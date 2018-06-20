@@ -174,6 +174,23 @@ public class Location {
       zipsForCity = zipCodes.get(cityName + " Town");
     }
     
+    if (zipsForCity == null) {
+      zipsForCity = zipCodes.get(cityName + " Center");
+    }
+    
+    if (zipsForCity == null) {
+      zipsForCity = zipCodes.get(cityName + " City");
+    }
+    
+    if (zipsForCity == null) {
+      zipsForCity = zipCodes.get(cityName.substring(0, cityName.lastIndexOf(" ")));
+    }
+    
+    if (zipsForCity == null) {
+      // TODO: better way to report and handle errors
+      System.err.println("ERROR: No zips for " + cityName + " found");
+    }
+    
     Place place = null;
     if (zipsForCity.size() == 1) {
       place = zipsForCity.get(0);

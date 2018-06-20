@@ -39,6 +39,7 @@ public class Demographics {
   private RandomCollection<String> incomeDistribution;
   public Map<String, Double> education;
   private RandomCollection<String> educationDistribution;
+  private static DemographicsOptions options;
 
   public int pickAge(Random random) {
     // lazy-load in case this randomcollection isn't necessary
@@ -405,25 +406,6 @@ public class Demographics {
   }
   
   /**
-   * The index of the entry in this list + 1 == the column header in the CSV for that age group.
-   * For example, age range 0-4 is stored in the CSV with column header "1".
-   */
-  private static final List<String> CSV_AGE_GROUPS = Arrays.asList(
-          "0..4", "5..9", "10..14", "15..19", "20..24", "25..29", 
-          "30..34", "35..39", "40..44", "45..49", "50..54", 
-          "55..59", "60..64", "65..69", "70..74", "75..79", "80..84", "85..110");
-  
-  private static final List<String> CSV_RACES = Arrays.asList(
-      "WHITE", "HISPANIC", "BLACK", "ASIAN", "NATIVE", "OTHER");
-  
-  private static final List<String> CSV_INCOMES = Arrays.asList(
-      "00..10", "10..15", "15..25", "25..35", "35..50",
-      "50..75", "75..100", "100..150", "150..200", "200..999");
-  
-  private static final List<String> CSV_EDUCATIONS = Arrays.asList(
-      "LESS_THAN_HS", "HS_DEGREE", "SOME_COLLEGE", "BS_DEGREE");
-  
-  /**
    * Map a single line of the demographics CSV file into a Demographics object.
    * 
    * @param line Line representing one city, parsed via SimpleCSV
@@ -432,7 +414,8 @@ public class Demographics {
   public static Demographics csvLineToDemographics(Map<String,String> line) {
     Demographics d = new Demographics();
     
-    d.population = Double.valueOf(line.get("POPESTIMATE2015")).longValue(); 
+    d.population = Double.valueOf(line.get("POPESTIMATE2016")).longValue(); 
+    options = new DemographicsOptions(CSV_VET_AGE_GROUPS, CSV_RACES, CSV_VET_INCOMES, CSV_EDUCATIONS);
     // some .0's seem to sneak in there and break Long.valueOf
     
     d.city = line.get("NAME");
@@ -442,7 +425,7 @@ public class Demographics {
     d.ages = new HashMap<String, Double>();
     
     int i = 1;
-    for (String ageGroup : CSV_AGE_GROUPS) {
+    for (String ageGroup : options.getAgeGroups()) {
       String csvHeader = Integer.toString(i++);
       double percentage = Double.parseDouble(line.get(csvHeader));
       d.ages.put(ageGroup, percentage);
@@ -453,13 +436,13 @@ public class Demographics {
     d.gender.put("female", Double.parseDouble(line.get("TOT_FEMALE")));
     
     d.race = new HashMap<String, Double>();
-    for (String race : CSV_RACES) {
+    for (String race : options.getRaces()) {
       double percentage = Double.parseDouble(line.get(race));
       d.race.put(race.toLowerCase(), percentage);
     }
     
     d.income = new HashMap<String, Double>();
-    for (String income : CSV_INCOMES) {
+    for (String income : options.getIncomes()) {
       String incomeString = line.get(income);
       if (incomeString.isEmpty()) {
         d.income.put(income, 0.01); // dummy value, has to be non-zero
@@ -470,7 +453,7 @@ public class Demographics {
     }
     
     d.education = new HashMap<String, Double>();
-    for (String education : CSV_EDUCATIONS) {
+    for (String education : options.getEducations()) {
       String educationString = line.get(education);
       if (educationString.isEmpty()) {
         d.education.put(education.toLowerCase(), 0.01); // dummy value, has to be non-zero
@@ -493,4 +476,78 @@ public class Demographics {
     }
     return distribution;
   }
+  
+  /**
+   * The index of the entry in this list + 1 == the column header in the CSV for that age group.
+   * For example, age range 0-4 is stored in the CSV with column header "1".
+   */
+  private static final List<String> CSV_AGE_GROUPS = Arrays.asList(
+          "0..4", "5..9", "10..14", "15..19", "20..24", "25..29", 
+          "30..34", "35..39", "40..44", "45..49", "50..54", 
+          "55..59", "60..64", "65..69", "70..74", "75..79", "80..84", "85..110");
+  
+  private static final List<String> CSV_VET_AGE_GROUPS = Arrays.asList(
+		  "18..34", "35..54", "55..64", "65..74", "75..110");
+  
+  private static final List<String> CSV_RACES = Arrays.asList(
+      "WHITE", "HISPANIC", "BLACK", "ASIAN", "NATIVE", "OTHER");
+  
+  private static final List<String> CSV_INCOMES = Arrays.asList(
+      "00..10", "10..15", "15..25", "25..35", "35..50",
+      "50..75", "75..100", "100..150", "150..200", "200..999");
+  
+  private static final List<String> CSV_VET_INCOMES = Arrays.asList(
+		  "00..11", "11..999");
+  
+  private static final List<String> CSV_EDUCATIONS = Arrays.asList(
+      "LESS_THAN_HS", "HS_DEGREE", "SOME_COLLEGE", "BS_DEGREE");
+  
+  private static class DemographicsOptions {
+	  
+	  private final List<String> csvAgeGroups;
+	  private final List<String> csvRaces;
+	  private final List<String> csvIncomes;
+	  private final List<String> csvEducations;
+	  public DemographicsOptions() {
+		  this(CSV_AGE_GROUPS, CSV_RACES, CSV_INCOMES, CSV_EDUCATIONS);
+	  }
+	  
+	  public DemographicsOptions(List<String> ag, List<String> r, List<String> i, List<String> e) {
+		  csvAgeGroups = ag;
+		  csvRaces = r;
+		  csvIncomes = i;
+		  csvEducations = e;
+	  }
+	  
+	  public boolean hasAgeGroups() {
+		  return csvAgeGroups != null;
+	  }
+	  
+	  public boolean hasRaces() {
+		  return csvRaces != null;
+	  }
+	  
+	  public boolean hasIncomes() {
+		  return csvIncomes != null;
+	  }
+	  
+	  public boolean hasEducations() {
+		  return csvEducations != null;
+	  }
+	  
+	  public List<String> getAgeGroups() {
+		  return csvAgeGroups;
+	  }
+	  public List<String> getRaces() {
+		  return csvRaces;
+	  }
+	  public List<String> getIncomes() {
+		  return csvIncomes;
+	  }
+	  
+	  public List<String> getEducations() {
+		  return csvEducations;
+	  }
+  }
+  
 }
