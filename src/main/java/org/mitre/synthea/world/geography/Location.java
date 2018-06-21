@@ -2,6 +2,8 @@ package org.mitre.synthea.world.geography;
 
 import com.google.common.collect.Table;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -14,8 +16,13 @@ import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Person;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Location {
   private static Map<String, String> stateAbbreviations = loadAbbreviations();
+  private static Logger locationLogger = LoggerFactory.getLogger(Location.class);
+  private static PrintWriter stackPrinter = new PrintWriter(new StringWriter());
 
   private long totalPopulation;
 
@@ -34,9 +41,9 @@ public class Location {
    *     e.g. "Columbus" or null for an entire state.
    */
   public Location(String state, String city) {
+    locationLogger.debug("Attempting to create Location(" + city + ", " + state + ")");
     try {
       this.city = city;
-      
       Table<String,String,Demographics> allDemographics = Demographics.load(state);
       
       // this still works even if only 1 city given,
@@ -58,8 +65,9 @@ public class Location {
       totalPopulation = runningPopulation;
       
     } catch (Exception e) {
-      System.err.println("ERROR: unable to load demographics");
-      e.printStackTrace();
+      System.err.println("ERROR: unable to load demographics for " + city + ", " + state);
+      e.printStackTrace(stackPrinter);
+      locationLogger.error(stackPrinter.toString());
       throw new ExceptionInInitializerError(e);
     }
 
@@ -84,7 +92,8 @@ public class Location {
       }
     } catch (Exception e) {
       System.err.println("ERROR: unable to load zips csv: " + filename);
-      e.printStackTrace();
+      e.printStackTrace(stackPrinter);
+      locationLogger.error(stackPrinter.toString());
       throw new ExceptionInInitializerError(e);
     }
   }
@@ -187,8 +196,8 @@ public class Location {
     }
     
     if (zipsForCity == null) {
-      // TODO: better way to report and handle errors
-      System.err.println("ERROR: No zips for " + cityName + " found");
+      throw new RuntimeException("ERROR: No zips for " + cityName + " found. Please check to make sure that"
+          + " the city is somehow represented in both the demographics and zipcodes file.");
     }
     
     Place place = null;
