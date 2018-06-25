@@ -22,7 +22,8 @@ import org.slf4j.LoggerFactory;
 public class Location {
   private static Map<String, String> stateAbbreviations = loadAbbreviations();
   private static Logger locationLogger = LoggerFactory.getLogger(Location.class);
-  private static PrintWriter stackPrinter = new PrintWriter(new StringWriter());
+  private static StringWriter stackWriter = new StringWriter();
+  private static PrintWriter stackPrinter = new PrintWriter(stackWriter);
 
   private long totalPopulation;
 
@@ -67,7 +68,7 @@ public class Location {
     } catch (Exception e) {
       System.err.println("ERROR: unable to load demographics for " + city + ", " + state);
       e.printStackTrace(stackPrinter);
-      locationLogger.error(stackPrinter.toString());
+      locationLogger.error(stackWriter.toString());
       throw new ExceptionInInitializerError(e);
     }
 
@@ -93,7 +94,7 @@ public class Location {
     } catch (Exception e) {
       System.err.println("ERROR: unable to load zips csv: " + filename);
       e.printStackTrace(stackPrinter);
-      locationLogger.error(stackPrinter.toString());
+      locationLogger.error(stackWriter.toString());
       throw new ExceptionInInitializerError(e);
     }
   }
@@ -192,7 +193,13 @@ public class Location {
     }
     
     if (zipsForCity == null) {
-      zipsForCity = zipCodes.get(cityName.substring(0, cityName.lastIndexOf(" ")));
+      zipsForCity = zipCodes.get(cityName + " corporation");
+    }
+    
+    if (zipsForCity == null) {
+      if (cityName.contains(" ")) {
+        zipsForCity = zipCodes.get(cityName.substring(0, cityName.lastIndexOf(" ")));
+      }
     }
     
     if (zipsForCity == null) {

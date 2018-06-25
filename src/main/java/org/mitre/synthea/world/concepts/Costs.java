@@ -1,6 +1,8 @@
 package org.mitre.synthea.world.concepts;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,6 +16,8 @@ import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.HealthRecord.Entry;
 import org.mitre.synthea.world.geography.Location;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Costs {
   // all of these are CSVs with these columns: 
@@ -36,15 +40,36 @@ public class Costs {
   private static final double DEFAULT_IMMUNIZATION_COST =
       Double.parseDouble(Config.get("generate.costs.default_immunization_cost"));
   
-  private static final Map<String, Double> LOCATION_ADJUSTMENT_FACTORS = 
-      parseAdjustmentFactors(); 
+  private static Map<String, Double> state_adjustment_factors;
+  
+  private static Map<String, Double> zip_adjustment_factors;
+  
+  private static Logger costsLogger = LoggerFactory.getLogger(Costs.class);
+  private static StringWriter stackWriter = new StringWriter();
+  private static PrintWriter stackPrinter = new PrintWriter(stackWriter);
   
   /**
    * Load all cost data needed by the system.
    */
-  public static void loadCostData() {
-    // intentionally do nothing
-    // this method is only called to ensure the static data is loaded at a predictable time
+  public static void loadCostData() {  
+    try {
+      zip_adjustment_factors = parseAdjustmentFactors("costs/zipAdjustmentFactors.csv", "ZIP");
+    } catch (Exception e) {
+      System.err.println("WARN: unable to load zip code cost data csv: costs/zipAdjustmentFactors.csv - falling back to state");
+      e.printStackTrace(stackPrinter);
+      costsLogger.warn("unable to load zip code costs - falling back to state data");
+      costsLogger.warn(stackWriter.toString());
+      zip_adjustment_factors = null;
+    }
+    try {
+      state_adjustment_factors = parseAdjustmentFactors("costs/adjustmentFactors.csv", "STATE");
+    } catch (Exception e) {
+      System.err.println("ERROR: unable to load state cost data csv: costs/adjustmentFactors.csv");
+      e.printStackTrace(stackPrinter);
+      costsLogger.error("failed to read state data - no fallback available if everything else failed");
+      costsLogger.error(stackWriter.toString());
+      state_adjustment_factors = null;
+    }
   }
   
   private static Map<String, CostData> parseCsvToMap(String filename) {
@@ -80,18 +105,21 @@ public class Costs {
     }
   }
   
-  private static Map<String, Double> parseAdjustmentFactors() {
+  private static Map<String, Double> parseAdjustmentFactors(String path, String type) {
     try {
-      String rawData = Utilities.readResource("costs/adjustmentFactors.csv");
+      String rawData = Utilities.readResource(path);
       List<LinkedHashMap<String, String>> lines = SimpleCSV.parse(rawData);
 
       Map<String, Double> costMap = new HashMap<>();
+      costsLogger.debug("Scanning lines of " + type.toLowerCase() + " csv file");
       for (Map<String, String> line : lines) {
-        String state = line.get("STATE");
+        String location = line.get(type);
         String factorStr = line.get("ADJ_FACTOR");
+        costsLogger.debug("Loading cost data for " + type.toLowerCase() + " " + location);
         try {
           Double factor = Double.valueOf(factorStr);
-          costMap.put(state, factor);
+          costMap.put(location, factor);
+          costsLogger.debug("Successfully loaded cost data for " + type.toLowerCase() + " " + location);
         } catch (NumberFormatException nfe) {
           throw new RuntimeException("Invalid cost adjustment factor: " + factorStr, nfe);
         }
@@ -100,7 +128,7 @@ public class Costs {
     } catch (IOException e) {
       e.printStackTrace();
       throw new ExceptionInInitializerError(
-          "Unable to read required file: costs/adjustmentFactors.csv");
+          "Unable to read file: " + path);
     }
   }
 
@@ -158,12 +186,34 @@ public class Costs {
     }
     
     double locationAdjustment = 1.0;
+    
     if (patient != null && patient.attributes.containsKey(Person.STATE)) {
       String state = (String) patient.attributes.get(Person.STATE);
       state = Location.getAbbreviation(state);
-      if (LOCATION_ADJUSTMENT_FACTORS.containsKey(state)) {
-        locationAdjustment = (double) LOCATION_ADJUSTMENT_FACTORS.get(state);
+      if (state_adjustment_factors.containsKey(state)) {
+        locationAdjustment = (double) state_adjustment_factors.get(state);
+      } else {
+        costsLogger.info("State adjustment for " + state + " not found. Rolling back to default.");
       }
+    } else {
+      costsLogger.info("Patient is null or does not have a defined state. This shouldn't happen!");
+    }
+    
+    // try to get the zip code adjustment
+    
+    if (patient != null && patient.attributes.containsKey(Person.ZIP)) {
+      String zip = (String) patient.attributes.get(Person.ZIP);
+      if (zip_adjustment_factors != null) {
+        if (zip_adjustment_factors.containsKey(zip)) {
+          locationAdjustment = (double) zip_adjustment_factors.get(zip);
+        } else {
+          costsLogger.info("Zip code adjustment for " + zip + " not found. Rolling back to state adjustment or default value.");
+        }
+      } else {
+        costsLogger.info("Zip code adjustment for " + zip + " not found. Rolling back to state adjustment or default value.");
+      }
+    } else {
+      costsLogger.info("Patient is null or does not have a defined zip code.");
     }
     
     return baseCost * locationAdjustment;

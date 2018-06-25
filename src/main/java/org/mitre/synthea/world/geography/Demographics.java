@@ -414,7 +414,7 @@ public class Demographics {
   public static Demographics csvLineToDemographics(Map<String,String> line) {
     Demographics d = new Demographics();
     
-    d.population = Double.valueOf(line.get("POPESTIMATE2016")).longValue(); 
+    d.population = Double.valueOf(line.get("POPESTIMATE2015")).longValue(); 
     options = new DemographicsOptions(CSV_VET_AGE_GROUPS, CSV_RACES, CSV_VET_INCOMES, CSV_EDUCATIONS);
     // some .0's seem to sneak in there and break Long.valueOf
     
