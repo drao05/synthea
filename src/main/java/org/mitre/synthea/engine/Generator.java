@@ -43,6 +43,7 @@ public class Generator {
   private AtomicInteger totalGeneratedPopulation;
   private String logLevel;
   private boolean onlyDeadPatients;
+  private boolean onlyVeterans;
   public TransitionMetrics metrics;
   public static final String DEFAULT_STATE = "Massachusetts";
 
@@ -147,7 +148,7 @@ public class Generator {
 
     this.logLevel = Config.get("generate.log_patients.detail", "simple");
     this.onlyDeadPatients = Boolean.parseBoolean(Config.get("generate.only_dead_patients"));
-
+    this.onlyVeterans = Boolean.parseBoolean(Config.get("generate.veteran_population_override"));
     this.totalGeneratedPopulation = new AtomicInteger(0);
     this.stats = Collections.synchronizedMap(new HashMap<String, AtomicInteger>());
     stats.put("alive", new AtomicInteger(0));
@@ -424,6 +425,10 @@ public class Generator {
     double sesScore = city.socioeconomicScore(incomeLevel, educationLevel, occupation);
     out.put(Person.SOCIOECONOMIC_SCORE, sesScore);
     out.put(Person.SOCIOECONOMIC_CATEGORY, city.socioeconomicCategory(sesScore));
+
+    if (this.onlyVeterans) {
+      out.put("veteran_population_override", Boolean.TRUE);
+    }
 
     int targetAge;
     if (options.ageSpecified) {

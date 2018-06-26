@@ -415,7 +415,7 @@ public class Demographics {
     Demographics d = new Demographics();
     
     d.population = Double.valueOf(line.get("POPESTIMATE2015")).longValue(); 
-    options = new DemographicsOptions(CSV_VET_AGE_GROUPS, CSV_RACES, CSV_VET_INCOMES, CSV_EDUCATIONS);
+    options = new DemographicsOptions(CSV_AGE_GROUPS, CSV_RACES, CSV_INCOMES, CSV_EDUCATIONS);
     // some .0's seem to sneak in there and break Long.valueOf
     
     d.city = line.get("NAME");
@@ -486,7 +486,7 @@ public class Demographics {
           "30..34", "35..39", "40..44", "45..49", "50..54", 
           "55..59", "60..64", "65..69", "70..74", "75..79", "80..84", "85..110");
   
-  private static final List<String> CSV_VET_AGE_GROUPS = Arrays.asList(
+  private static final List<String> CSV_AGE_GROUPS_ACS = Arrays.asList(
 		  "18..34", "35..54", "55..64", "65..74", "75..110");
   
   private static final List<String> CSV_RACES = Arrays.asList(
@@ -496,7 +496,7 @@ public class Demographics {
       "00..10", "10..15", "15..25", "25..35", "35..50",
       "50..75", "75..100", "100..150", "150..200", "200..999");
   
-  private static final List<String> CSV_VET_INCOMES = Arrays.asList(
+  private static final List<String> CSV_INCOMES_ACS = Arrays.asList(
 		  "00..11", "11..999");
   
   private static final List<String> CSV_EDUCATIONS = Arrays.asList(
