@@ -207,10 +207,10 @@ public class Costs {
         if (zip_adjustment_factors.containsKey(zip)) {
           locationAdjustment = (double) zip_adjustment_factors.get(zip);
         } else {
-          costsLogger.info("Zip code adjustment for " + zip + " not found. Rolling back to state adjustment or default value.");
+          costsLogger.info("Zip code adjustment for " + zip + " (" + patient.attributes.get(Person.CITY) + ") not found. Rolling back to state adjustment or default value.");
         }
       } else {
-        costsLogger.info("Zip code adjustment for " + zip + " not found. Rolling back to state adjustment or default value.");
+        costsLogger.info("Zip code adjustment for " + zip + " (" + patient.attributes.get(Person.CITY) + ") not found. Rolling back to state adjustment or default value.");
       }
     } else {
       costsLogger.info("Patient is null or does not have a defined zip code.");
