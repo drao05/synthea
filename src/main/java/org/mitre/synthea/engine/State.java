@@ -1109,6 +1109,8 @@ public abstract class State implements Cloneable {
     private org.mitre.synthea.world.concepts.VitalSign vitalSign;
     private String category;
     private String unit;
+    private String device;
+    private String performer;
 
     @Override
     public Observation clone() {
@@ -1120,6 +1122,8 @@ public abstract class State implements Cloneable {
       clone.vitalSign = vitalSign;
       clone.category = category;
       clone.unit = unit;
+      clone.device = device;
+      clone.performer = performer;
       return clone;
     }
 
@@ -1140,6 +1144,8 @@ public abstract class State implements Cloneable {
       observation.name = this.name;
       observation.codes.addAll(codes);
       observation.category = category;
+      observation.device = device;
+      observation.performer = performer;
       observation.unit = unit;
 
       return true;
@@ -1174,11 +1180,15 @@ public abstract class State implements Cloneable {
    */
   public static class MultiObservation extends ObservationGroup {
     private String category;
+    private String device;
+    private String performer;    
 
     @Override
     public MultiObservation clone() {
       MultiObservation clone = (MultiObservation) super.clone();
       clone.category = category;
+      clone.device = device;
+      clone.performer = performer;
       return clone;
     }
 
@@ -1190,6 +1200,8 @@ public abstract class State implements Cloneable {
       observation.name = this.name;
       observation.codes.addAll(codes);
       observation.category = category;
+      observation.device = device;
+      observation.performer = performer;
 
       return true;
     }
