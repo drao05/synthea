@@ -940,6 +940,10 @@ public class FhirStu3 {
     observationResource.addCategory().addCoding().setCode(observation.category)
         .setSystem("http://hl7.org/fhir/observation-category").setDisplay(observation.category);
 
+    // set device and performer
+    observationResource.setDevice(new Reference(observation.device));
+    observationResource.addPerformer(new Reference(observation.performer));
+
     if (observation.value != null) {
       Type value = mapValueToFHIRType(observation.value, observation.unit);
       observationResource.setValue(value);
@@ -951,6 +955,10 @@ public class FhirStu3 {
         Type value = mapValueToFHIRType(subObs.value, subObs.unit);
         comp.setValue(value);
         observationResource.addComponent(comp);
+
+        // TODO set these to addDevice when that change is made
+        observationResource.setDevice(new Reference(subObs.device));
+        observationResource.addPerformer(new Reference(subObs.performer));
       }
     }
 
