@@ -273,6 +273,8 @@
         "37.2 - 39.4 Celsius == 99 - 103 Fahrenheit"
       ],
       "unit": "Cel",
+      "device":"Thermometer",
+      "performer":"Nurse",
       "codes": [
         {
           "system": "LOINC",
@@ -293,6 +295,8 @@
         "37.0 - 38.0 Celsius == 98.6 - 100.4 Fahrenheit"
       ],
       "unit": "Cel",
+      "device":"Thermometer",
+      "performer":"Nurse",      
       "codes": [
         {
           "system": "LOINC",

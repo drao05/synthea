@@ -78,6 +78,8 @@
       "type": "Observation",
       "category": "laboratory",
       "unit": "ng/dl",
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",      
       "codes": [
         {
           "system": "LOINC",
@@ -95,6 +97,8 @@
       "type": "Observation",
       "category": "laboratory",
       "unit": "m[IU]/L",
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",       
       "codes": [
         {
           "system": "LOINC",

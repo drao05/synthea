@@ -1568,6 +1568,8 @@
         "high": 0.5
       },
       "unit": "{T-score}",
+      "device":"DXA scanner",
+      "performer":"Radiologist",       
       "direct_transition": "End_Broken_Bone_Encounter"
     },
     "Low_Bone_Density": {
@@ -1585,6 +1587,8 @@
         "high": -2.5
       },
       "unit": "{T-score}",
+      "device":"DXA scanner",
+      "performer":"Radiologist",       
       "remarks": [
         "WHO definition of osteoporosis is a T-score < 2.5",
         "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1963365/"

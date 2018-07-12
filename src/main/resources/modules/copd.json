@@ -303,6 +303,8 @@
         "early diagnosis for COPD is the exception not the rule. assume that most people will be stage 2 at diagnosis"
       ],
       "unit": "%",
+      "device":"Spirometer, Mouthpiece",
+      "performer":"Nurse, Doctor, Respiratory Physiologist",
       "conditional_transition": [
         {
           "condition": {
@@ -697,6 +699,8 @@
         "currently in stage 1 so they can stay in 1 or drop to 2"
       ],
       "unit": "%",
+      "device":"Spirometer, Mouthpiece",
+      "performer":"Nurse, Doctor, Respiratory Physiologist",      
       "codes": [
         {
           "system": "LOINC",
@@ -717,6 +721,8 @@
         "currently in stage 2 so they can stay in 2 or drop to 3"
       ],
       "unit": "%",
+      "device":"Spirometer, Mouthpiece",
+      "performer":"Nurse, Doctor, Respiratory Physiologist",      
       "codes": [
         {
           "system": "LOINC",
@@ -737,6 +743,8 @@
         "currently in stage 3 so they can stay in 3 or drop to 4"
       ],
       "unit": "%",
+      "device":"Spirometer, Mouthpiece",
+      "performer":"Nurse, Doctor, Respiratory Physiologist",      
       "codes": [
         {
           "system": "LOINC",
@@ -754,6 +762,8 @@
         "high": 29
       },
       "unit": "%",
+      "device":"Spirometer, Mouthpiece",
+      "performer":"Nurse, Doctor, Respiratory Physiologist",      
       "codes": [
         {
           "system": "LOINC",

@@ -26,6 +26,8 @@
         }
       ],
       "unit": "cm",
+      "device": "Stadiometer / Height Rod",
+      "performer": "Nurse",
       "direct_transition": "Record_Weight"
     },
     "Record_Weight": {
@@ -41,6 +43,9 @@
         }
       ],
       "unit": "kg",
+      "device":"Weighing Scale",
+      "performer":"Nurse",
+
       "conditional_transition": [
         {
           "condition": {
@@ -87,6 +92,8 @@
         }
       ],
       "unit": "mmHg",
+      "device":"Sphygmomanometer",
+      "performer":"Nurse",      
       "direct_transition": "Record_Diastolic_BP"
     },
     "Record_Diastolic_BP": {
@@ -101,6 +108,8 @@
           "display": "Diastolic Blood Pressure"
         }
       ],
+      "device":"Sphygmomanometer",
+      "performer":"Nurse",            
       "unit": "mmHg",
       "direct_transition": "Record_BP"
     },
@@ -115,6 +124,8 @@
           "display": "Blood Pressure"
         }
       ],
+      "device":"Sphygmomanometer",
+      "performer":"Nurse",
       "target_encounter": "Wellness_Encounter",
       "direct_transition": "Lab_1_HA1C"
     },
@@ -167,6 +178,8 @@
         }
       ],
       "unit": "%",
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",            
       "direct_transition": "Lab_2_MetabolicPanel"
     },
     "Lab_2_MetabolicPanel": {
@@ -217,6 +230,8 @@
           "display": "Glucose"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",            
       "unit": "mg/dL",
       "direct_transition": "Record_UreaNitrogen"
     },
@@ -232,6 +247,8 @@
           "display": "Urea Nitrogen"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",       
       "unit": "mg/dL",
       "direct_transition": "Record_Creatinine"
     },
@@ -247,6 +264,8 @@
           "display": "Creatinine"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",       
       "unit": "mg/dL",
       "direct_transition": "Record_Calcium"
     },
@@ -262,6 +281,8 @@
           "display": "Calcium"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",      
       "unit": "mg/dL",
       "direct_transition": "Record_Sodium"
     },
@@ -277,6 +298,8 @@
           "display": "Sodium"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",      
       "unit": "mmol/L",
       "direct_transition": "Record_Potassium"
     },
@@ -292,6 +315,8 @@
           "display": "Potassium"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",      
       "unit": "mmol/L",
       "direct_transition": "Record_Chloride"
     },
@@ -307,6 +332,8 @@
           "display": "Chloride"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",      
       "unit": "mmol/L",
       "direct_transition": "Record_CO2"
     },
@@ -322,6 +349,8 @@
           "display": "Carbon Dioxide"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",      
       "unit": "mmol/L",
       "direct_transition": "Record_MetabolicPanel"
     },
@@ -398,6 +427,8 @@
           "display": "Total Cholesterol"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",      
       "unit": "mg/dL",
       "direct_transition": "Record_Triglycerides"
     },
@@ -413,6 +444,8 @@
           "display": "Triglycerides"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",      
       "unit": "mg/dL",
       "direct_transition": "Record_LDL"
     },
@@ -428,6 +461,8 @@
           "display": "Low Density Lipoprotein Cholesterol"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",      
       "unit": "mg/dL",
       "direct_transition": "Record_HDL"
     },
@@ -443,6 +478,8 @@
           "display": "High Density Lipoprotein Cholesterol"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",      
       "unit": "mg/dL",
       "direct_transition": "Record_LipidPanel"
     },
@@ -456,6 +493,8 @@
           "display": "Lipid Panel"
         }
       ],
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",      
       "target_encounter": "Wellness_Encounter",
       "direct_transition": "Lab_4_ACR"
     },
@@ -493,6 +532,8 @@
         }
       ],
       "unit": "mg/g",
+      "device":"Specimen Cup, Urine test strips, Urine Analyzer",
+      "performer":"Nurse",      
       "direct_transition": "Lab_5_EGFR"
     },
     "Lab_5_EGFR": {
@@ -544,6 +585,8 @@
         }
       ],
       "unit": "mL/min/{1.73_m2}",
+      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
+      "performer":"Nurse",       
       "direct_transition": "Wellness_Encounter"
     }
   }
