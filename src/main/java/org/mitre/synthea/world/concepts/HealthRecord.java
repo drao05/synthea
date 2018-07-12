@@ -133,6 +133,8 @@ public class HealthRecord {
     public String unit;
     public List<Observation> observations;
     public Report report;
+    public String device;
+    public String performer;
 
     public Observation(long time, String type, Object value) {
       super(time, type);
@@ -169,6 +171,7 @@ public class HealthRecord {
     }
   }
 
+  // todo add device here too
   public class Procedure extends Entry {
     public List<Code> reasons;
 

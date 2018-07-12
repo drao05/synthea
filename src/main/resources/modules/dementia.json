@@ -204,6 +204,8 @@
         "http://alzheimer.wustl.edu/cdr/cdr.htm"
       ],
       "unit": "(score)",
+      "device":"Mini-Mental State Examination",
+      "performer":"Administrator (can be nurse or doctor)",
       "codes": [
         {
           "system": "LOINC",
@@ -411,6 +413,8 @@
         "http://www.alz.org/alzheimers_disease_steps_to_diagnosis.asp"
       ],
       "unit": "(score)",
+      "device":"Mini-Mental State Examination",
+      "performer":"Administrator (can be nurse or doctor)",      
       "conditional_transition": [
         {
           "condition": {
@@ -560,6 +564,8 @@
         "http://www.alz.org/alzheimers_disease_steps_to_diagnosis.asp"
       ],
       "unit": "(score)",
+      "device":"Mini-Mental State Examination",
+      "performer":"Administrator (can be nurse or doctor)",      
       "direct_transition": "End_Severe_Encounter"
     },
     "End_Severe_Encounter": {
@@ -611,6 +617,8 @@
         "http://www.alz.org/alzheimers_disease_steps_to_diagnosis.asp"
       ],
       "unit": "(score)",
+      "device":"Mini-Mental State Examination",
+      "performer":"Administrator (can be nurse or doctor)",      
       "direct_transition": "End_VerySevere_Encounter"
     },
     "End_VerySevere_Encounter": {

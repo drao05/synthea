@@ -262,6 +262,8 @@
         "high": 7
       },
       "unit": "mm",
+      "device":"CT Scanner",
+      "performer":"Radiologist",
       "codes": [
         {
           "system": "LOINC",
@@ -279,6 +281,8 @@
         "high": 25
       },
       "unit": "mm",
+      "device":"CT Scanner",
+      "performer":"Radiologist",      
       "codes": [
         {
           "system": "LOINC",
@@ -333,6 +337,8 @@
         "high": 500
       },
       "unit": "ng/mL",
+      "device":"Fecal Test Collection Cards or Tubes",
+      "performer":"Nurse",
       "codes": [
         {
           "system": "LOINC",
@@ -350,6 +356,8 @@
         "high": 25
       },
       "unit": "ng/mL",
+      "device":"Fecal Test Collection Cards or Tubes",
+      "performer":"Nurse",      
       "codes": [
         {
           "system": "LOINC",
