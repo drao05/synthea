@@ -102,7 +102,7 @@
           ],
           "unit": "mmHg",
           "device":"Sphygmomanometer",
-          "performer":"Nurse",
+          "performer":"Nurse"
         },
         {
           "category": "vital-signs",
@@ -116,7 +116,7 @@
           ],
           "unit": "mmHg",
           "device":"Sphygmomanometer",
-          "performer":"Nurse",           
+          "performer":"Nurse"          
         }
       ],
       "target_encounter": "Wellness_Encounter",
