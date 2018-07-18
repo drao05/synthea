@@ -26,8 +26,6 @@
         }
       ],
       "unit": "cm",
-      "device": "Stadiometer / Height Rod",
-      "performer": "Nurse",
       "direct_transition": "Record_Weight"
     },
     "Record_Weight": {
@@ -43,9 +41,6 @@
         }
       ],
       "unit": "kg",
-      "device":"Weighing Scale",
-      "performer":"Nurse",
-
       "conditional_transition": [
         {
           "condition": {
@@ -100,9 +95,7 @@
               "display": "Systolic Blood Pressure"
             }
           ],
-          "unit": "mmHg",
-          "device":"Sphygmomanometer",
-          "performer":"Nurse",
+          "unit": "mmHg"
         },
         {
           "category": "vital-signs",
@@ -114,9 +107,7 @@
               "display": "Diastolic Blood Pressure"
             }
           ],
-          "unit": "mmHg",
-          "device":"Sphygmomanometer",
-          "performer":"Nurse",           
+          "unit": "mmHg"
         }
       ],
       "target_encounter": "Wellness_Encounter",
@@ -309,8 +300,6 @@
           "display": "Microalbumin Creatinine Ratio"
         }
       ],
-      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
-      "performer":"Nurse",            
       "unit": "mg/g",
       "direct_transition": "Lab_EGFR"
     },
@@ -327,8 +316,6 @@
         }
       ],
       "unit": "mL/min/{1.73_m2}",
-      "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
-      "performer":"Nurse",      
       "direct_transition": "Wellness_Encounter"
     },
     "Lab_MetabolicPanel": {
@@ -367,7 +354,6 @@
         }
       ]
     },
-
     "Lab_LipidPanel": {
       "type": "Simple",
       "conditional_transition": [
