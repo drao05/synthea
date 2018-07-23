@@ -20,7 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Location {
-  private static Map<String, String> stateAbbreviations = loadAbbreviations();
+  private static AbbreviationsLoader abbrLoader = new StateAbbreviationsLoader(Config.get("generate.geography.zipcodes.default_file"), null);
+  private static Map<String, String> stateAbbreviations = abbrLoader.loadAbbreviations();
   private static Logger locationLogger = LoggerFactory.getLogger(Location.class);
   private static StringWriter stackWriter = new StringWriter();
   private static PrintWriter stackPrinter = new PrintWriter(stackWriter);
@@ -29,7 +30,7 @@ public class Location {
 
   // cache the population by city name for performance
   private Map<String, Long> populationByCity;
-  private Map<String, List<Place>> zipCodes;
+  private Map<String, List<CityZipPlace>> zipCodes;
 
   private String city;
   private Map<String, Demographics> demographics;
@@ -80,14 +81,14 @@ public class Location {
 
       zipCodes = new HashMap<>();
       for (Map<String,String> line : ziplist) {
-        Place place = new Place(line);
+        CityZipPlace place = new CityZipPlace(line);
         
         if (!place.sameState(state)) {
           continue;
         }
         
         if (!zipCodes.containsKey(place.name)) {
-          zipCodes.put(place.name, new ArrayList<Place>());
+          zipCodes.put(place.name, new ArrayList<CityZipPlace>());
         }
         zipCodes.get(place.name).add(place);
       }
@@ -108,7 +109,7 @@ public class Location {
    * @return a zip code for the given city
    */
   public String getZipCode(String cityName) {
-    List<Place> zipsForCity = zipCodes.get(cityName);
+    List<CityZipPlace> zipsForCity = zipCodes.get(cityName);
     
     if (zipsForCity == null) {
       zipsForCity = zipCodes.get(cityName + " Town");
@@ -172,7 +173,7 @@ public class Location {
    *          Name of the city, or null to choose one randomly
    */
   public void assignPoint(Person person, String cityName) {
-    List<Place> zipsForCity = null;
+    List<CityZipPlace> zipsForCity = null;
 
     if (cityName == null) {
       int size = zipCodes.keySet().size();
@@ -207,7 +208,7 @@ public class Location {
           + " the city is somehow represented in both the demographics and zipcodes file.");
     }
     
-    Place place = null;
+    CityZipPlace place = null;
     if (zipsForCity.size() == 1) {
       place = zipsForCity.get(0);
     } else {
@@ -218,26 +219,6 @@ public class Location {
     if (place != null) {
       person.attributes.put(Person.COORDINATE, place.getLatLon());
     }
-  }
-
-  private static Map<String, String> loadAbbreviations() {
-    Map<String, String> abbreviations = new HashMap<String, String>();
-    String filename = null;
-    try {
-      filename = Config.get("generate.geography.zipcodes.default_file");
-      String csv = Utilities.readResource(filename);
-      List<? extends Map<String,String>> ziplist = SimpleCSV.parse(csv);
-
-      for (Map<String,String> line : ziplist) {
-        String state = line.get("USPS");
-        String abbreviation = line.get("ST");
-        abbreviations.put(state, abbreviation);
-      }
-    } catch (Exception e) {
-      System.err.println("ERROR: unable to load zips csv: " + filename);
-      e.printStackTrace();
-    }
-    return abbreviations;
   }
 
   /**

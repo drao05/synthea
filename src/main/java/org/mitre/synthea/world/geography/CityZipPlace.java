@@ -8,7 +8,7 @@ import org.apache.sis.index.tree.QuadTreeData;
 /**
  * Place represents a named place with a postal code and coordinate.
  */
-public class Place implements QuadTreeData {
+public class CityZipPlace implements QuadTreeData {
   /** The name of the state. For example, Ohio */
   public String state;
   /** The state abbreviation. For example, OH */
@@ -24,7 +24,7 @@ public class Place implements QuadTreeData {
    * Create a new row from a CSV row.
    * @param row from the zip file. Each key is the column header.
    */
-  public Place(Map<String,String> row) {
+  public CityZipPlace(Map<String,String> row) {
     this.state = row.get("USPS");
     this.abbreviation = row.get("ST");
     this.name = row.get("NAME");
