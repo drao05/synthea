@@ -14,8 +14,8 @@ public class DemographicsLoader {
   
   private DemographicsOptions options; 
   
-  public DemographicsLoader(List<String> ag, List<String> r, List<String> i, List<String> e, String estHeader) {
-    options = new DemographicsOptions(ag, r, i, e, estHeader);
+  public DemographicsLoader(List<String> ag, List<String> r, List<String> i, List<String> e, List<String> s, String estHeader) {
+    options = new DemographicsOptions(ag, r, i, e, s, estHeader);
   }
   
   public Demographics csvLineToDemographics(Map<String,String> line) {
@@ -38,8 +38,8 @@ public class DemographicsLoader {
     }
     
     d.gender = new HashMap<String, Double>();
-    d.gender.put("male", Double.parseDouble(line.get("TOT_MALE")));
-    d.gender.put("female", Double.parseDouble(line.get("TOT_FEMALE")));
+    d.gender.put("male", Double.parseDouble(line.get(options.getSexes().get(0))));
+    d.gender.put("female", Double.parseDouble(line.get(options.getSexes().get(1))));
     
     d.race = new HashMap<String, Double>();
     for (String race : options.getRaces()) {

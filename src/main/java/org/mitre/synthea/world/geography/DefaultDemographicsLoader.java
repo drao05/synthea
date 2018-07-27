@@ -15,7 +15,7 @@ import java.util.Map;
 public class DefaultDemographicsLoader extends DemographicsLoader {
 
   public DefaultDemographicsLoader() {
-    super(CSV_AGE_GROUPS, CSV_RACES, CSV_INCOMES, CSV_EDUCATIONS, ESTIMATE_HEADER);
+    super(CSV_AGE_GROUPS, CSV_RACES, CSV_INCOMES, CSV_EDUCATIONS, CSV_SEXES, ESTIMATE_HEADER);
   }
 
   /**
@@ -34,6 +34,8 @@ public class DefaultDemographicsLoader extends DemographicsLoader {
 
   private static final List<String> CSV_EDUCATIONS = Arrays.asList("LESS_THAN_HS", "HS_DEGREE", "SOME_COLLEGE",
       "BS_DEGREE");
+  
+  private static final List<String> CSV_SEXES = Arrays.asList("TOT_MALE", "TOT_FEMALE");
   
   private static final String ESTIMATE_HEADER = "POPESTIMATE2015";
 }

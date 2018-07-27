@@ -7,13 +7,15 @@ public class DemographicsOptions {
   private final List<String> csvRaces;
   private final List<String> csvIncomes;
   private final List<String> csvEducations;
+  private final List<String> csvSexes;
   private final String popEstHeader;
 
-  public DemographicsOptions(List<String> ag, List<String> r, List<String> i, List<String> e, String estHeader) {
+  public DemographicsOptions(List<String> ag, List<String> r, List<String> i, List<String> e, List<String> s, String estHeader) {
     csvAgeGroups = ag;
     csvRaces = r;
     csvIncomes = i;
     csvEducations = e;
+    csvSexes = s;
     popEstHeader = estHeader;
   }
 
@@ -47,6 +49,10 @@ public class DemographicsOptions {
 
   public List<String> getEducations() {
     return csvEducations;
+  }
+  
+  public List<String> getSexes() {
+    return csvSexes;
   }
 
   public String getPopEstHeader() {

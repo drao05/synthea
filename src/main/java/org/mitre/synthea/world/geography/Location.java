@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.sis.geometry.DirectPosition2D;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;
@@ -21,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 public class Location {
   private static AbbreviationsLoader abbrLoader = new StateAbbreviationsLoader(Config.get("generate.geography.zipcodes.default_file"), null);
+  private static StateCityZipPlaceFactory placeLoader = new StateCityZipPlaceFactory("USPS", "ST", "NAME", "ZCTA5", "LAT", "LON");
   private static Map<String, String> stateAbbreviations = abbrLoader.loadAbbreviations();
   private static Logger locationLogger = LoggerFactory.getLogger(Location.class);
   private static StringWriter stackWriter = new StringWriter();
@@ -30,7 +32,7 @@ public class Location {
 
   // cache the population by city name for performance
   private Map<String, Long> populationByCity;
-  private Map<String, List<CityZipPlace>> zipCodes;
+  private Map<String, List<StateCityZipPlace>> zipCodes;
 
   private String city;
   private Map<String, Demographics> demographics;
@@ -81,14 +83,14 @@ public class Location {
 
       zipCodes = new HashMap<>();
       for (Map<String,String> line : ziplist) {
-        CityZipPlace place = new CityZipPlace(line);
+        StateCityZipPlace place = (StateCityZipPlace) placeLoader.placeFromRow(line);
         
         if (!place.sameState(state)) {
           continue;
         }
         
         if (!zipCodes.containsKey(place.name)) {
-          zipCodes.put(place.name, new ArrayList<CityZipPlace>());
+          zipCodes.put(place.name, new ArrayList<StateCityZipPlace>());
         }
         zipCodes.get(place.name).add(place);
       }
@@ -109,7 +111,7 @@ public class Location {
    * @return a zip code for the given city
    */
   public String getZipCode(String cityName) {
-    List<CityZipPlace> zipsForCity = zipCodes.get(cityName);
+    List<StateCityZipPlace> zipsForCity = zipCodes.get(cityName);
     
     if (zipsForCity == null) {
       zipsForCity = zipCodes.get(cityName + " Town");
@@ -173,7 +175,7 @@ public class Location {
    *          Name of the city, or null to choose one randomly
    */
   public void assignPoint(Person person, String cityName) {
-    List<CityZipPlace> zipsForCity = null;
+    List<StateCityZipPlace> zipsForCity = null;
 
     if (cityName == null) {
       int size = zipCodes.keySet().size();
@@ -208,7 +210,7 @@ public class Location {
           + " the city is somehow represented in both the demographics and zipcodes file.");
     }
     
-    CityZipPlace place = null;
+    StateCityZipPlace place = null;
     if (zipsForCity.size() == 1) {
       place = zipsForCity.get(0);
     } else {
