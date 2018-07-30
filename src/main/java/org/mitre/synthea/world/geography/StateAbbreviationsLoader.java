@@ -1,6 +1,7 @@
 package org.mitre.synthea.world.geography;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +33,7 @@ public class StateAbbreviationsLoader implements AbbreviationsLoader {
 
   @Override
   public Map<String, String> loadAbbreviations() {
-    Map<String, String> abbreviations;
+    LinkedHashMap<String, String> abbreviations;
     if (zipFile != null) {
       abbreviations = loadAbbrsFromCSV(zipFile, "USPS", "ST");
     }
@@ -42,8 +43,8 @@ public class StateAbbreviationsLoader implements AbbreviationsLoader {
     return abbreviations;
   }
   
-  private Map<String, String> loadAbbrsFromCSV(String filename, String stateHeader, String abbrHeader) {
-    Map<String, String> abbreviations = new HashMap<String, String>();
+  private LinkedHashMap<String, String> loadAbbrsFromCSV(String filename, String stateHeader, String abbrHeader) {
+    LinkedHashMap<String, String> abbreviations = new LinkedHashMap<String, String>();
     try {
       String csv = Utilities.readResource(filename);
       List<? extends Map<String,String>> ziplist = SimpleCSV.parse(csv);
