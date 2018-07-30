@@ -3,7 +3,6 @@ package org.mitre.synthea.engine;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -1185,11 +1184,7 @@ public abstract class State implements Cloneable {
     public ObservationGroup clone() {
       ObservationGroup clone = (ObservationGroup) super.clone();
       clone.codes = codes;
-      if (observations != null) {
-        clone.observations = observations.subList(0, observations.size());
-      } else {
-        clone.observations = null;
-      }
+      clone.observations = observations;
       return clone;
     }
   }
