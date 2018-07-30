@@ -1,9 +1,9 @@
 package org.mitre.synthea.export;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.nio.file.Files;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -11,46 +11,43 @@ import org.junit.rules.TemporaryFolder;
 import org.mitre.synthea.TestHelper;
 import org.mitre.synthea.engine.Generator;
 import org.mitre.synthea.helpers.Config;
-import org.mitre.synthea.world.agents.Person;
+import org.mitre.synthea.helpers.SimpleCSV;
 
-public class TextExporterTest {
+public class CDWExporterTest {
   /**
    * Temporary folder for any exported files, guaranteed to be deleted at the end of the test.
    */
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
-  
+
   @Test
-  public void testTextExport() throws Exception {
+  public void testCDWExport() throws Exception {
+    TestHelper.exportOff();
+    Config.set("exporter.cdw.export", "true");
     File tempOutputFolder = tempFolder.newFolder();
     Config.set("exporter.baseDirectory", tempOutputFolder.toString());
-    
-    int numberOfPeople = 10;
+
+    int numberOfPeople = 100;
     Generator generator = new Generator(numberOfPeople);
     for (int i = 0; i < numberOfPeople; i++) {
-      TestHelper.exportOff();
-      Person person = generator.generatePerson(i);
-      Config.set("exporter.text.export", "true");
-      Config.set("exporter.text.per_encounter_export", "true");
-      Exporter.export(person, System.currentTimeMillis());
+      generator.generatePerson(i);
     }
+    CDWExporter.getInstance().writeFactTables();
 
     // if we get here we at least had no exceptions
-    
-    File expectedExportFolder = tempOutputFolder.toPath().resolve("text").toFile();
-    
+    File expectedExportFolder = tempOutputFolder.toPath().resolve("cdw").toFile();
     assertTrue(expectedExportFolder.exists() && expectedExportFolder.isDirectory());
-    
-    int count = 0;
-    for (File txtFile : expectedExportFolder.listFiles()) {
-      if (!txtFile.getName().endsWith(".txt")) {
+
+    for (File cdwFile : expectedExportFolder.listFiles()) {
+      if (!cdwFile.getName().endsWith(".csv")) {
         continue;
       }
-      
-      count++;
+      System.out.println("Parsing " + cdwFile.getPath());
+      String cdwData = new String(Files.readAllBytes(cdwFile.toPath()));
+
+      // the CDW exporter doesn't use the SimpleCSV class to write the data,
+      // so we can use it here for a level of validation.
+      assertTrue(SimpleCSV.parse(cdwData).size() >= 0);
     }
-    
-    assertEquals("Expected " + numberOfPeople + " files in the output directory, found " + count, 
-        numberOfPeople, count);
   }
 }

@@ -13,63 +13,267 @@
     },
     "Female": {
       "type": "Simple",
-      "distributed_transition": [
-        {
-          "transition": "Onset_age_18_to_29_Female",
-          "distribution": 0.15
-        },
-        {
-          "transition": "Onset_age_30_to_39_Female",
-          "distribution": 0.25
-        },
-        {
-          "transition": "Onset_age_40_to_49_Female",
-          "distribution": 0.23
-        },
-        {
-          "transition": "Onset_age_50_to_59_Female",
-          "distribution": 0.16
-        },
-        {
-          "transition": "Onset_age_60_to_69_Female",
-          "distribution": 0.15
-        },
-        {
-          "transition": "Terminal",
-          "distribution": 0.06
-        }
-      ],
       "remarks": [
         "Females suffer depression at rates 2x than males (www.americanhealthrankings.com), cited by VA",
         "Age related and War Era related distributions of MDD provided by "
+      ],
+      "complex_transition": [
+        {
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Late_Gulf_War"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.15
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.85
+            }
+          ]
+        },
+        {
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Early_Gulf_War"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.25
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.75
+            }
+          ]
+        },
+        {
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Between_VW_and_GW"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.23
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.77
+            }
+          ]
+        },
+        {
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Vietnam_War"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.16
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.84
+            }
+          ]
+        },
+        {
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "vetreran",
+            "operator": "==",
+            "value": "Between_KW_and_VW"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.15
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.85
+            }
+          ]
+        },
+        {
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Korean_War"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.06
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.94
+            }
+          ]
+        }
       ]
     },
     "Male": {
       "type": "Simple",
-      "distributed_transition": [
+      "complex_transition": [
         {
-          "transition": "Onset_age_18_to_29_Male",
-          "distribution": 0.156
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Late_Gulf_War"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.156
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.844
+            }
+          ]
         },
         {
-          "transition": "Onset_age_30_to_39_Male",
-          "distribution": 0.155
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.155
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.845
+            }
+          ],
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Early_Gulf_War"
+          }
         },
         {
-          "transition": "Onset_age_40_to_49_Male",
-          "distribution": 0.13
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Between_VW_and_GW"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.225
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.775
+            }
+          ]
         },
         {
-          "transition": "Onset_age_50_to_59_Male",
-          "distribution": 0.095
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Vietnam_War"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.09
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.91
+            }
+          ]
         },
         {
-          "transition": "Onset_age_60_to_69_Male",
-          "distribution": 0.09
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Between_KW_and_VW"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.07
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.93
+            }
+          ]
         },
         {
-          "transition": "Terminal",
-          "distribution": 0.374
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Korean_War"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.05
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.95
+            }
+          ]
+        },
+        {
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "Between_WW2_and_KW"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.03
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.97
+            }
+          ]
+        },
+        {
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "veteran",
+            "operator": "==",
+            "value": "WW2"
+          },
+          "distributions": [
+            {
+              "transition": "MDD Episode",
+              "distribution": 0.02
+            },
+            {
+              "transition": "Terminal",
+              "distribution": 0.98
+            }
+          ]
         }
       ]
     },
@@ -96,97 +300,9 @@
       "type": "Simple",
       "direct_transition": "Terminal"
     },
-    "Onset_age_18_to_29_Male": {
-      "type": "Delay",
-      "exact": {
-        "quantity": 18,
-        "unit": "years"
-      },
-      "direct_transition": "MDD Episode"
-    },
-    "Onset_age_18_to_29_Female": {
-      "type": "Delay",
-      "exact": {
-        "quantity": 18,
-        "unit": "years"
-      },
-      "direct_transition": "MDD Episode"
-    },
-    "Onset_age_30_to_39_Male": {
-      "type": "Delay",
-      "exact": {
-        "quantity": 30,
-        "unit": "years"
-      },
-      "direct_transition": "MDD Episode"
-    },
-    "Onset_age_30_to_39_Female": {
-      "type": "Delay",
-      "exact": {
-        "quantity": 30,
-        "unit": "years"
-      },
-      "direct_transition": "MDD Episode"
-    },
-    "Onset_age_40_to_49_Male": {
-      "type": "Delay",
-      "exact": {
-        "quantity": 40,
-        "unit": "years"
-      },
-      "direct_transition": "MDD Episode"
-    },
-    "Onset_age_40_to_49_Female": {
-      "type": "Delay",
-      "exact": {
-        "quantity": 40,
-        "unit": "years"
-      },
-      "direct_transition": "MDD Episode"
-    },
-    "Onset_age_50_to_59_Female": {
-      "type": "Delay",
-      "exact": {
-        "quantity": 50,
-        "unit": "years"
-      },
-      "direct_transition": "MDD Episode"
-    },
-    "Onset_age_60_to_69_Female": {
-      "type": "Delay",
-      "exact": {
-        "quantity": 60,
-        "unit": "years"
-      },
-      "direct_transition": "MDD Episode"
-    },
-    "Onset_age_50_to_59_Male": {
-      "type": "Delay",
-      "exact": {
-        "quantity": 50,
-        "unit": "years"
-      },
-      "direct_transition": "MDD Episode"
-    },
-    "Onset_age_60_to_69_Male": {
-      "type": "Delay",
-      "exact": {
-        "quantity": 60,
-        "unit": "years"
-      },
-      "direct_transition": "MDD Episode"
-    },
-    "Evaluation Gate delay": {
-      "type": "Delay",
-      "exact": {
-        "quantity": 3,
-        "unit": "months"
-      },
-      "direct_transition": "MDD_Re_evaluation Encounter"
-    },
     "end_Psych_encounter": {
       "type": "EncounterEnd",
-      "direct_transition": "Evaluation Gate delay"
+      "direct_transition": "therapy_delay"
     },
     "end re_evaluation_medication": {
       "type": "MedicationEnd",
@@ -201,23 +317,10 @@
         {
           "system": "SNOMED-CT",
           "code": 36923009,
-          "display": "major depression, single episode"
+          "display": "Major depression, single episode"
         }
       ],
       "direct_transition": "Time Gate"
-    },
-    "MDD_Encouter": {
-      "type": "Encounter",
-      "encounter_class": "ambulatory",
-      "reason": "mdd",
-      "codes": [
-        {
-          "system": "SNOMED-CT",
-          "code": 36923009,
-          "display": "major depression, single episode"
-        }
-      ],
-      "direct_transition": "MDD_Initial_Careplan"
     },
     "Time Gate": {
       "type": "Delay",
@@ -225,7 +328,7 @@
         "quantity": 6,
         "unit": "weeks"
       },
-      "direct_transition": "MDD_Encouter"
+      "direct_transition": "MDD_Encounter"
     },
     "MDD_Initial_Careplan": {
       "type": "CarePlanStart",
@@ -262,11 +365,6 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 370143000,
-          "display": "major depression disorder"
-        },
-        {
-          "system": "SNOMED-CT",
           "code": 79094001,
           "display": "Initial Psychiatric Interview with mental status evaluation"
         }
@@ -286,12 +384,12 @@
     "MDD Diagnosis": {
       "type": "ConditionOnset",
       "assign_to_attribute": "mdd_psych",
-      "target_encounter": "initial_Psychiatric_MDD_Encounter",
+      "target_encounter": "Initial_Psychiatric_MDD_Encounter",
       "codes": [
         {
           "system": "SNOMED-CT",
           "code": 370143000,
-          "display": "major depression disorder"
+          "display": "Major depression disorder"
         }
       ],
       "distributed_transition": [
@@ -327,6 +425,32 @@
       "codes": [
         {
           "system": "SNOMED-CT",
+          "code": 736254008,
+          "display": "Psychiatry care plan"
+        }
+      ],
+      "conditional_transition": [
+        {
+          "transition": "end re_evaluation_medication",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "ssri",
+            "operator": "is not nil"
+          }
+        },
+        {
+          "transition": "MDD Medication Order",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "ssri",
+            "operator": "is nil"
+          }
+        }
+      ],
+      "reason": "mdd_psych",
+      "activities": [
+        {
+          "system": "SNOMED-CT",
           "code": 88848003,
           "display": "Psychiatric Follow-up"
         },
@@ -350,30 +474,25 @@
           "code": 304822001,
           "display": "Psychodynamic Interpersonal Therapy"
         }
-      ],
-      "conditional_transition": [
-        {
-          "transition": "end re_evaluation_medication",
-          "condition": {
-            "condition_type": "Attribute",
-            "attribute": "ssri",
-            "operator": "is not nil"
-          }
-        },
-        {
-          "transition": "MDD Medication Order",
-          "condition": {
-            "condition_type": "Attribute",
-            "attribute": "ssri",
-            "operator": "is nil"
-          }
-        }
-      ],
-      "reason": "mdd_psych"
+      ]
     },
     "MDD_Careplan_Psych": {
       "type": "CarePlanStart",
       "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": 736254008,
+          "display": "Psychiatry care plan"
+        }
+      ],
+      "direct_transition": "end_Psych_encounter",
+      "reason": "mdd_psych",
+      "activities": [
+        {
+          "system": "SNOMED-CT",
+          "code": 385724002,
+          "display": "Coping Support Management"
+        },
         {
           "system": "SNOMED-CT",
           "code": 88848003,
@@ -384,15 +503,6 @@
           "code": 225337009,
           "display": "Suicide Risk Assessment"
         }
-      ],
-      "direct_transition": "end_Psych_encounter",
-      "reason": "mdd_psych",
-      "activities": [
-        {
-          "system": "SNOMED-CT",
-          "code": 385724002,
-          "display": "Coping Support Management"
-        }
       ]
     },
     "MDD_Re_evaluation Encounter": {
@@ -402,8 +512,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 370143000,
-          "display": "major depression disorder"
+          "code": 390906007,
+          "display": "Follow-up encounter"
         }
       ],
       "distributed_transition": [
@@ -551,7 +661,7 @@
       "allow": {
         "condition_type": "Age",
         "operator": ">",
-        "quantity": 21,
+        "quantity": 18,
         "unit": "years"
       },
       "direct_transition": "veteran guard"
@@ -574,6 +684,76 @@
             "attribute": "veteran",
             "operator": "is nil"
           }
+        }
+      ]
+    },
+    "MDD_Encounter": {
+      "type": "Encounter",
+      "encounter_class": "ambulatory",
+      "reason": "mdd",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": 185345009,
+          "display": "Encounter for symptom (procedure)"
+        }
+      ],
+      "direct_transition": "MDD_Initial_Careplan"
+    },
+    "therapy_delay": {
+      "type": "Delay",
+      "range": {
+        "low": 5,
+        "high": 14,
+        "unit": "days"
+      },
+      "direct_transition": "Therapy_Visit"
+    },
+    "Therapy_Visit": {
+      "type": "Encounter",
+      "encounter_class": "ambulatory",
+      "reason": "mdd_psych",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": 185347001,
+          "display": "Encounter for problem (procedure)"
+        }
+      ],
+      "direct_transition": "Therapy_Note"
+    },
+    "Therapy_Note": {
+      "type": "Observation",
+      "category": "therapy",
+      "unit": "{nominal}",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "75443-2",
+          "display": "Mental health Outpatient Note"
+        }
+      ],
+      "exact": {
+        "quantity": 1
+      },
+      "direct_transition": "end therapy visit"
+    },
+    "end therapy visit": {
+      "type": "EncounterEnd",
+      "conditional_transition": [
+        {
+          "transition": "therapy_delay",
+          "condition": {
+            "condition_type": "PriorState",
+            "name": "MDD_Re_evaluation Encounter",
+            "within": {
+              "quantity": 3,
+              "unit": "months"
+            }
+          }
+        },
+        {
+          "transition": "MDD_Re_evaluation Encounter"
         }
       ]
     }

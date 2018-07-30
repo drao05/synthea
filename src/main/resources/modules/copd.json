@@ -292,7 +292,7 @@
         {
           "system": "LOINC",
           "code": "19926-5",
-          "display": "FEV1/​FVC"
+          "display": "FEV1/FVC"
         }
       ],
       "range": {
@@ -410,7 +410,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": ">=",
@@ -430,7 +430,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": ">=",
@@ -454,7 +454,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": ">=",
@@ -482,7 +482,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": "<",
@@ -515,7 +515,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": ">=",
@@ -530,7 +530,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": ">=",
@@ -554,7 +554,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": ">=",
@@ -578,7 +578,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": "<",
@@ -621,7 +621,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": ">=",
@@ -639,7 +639,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": ">=",
@@ -657,7 +657,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": ">=",
@@ -675,7 +675,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": "<",
@@ -705,7 +705,7 @@
         {
           "system": "LOINC",
           "code": "19926-5",
-          "display": "FEV1/​FVC"
+          "display": "FEV1/FVC"
         }
       ],
       "direct_transition": "Loop_back_to_Living_with_COPD"
@@ -727,7 +727,7 @@
         {
           "system": "LOINC",
           "code": "19926-5",
-          "display": "FEV1/​FVC"
+          "display": "FEV1/FVC"
         }
       ],
       "direct_transition": "Check_Medication"
@@ -749,7 +749,7 @@
         {
           "system": "LOINC",
           "code": "19926-5",
-          "display": "FEV1/​FVC"
+          "display": "FEV1/FVC"
         }
       ],
       "direct_transition": "Check_Medication"
@@ -768,7 +768,7 @@
         {
           "system": "LOINC",
           "code": "19926-5",
-          "display": "FEV1/​FVC"
+          "display": "FEV1/FVC"
         }
       ],
       "direct_transition": "Pulmonary_Rehab"
@@ -827,7 +827,7 @@
                   {
                     "system": "LOINC",
                     "code": "19926-5",
-                    "display": "FEV1/​FVC"
+                    "display": "FEV1/FVC"
                   }
                 ],
                 "operator": ">",
@@ -903,7 +903,7 @@
               {
                 "system": "LOINC",
                 "code": "19926-5",
-                "display": "FEV1/​FVC"
+                "display": "FEV1/FVC"
               }
             ],
             "operator": ">",
