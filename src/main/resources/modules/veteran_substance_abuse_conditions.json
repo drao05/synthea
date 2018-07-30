@@ -23,14 +23,13 @@
     "smoker": {
       "type": "SetAttribute",
       "attribute": "smoking",
-      "value": 1,
+      "value": true,
       "direct_transition": "Alcohol Check"
     },
     "non_smoker": {
       "type": "SetAttribute",
       "attribute": "smoking",
-      "direct_transition": "Alcohol Check",
-      "value": 0
+      "direct_transition": "Alcohol Check"
     },
     "Age_Guard": {
       "type": "Delay",
@@ -118,17 +117,36 @@
     "Alcohol Dependence": {
       "type": "SetAttribute",
       "attribute": "alcoholism",
-      "direct_transition": "Substance Abuse Condition Check",
-      "value": 1
+      "value": true,
+      "direct_transition": "Opioid Abuse check"
     },
     "No Alcohol Dependence": {
       "type": "SetAttribute",
       "attribute": "alcoholism",
-      "direct_transition": "Substance Abuse Condition Check",
-      "value": 0
+      "direct_transition": "Opioid Abuse check"
     },
-    "Substance Abuse Condition Check": {
+    "Opioid Abuse check": {
       "type": "Simple",
+      "distributed_transition": [
+        {
+          "transition": "Opioid Dependance",
+          "distribution": 0.13
+        },
+        {
+          "transition": "No Opioid Dependence",
+          "distribution": 0.87
+        }
+      ]
+    },
+    "Opioid Dependance": {
+      "type": "SetAttribute",
+      "attribute": "opioid_addiction",
+      "direct_transition": "Terminal",
+      "value": true
+    },
+    "No Opioid Dependence": {
+      "type": "SetAttribute",
+      "attribute": "opioid_addiction",
       "direct_transition": "Terminal"
     }
   }
