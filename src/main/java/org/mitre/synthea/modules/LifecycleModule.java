@@ -23,8 +23,8 @@ import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.concepts.BiometricsConfig;
 import org.mitre.synthea.world.concepts.BirthStatistics;
 import org.mitre.synthea.world.concepts.HealthRecord.Code;
+import org.mitre.synthea.world.geography.location.CityStateLocation;
 import org.mitre.synthea.world.concepts.VitalSign;
-import org.mitre.synthea.world.geography.Location;
 
 public final class LifecycleModule extends Module {
   @SuppressWarnings("rawtypes")
@@ -160,7 +160,7 @@ public final class LifecycleModule extends Module {
     attributes.put(Person.IDENTIFIER_SSN, ssn);
 
     String city = (String) attributes.get(Person.CITY);
-    Location location = (Location) attributes.get(Person.LOCATION);
+    CityStateLocation location = (CityStateLocation) attributes.get(Person.LOCATION);
     if (location != null) {
       // should never happen in practice, but can happen in unit tests
       location.assignPoint(person, city);

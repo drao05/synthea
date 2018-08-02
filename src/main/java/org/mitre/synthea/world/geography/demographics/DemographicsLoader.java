@@ -1,8 +1,17 @@
-package org.mitre.synthea.world.geography;
+package org.mitre.synthea.world.geography.demographics;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.mitre.synthea.helpers.SimpleCSV;
+import org.mitre.synthea.helpers.Utilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 
 /**
  * Class for loading demographics
@@ -12,14 +21,62 @@ import java.util.Map;
 
 public class DemographicsLoader {
   
+  private static Logger demographicsLoaderLogger = LoggerFactory.getLogger(DemographicsLoader.class);
   private DemographicsOptions options; 
   
   public DemographicsLoader(List<String> ag, List<String> r, List<String> i, List<String> e, List<String> s, String estHeader) {
     options = new DemographicsOptions(ag, r, i, e, s, estHeader);
   }
   
-  public Demographics csvLineToDemographics(Map<String,String> line) {
-    Demographics d = new Demographics();
+  /**
+   * Get a Table of (State, City, Demographics), with the given restrictions on state and city.
+   * 
+   * @param state
+   *          The state that is desired. Other states will be excluded from the results.
+   * @param filename The name of the file from which demographics will be loaded.
+   * @return Table of (State, City, Demographics)
+   * @throws IOException
+   *           if any exception occurs in reading the demographics file
+   */
+  
+  public Table<String, String, CityStateDemographics> load(String state, String filename) {
+    String csv = null;
+    try {
+      csv = Utilities.readResource(filename);
+    } catch (IOException e) {
+      demographicsLoaderLogger.error("loading csv " + filename + " failed");
+      e.printStackTrace();
+      return null;
+    }
+    
+    List<? extends Map<String, String>> demographicsCsv = null;
+    try {
+      demographicsCsv = SimpleCSV.parse(csv);
+    } catch (IOException e) {
+      demographicsLoaderLogger.error("parsing csv " + filename + " failed");
+      e.printStackTrace();
+      return null;
+    }
+    
+    Table<String, String, CityStateDemographics> table = HashBasedTable.create();
+    
+    for (Map<String,String> demographicsLine : demographicsCsv) {
+      String currCity = demographicsLine.get("NAME");
+      String currState = demographicsLine.get("STNAME");
+      
+      // for now, only allow one state at a time
+      if (state != null && state.equalsIgnoreCase(currState)) {
+        CityStateDemographics parsed = csvLineToDemographics(demographicsLine);
+        
+        table.put(currState, currCity, parsed);
+      }
+    }
+    
+    return table;
+  }
+  
+  public CityStateDemographics csvLineToDemographics(Map<String,String> line) {
+    CityStateDemographics d = new CityStateDemographics();
     
     d.population = Double.valueOf(line.get(options.getPopEstHeader())).longValue();
     // some .0's seem to sneak in there and break Long.valueOf

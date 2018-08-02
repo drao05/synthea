@@ -1,24 +1,26 @@
-package org.mitre.synthea.world.geography;
+package org.mitre.synthea.world.geography.place;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.sis.geometry.DirectPosition2D;
 import org.apache.sis.index.tree.QuadTreeData;
+import org.mitre.synthea.world.agents.Person;
 
 /**
  * Place represents a named place with a postal code and coordinate.
  */
-public class StateCityZipPlace implements QuadTreeData, Place {
+public class StateCityZipPlace implements Place {
   /** The name of the state. For example, Ohio */
-  public String state;
+  public final String state;
   /** The state abbreviation. For example, OH */
-  public String abbreviation;
+  public final String abbreviation;
   /** The name of the place. For example, Columbus */
-  public String name;
+  public final String name;
   /** The postal code. For example, 01001 */
-  public String postalCode;
+  public final String postalCode;
   /** Coordinate of the place. */
-  public DirectPosition2D coordinate;
+  private DirectPosition2D coordinate;
   
   public StateCityZipPlace(String state, String abbreviation, String name,
       String postalCode, double lat, double lon) {
@@ -52,11 +54,19 @@ public class StateCityZipPlace implements QuadTreeData, Place {
 
   @Override
   public DirectPosition2D getLatLon() {
-    return coordinate;
+    return coordinate.clone();
   }
 
   @Override
   public String getFileName() {
     return null;
+  }
+  
+  @Override
+  public Map<String, Object> makeMapForPerson() {
+    Map<String, Object> out = new HashMap<>();
+    out.put(Person.CITY, name);
+    out.put(Person.STATE, state);
+    return out;
   }
 }

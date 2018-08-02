@@ -1,19 +1,11 @@
-package org.mitre.synthea.world.geography;
+package org.mitre.synthea.world.geography.demographics;
 
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
-
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.RandomCollection;
-import org.mitre.synthea.helpers.SimpleCSV;
-import org.mitre.synthea.helpers.Utilities;
 
 /**
  * Demographics class holds the information from the towns.json and associated county config files.
@@ -23,7 +15,7 @@ import org.mitre.synthea.helpers.Utilities;
  * maps so they are more accessible and useful. TODO: merge this with Location somehow. they
  * probably don't need to be separate classes
  */
-public class Demographics {
+public class CityStateDemographics implements Demographics {
   public long population;
   public String city;
   public String state;
@@ -39,6 +31,7 @@ public class Demographics {
   public Map<String, Double> education;
   private RandomCollection<String> educationDistribution;
 
+  @Override
   public int pickAge(Random random) {
     // lazy-load in case this randomcollection isn't necessary
     if (ageDistribution == null) {
@@ -62,6 +55,7 @@ public class Demographics {
     return random.nextInt((high - low) + 1) + low;
   }
 
+  @Override
   public String pickGender(Random random) {
     // lazy-load in case this randomcollection isn't necessary
     if (genderDistribution == null) {
@@ -75,6 +69,7 @@ public class Demographics {
     return genderDistribution.next(random);
   }
 
+  @Override
   public String pickRace(Random random) {
     // lazy-load in case this randomcollection isn't necessary
     if (raceDistribution == null) {
@@ -90,6 +85,7 @@ public class Demographics {
     return raceDistribution.next(random);
   }
 
+  @Override
   public String ethnicityFromRace(String race, Random random) {
     // https://en.wikipedia.org/wiki/Demographics_of_Massachusetts#Race.2C_ethnicity.2C_and_ancestry
     if (race.equals("white")) {
@@ -133,6 +129,7 @@ public class Demographics {
     }
   }
 
+  @Override
   public String languageFromEthnicity(String ethnicity, Random random) {
     // https://apps.mla.org/map_data -> search by State MA
     // or see
@@ -251,6 +248,7 @@ public class Demographics {
     }
   }
 
+  @Override
   public int pickIncome(Random random) {
     // lazy-load in case this randomcollection isn't necessary
     if (incomeDistribution == null) {
@@ -279,6 +277,7 @@ public class Demographics {
     return random.nextInt((high - low) + 1) + low;
   }
 
+  @Override
   public double incomeLevel(int income) {
     // simple linear formula just maps federal poverty level to 0.0 and 75,000 to 1.0
     // 75,000 chosen based on
@@ -298,6 +297,7 @@ public class Demographics {
     }
   }
 
+  @Override
   public String pickEducation(Random random) {
     // lazy-load in case this randomcollection isn't necessary
     if (educationDistribution == null) {
@@ -307,6 +307,7 @@ public class Demographics {
     return educationDistribution.next(random);
   }
 
+  @Override
   public double educationLevel(String level, Random random) {
     double lessThanHsMin = Double.parseDouble(
         Config.get("generate.demographics.socioeconomic.education.less_than_hs.min", "0.0"));
@@ -343,6 +344,7 @@ public class Demographics {
     return (low + ((high - low) * r.nextDouble()));
   }
 
+  @Override
   public double socioeconomicScore(double income, double education, double occupation) {
     double incomeWeight = Double
         .parseDouble(Config.get("generate.demographics.socioeconomic.weights.income"));
@@ -355,6 +357,7 @@ public class Demographics {
         + (occupation * occupationWeight);
   }
 
+  @Override
   public String socioeconomicCategory(double score) {
     double highScore = Double
         .parseDouble(Config.get("generate.demographics.socioeconomic.score.high"));
@@ -368,46 +371,6 @@ public class Demographics {
     } else {
       return "Low";
     }
-  }
-  
-  /**
-   * Get a Table of (State, City, Demographics), with the given restrictions on state and city.
-   * 
-   * @param state
-   *          The state that is desired. Other states will be excluded from the results.
-   * @return Table of (State, City, Demographics)
-   * @throws IOException
-   *           if any exception occurs in reading the demographics file
-   */
-  public static Table<String, String, Demographics> load(String state) 
-      throws IOException {
-    DemographicsLoader loader;
-    String filename = Config.get("generate.demographics.default_file");
-    String format = Config.get("generate.demographics.default_file_format");
-    if (format.equals("acs_factfinder")) {
-      loader = new ACSFactFinderDemographicsLoader();
-    } else {
-      loader = new DefaultDemographicsLoader();
-    }
-    String csv = Utilities.readResource(filename);
-    
-    List<? extends Map<String,String>> demographicsCsv = SimpleCSV.parse(csv);
-    
-    Table<String, String, Demographics> table = HashBasedTable.create();
-    
-    for (Map<String,String> demographicsLine : demographicsCsv) {
-      String currCity = demographicsLine.get("NAME");
-      String currState = demographicsLine.get("STNAME");
-      
-      // for now, only allow one state at a time
-      if (state != null && state.equalsIgnoreCase(currState)) {
-        Demographics parsed = loader.csvLineToDemographics(demographicsLine);
-        
-        table.put(currState, currCity, parsed);
-      }
-    }
-    
-    return table;
   }
   
 

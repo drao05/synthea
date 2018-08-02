@@ -1,4 +1,4 @@
-package org.mitre.synthea.world.geography;
+package org.mitre.synthea.world.geography.demographics;
 
 import java.util.List;
 

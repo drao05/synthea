@@ -1,4 +1,4 @@
-package org.mitre.synthea.world.geography;
+package org.mitre.synthea.world.geography.location;
 
 import com.google.common.collect.Table;
 
@@ -16,18 +16,37 @@ import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Person;
-
+import org.mitre.synthea.world.geography.AbbreviationsLoader;
+import org.mitre.synthea.world.geography.StateAbbreviationsLoader;
+import org.mitre.synthea.world.geography.demographics.ACSFactFinderDemographicsLoader;
+import org.mitre.synthea.world.geography.demographics.CityStateDemographics;
+import org.mitre.synthea.world.geography.demographics.DefaultDemographicsLoader;
+import org.mitre.synthea.world.geography.demographics.DemographicsLoader;
+import org.mitre.synthea.world.geography.place.StateCityZipPlace;
+import org.mitre.synthea.world.geography.place.StateCityZipPlaceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Location {
+public class CityStateLocation implements Location {
   private static AbbreviationsLoader abbrLoader = new StateAbbreviationsLoader(Config.get("generate.geography.zipcodes.default_file"), null);
   private static StateCityZipPlaceFactory placeLoader = new StateCityZipPlaceFactory("USPS", "ST", "NAME", "ZCTA5", "LAT", "LON");
-  private static Logger locationLogger = LoggerFactory.getLogger(Location.class);
+  private static Logger locationLogger = LoggerFactory.getLogger(CityStateLocation.class);
   private static StringWriter stackWriter = new StringWriter();
   private static PrintWriter stackPrinter = new PrintWriter(stackWriter);
   private static Map<String, String> stateAbbreviations = abbrLoader.loadAbbreviations();
   private static Map<String, String> timezones = loadTimezones();
+  private static DemographicsLoader demographicsLoader;
+  private static String demographicsFile;
+  
+  static {
+    demographicsFile = Config.get("generate.demographics.default_file");
+    String format = Config.get("generate.demographics.default_file_format");
+    if (format.equals("acs_factfinder")) {
+      demographicsLoader = new ACSFactFinderDemographicsLoader();
+    } else {
+      demographicsLoader = new DefaultDemographicsLoader();
+    }
+  }
 
   private long totalPopulation;
 
@@ -36,7 +55,7 @@ public class Location {
   private Map<String, List<StateCityZipPlace>> zipCodes;
 
   private String city;
-  private Map<String, Demographics> demographics;
+  private Map<String, CityStateDemographics> demographics;
 
   /**
    * Location is a set of demographic and place information.
@@ -45,11 +64,11 @@ public class Location {
    * @param city The full name of the city.
    *     e.g. "Columbus" or null for an entire state.
    */
-  public Location(String state, String city) {
-    locationLogger.debug("Attempting to create Location(" + city + ", " + state + ")");
+  public CityStateLocation(String state, String city) {
+    locationLogger.debug("Attempting to create CityStateLocation(" + city + ", " + state + ")");
     try {
       this.city = city;
-      Table<String,String,Demographics> allDemographics = Demographics.load(state);
+      Table<String,String,CityStateDemographics> allDemographics = demographicsLoader.load(state, demographicsFile);
       
       // this still works even if only 1 city given,
       // because allDemographics will only contain that 1 city
@@ -61,7 +80,7 @@ public class Location {
 
       long runningPopulation = 0;
       populationByCity = new LinkedHashMap<>(); // linked to ensure consistent iteration order
-      for (Demographics d : this.demographics.values()) {
+      for (CityStateDemographics d : this.demographics.values()) {
         long pop = d.population;
         runningPopulation += pop;
         populationByCity.put(d.city, pop);
@@ -137,7 +156,7 @@ public class Location {
    * @param random Source of randomness
    * @return Demographics of a random city.
    */
-  public Demographics randomCity(Random random) {
+  public CityStateDemographics randomCity(Random random) {
     if (city != null) {
       // if we're only generating one city at a time, just use that one city
       return demographics.get(city);

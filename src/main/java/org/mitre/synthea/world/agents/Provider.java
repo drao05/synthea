@@ -19,7 +19,7 @@ import org.apache.sis.index.tree.QuadTreeData;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;
-import org.mitre.synthea.world.geography.Location;
+import org.mitre.synthea.world.geography.location.CityStateLocation;
 
 public class Provider implements QuadTreeData {
 
@@ -199,7 +199,7 @@ public class Provider implements QuadTreeData {
    */
   public static void loadProviders(String state) {
     try {
-      String abbreviation = Location.getAbbreviation(state);
+      String abbreviation = CityStateLocation.getAbbreviation(state);
 
       Set<String> servicesProvided = new HashSet<String>();
       servicesProvided.add(Provider.AMBULATORY);

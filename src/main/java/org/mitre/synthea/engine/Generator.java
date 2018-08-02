@@ -24,8 +24,8 @@ import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.Costs;
 import org.mitre.synthea.world.concepts.VitalSign;
-import org.mitre.synthea.world.geography.Demographics;
-import org.mitre.synthea.world.geography.Location;
+import org.mitre.synthea.world.geography.demographics.CityStateDemographics;
+import org.mitre.synthea.world.geography.location.CityStateLocation;
 
 /**
  * Generator creates a population by running the generic modules each timestep per Person.
@@ -40,7 +40,7 @@ public class Generator {
   public long timestep;
   public long stop;
   public Map<String, AtomicInteger> stats;
-  public Location location;
+  public CityStateLocation location;
   private AtomicInteger totalGeneratedPopulation;
   private String logLevel;
   private boolean onlyDeadPatients;
@@ -139,7 +139,7 @@ public class Generator {
     if (o.state == null) {
       o.state = DEFAULT_STATE;
     }
-    int stateIndex = Location.getIndex(o.state);
+    int stateIndex = CityStateLocation.getIndex(o.state);
     CDWExporter.getInstance().setKeyStart((stateIndex * 1_000_000) + 1);
     
     this.options = o;
@@ -147,7 +147,7 @@ public class Generator {
     this.timestep = Long.parseLong(Config.get("generate.timestep"));
     this.stop = System.currentTimeMillis();
 
-    this.location = new Location(o.state, o.city);
+    this.location = new CityStateLocation(o.state, o.city);
 
     this.logLevel = Config.get("generate.log_patients.detail", "simple");
     this.onlyDeadPatients = Boolean.parseBoolean(Config.get("generate.only_dead_patients"));
@@ -253,7 +253,7 @@ public class Generator {
       boolean isAlive = true;
       int tryNumber = 0; // number of tries to create these demographics
       Random randomForDemographics = new Random(personSeed);
-      Demographics city = location.randomCity(randomForDemographics);
+      CityStateDemographics city = location.randomCity(randomForDemographics);
       
       Map<String, Object> demoAttributes = pickDemographics(randomForDemographics, city);
       long start = (long) demoAttributes.get(Person.BIRTHDATE);
@@ -386,7 +386,7 @@ public class Generator {
     }
   }
 
-  private Map<String, Object> pickDemographics(Random random, Demographics city) {
+  private Map<String, Object> pickDemographics(Random random, CityStateDemographics city) {
     Map<String, Object> out = new HashMap<>();
     out.put(Person.CITY, city.city);
     out.put(Person.STATE, city.state);

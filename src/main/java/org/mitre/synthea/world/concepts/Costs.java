@@ -15,7 +15,7 @@ import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.HealthRecord.Entry;
-import org.mitre.synthea.world.geography.Location;
+import org.mitre.synthea.world.geography.location.CityStateLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -189,7 +189,7 @@ public class Costs {
     
     if (patient != null && patient.attributes.containsKey(Person.STATE)) {
       String state = (String) patient.attributes.get(Person.STATE);
-      state = Location.getAbbreviation(state);
+      state = CityStateLocation.getAbbreviation(state);
       if (state_adjustment_factors.containsKey(state)) {
         locationAdjustment = (double) state_adjustment_factors.get(state);
       } else {
