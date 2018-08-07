@@ -1,5 +1,6 @@
 package org.mitre.synthea.world.geography.demographics;
 
+import java.util.Map;
 import java.util.Random;
 
 public interface Demographics {
@@ -25,5 +26,12 @@ public interface Demographics {
   double socioeconomicScore(double income, double education, double occupation);
 
   String socioeconomicCategory(double score);
+  
+  /**
+   * Return a map with all the internal information for this Place.
+   * To be used with pickDemographics or other methods.
+   * @return
+   */
+  Map<String, Object> setDemographicsFields();
 
 }

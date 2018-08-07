@@ -61,12 +61,4 @@ public class StateCityZipPlace implements Place {
   public String getFileName() {
     return null;
   }
-  
-  @Override
-  public Map<String, Object> makeMapForPerson() {
-    Map<String, Object> out = new HashMap<>();
-    out.put(Person.CITY, name);
-    out.put(Person.STATE, state);
-    return out;
-  }
 }

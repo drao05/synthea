@@ -25,6 +25,7 @@ import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.Costs;
 import org.mitre.synthea.world.concepts.VitalSign;
 import org.mitre.synthea.world.geography.demographics.CityStateDemographics;
+import org.mitre.synthea.world.geography.demographics.Demographics;
 import org.mitre.synthea.world.geography.location.CityStateLocation;
 
 /**
@@ -386,10 +387,8 @@ public class Generator {
     }
   }
 
-  private Map<String, Object> pickDemographics(Random random, CityStateDemographics city) {
-    Map<String, Object> out = new HashMap<>();
-    out.put(Person.CITY, city.city);
-    out.put(Person.STATE, city.state);
+  private Map<String, Object> pickDemographics(Random random, Demographics city) {
+    Map<String, Object> out = city.setDemographicsFields();
     
     String race = city.pickRace(random);
     out.put(Person.RACE, race);

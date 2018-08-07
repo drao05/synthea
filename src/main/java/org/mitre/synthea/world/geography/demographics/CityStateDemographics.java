@@ -6,6 +6,7 @@ import java.util.Random;
 
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.RandomCollection;
+import org.mitre.synthea.world.agents.Person;
 
 /**
  * Demographics class holds the information from the towns.json and associated county config files.
@@ -383,6 +384,15 @@ public class CityStateDemographics implements Demographics {
       distribution.add(e.getValue(), e.getKey());
     }
     return distribution;
+  }
+  
+  
+  @Override
+  public Map<String, Object> setDemographicsFields() {
+    Map<String, Object> out = new HashMap<>();
+    out.put(Person.CITY, city);
+    out.put(Person.STATE, state);
+    return out;
   }
   
 }
