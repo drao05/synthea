@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Implementation of DemographicsLoader for default Synthea data
+ * Implementation of DemographicsLoader for default Synthea data.
  * 
  * @author JLISTER
  *
@@ -15,7 +15,7 @@ import java.util.Map;
 public class DefaultDemographicsLoader extends DemographicsLoader {
 
   public DefaultDemographicsLoader() {
-    super(CSV_AGE_GROUPS, CSV_RACES, CSV_INCOMES, CSV_EDUCATIONS, CSV_SEXES, ESTIMATE_HEADER);
+    super(CSV_AGE_GROUPS, CSV_RACES, CSV_INCOMES, CSV_EDUCATIONS, CSV_SEXES, CSV_GEOGRAPHY, ESTIMATE_HEADER);
   }
 
   /**
@@ -37,5 +37,13 @@ public class DefaultDemographicsLoader extends DemographicsLoader {
   
   private static final List<String> CSV_SEXES = Arrays.asList("TOT_MALE", "TOT_FEMALE");
   
+  private static final Map<String, String> CSV_GEOGRAPHY = new HashMap<String, String>();
+  
   private static final String ESTIMATE_HEADER = "POPESTIMATE2015";
+  
+  static {
+    CSV_GEOGRAPHY.put("state", "STNAME");
+    CSV_GEOGRAPHY.put("city", "NAME");
+    CSV_GEOGRAPHY.put("county", "CTYNAME");
+  }
 }

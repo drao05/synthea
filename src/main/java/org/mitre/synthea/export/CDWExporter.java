@@ -32,7 +32,7 @@ import org.mitre.synthea.world.concepts.HealthRecord.Medication;
 import org.mitre.synthea.world.concepts.HealthRecord.Observation;
 import org.mitre.synthea.world.concepts.HealthRecord.Procedure;
 import org.mitre.synthea.world.concepts.HealthRecord.Report;
-import org.mitre.synthea.world.geography.location.CityStateLocation;
+import org.mitre.synthea.world.geography.location.Location;
 
 /**
  * This exporter attempts to export synthetic patient data into 
@@ -452,8 +452,8 @@ public class CDWExporter {
     int primarySta3n = -1;
     Provider provider = person.getAmbulatoryProvider(time);
     if (provider != null) {
-      String state = CityStateLocation.getStateName(provider.state);
-      String tz = CityStateLocation.getTimezoneByState(state);
+      String state = Location.getStateName(provider.state);
+      String tz = Location.getTimezoneByState(state);
       primarySta3n = sta3n.addFact(provider.id, clean(provider.name) + "," + tz);
       location.addFact(provider.id,  clean(provider.name));
     }
@@ -814,8 +814,8 @@ public class CDWExporter {
     s.setLength(0);
     s.append(getNextKey(appointment)).append(',');
     if (encounter.provider != null) {
-      String state = CityStateLocation.getStateName(encounter.provider.state);
-      String tz = CityStateLocation.getTimezoneByState(state);
+      String state = Location.getStateName(encounter.provider.state);
+      String tz = Location.getTimezoneByState(state);
       s.append(sta3n.addFact(encounter.provider.id, clean(encounter.provider.name) + "," + tz));
     } else {
       s.append(primarySta3n);
@@ -868,8 +868,8 @@ public class CDWExporter {
     Integer sta3nValue = null;
     Integer providerSID = (sidStart / 10_000);
     if (encounter.provider != null) {
-      String state = CityStateLocation.getStateName(encounter.provider.state);
-      String tz = CityStateLocation.getTimezoneByState(state);
+      String state = Location.getStateName(encounter.provider.state);
+      String tz = Location.getTimezoneByState(state);
       sta3nValue = sta3n.addFact(encounter.provider.id, clean(encounter.provider.name) + "," + tz);
       providerSID = (Integer) encounter.provider.attributes.get(CLINICIAN_SID);
     }
@@ -946,8 +946,8 @@ public class CDWExporter {
     Integer sta3nValue = null;
     Integer providerSID = (sidStart / 10_000);
     if (encounter.provider != null) {
-      String state = CityStateLocation.getStateName(encounter.provider.state);
-      String tz = CityStateLocation.getTimezoneByState(state);
+      String state = Location.getStateName(encounter.provider.state);
+      String tz = Location.getTimezoneByState(state);
       sta3nValue = sta3n.addFact(encounter.provider.id, clean(encounter.provider.name) + "," + tz);
       providerSID = (Integer) encounter.provider.attributes.get(CLINICIAN_SID);
     }
@@ -1048,8 +1048,8 @@ public class CDWExporter {
     Integer sta3nValue = null;
     Integer providerSID = (sidStart / 10_000);
     if (encounter.provider != null) {
-      String state = CityStateLocation.getStateName(encounter.provider.state);
-      String tz = CityStateLocation.getTimezoneByState(state);
+      String state = Location.getStateName(encounter.provider.state);
+      String tz = Location.getTimezoneByState(state);
       sta3nValue = sta3n.addFact(encounter.provider.id, clean(encounter.provider.name) + "," + tz);
       providerSID = (Integer) encounter.provider.attributes.get(CLINICIAN_SID);
     }
@@ -1222,8 +1222,8 @@ public class CDWExporter {
     Integer providerSID = (sidStart / 10_000);
     Integer locationSID = null;
     if (encounter.provider != null) {
-      String state = CityStateLocation.getStateName(encounter.provider.state);
-      String tz = CityStateLocation.getTimezoneByState(state);
+      String state = Location.getStateName(encounter.provider.state);
+      String tz = Location.getTimezoneByState(state);
       sta3nValue = sta3n.addFact(encounter.provider.id, clean(encounter.provider.name) + "," + tz);
       locationSID = location.addFact(encounter.provider.id, clean(encounter.provider.name));
       providerSID = (Integer) encounter.provider.attributes.get(CLINICIAN_SID);
@@ -1299,8 +1299,8 @@ public class CDWExporter {
     Integer sta3nValue = primarySta3n;
     Integer providerSID = (sidStart / 10_000);
     if (encounter.provider != null) {
-      String state = CityStateLocation.getStateName(encounter.provider.state);
-      String tz = CityStateLocation.getTimezoneByState(state);
+      String state = Location.getStateName(encounter.provider.state);
+      String tz = Location.getTimezoneByState(state);
       sta3nValue = sta3n.addFact(encounter.provider.id, clean(encounter.provider.name) + "," + tz);
       providerSID = (Integer) encounter.provider.attributes.get(CLINICIAN_SID);
     }
@@ -1380,8 +1380,8 @@ public class CDWExporter {
     Integer sta3nValue = primarySta3n;
     Integer providerSID = (sidStart / 10_000);
     if (encounter.provider != null) {
-      String state = CityStateLocation.getStateName(encounter.provider.state);
-      String tz = CityStateLocation.getTimezoneByState(state);
+      String state = Location.getStateName(encounter.provider.state);
+      String tz = Location.getTimezoneByState(state);
       sta3nValue = sta3n.addFact(encounter.provider.id, clean(encounter.provider.name) + "," + tz);
       providerSID = (Integer) encounter.provider.attributes.get(CLINICIAN_SID);
     }
@@ -1562,8 +1562,8 @@ public class CDWExporter {
     s.append(immunizationSid).append(','); // ImmunizationIEN
     Integer providerSID = (sidStart / 10_000);
     if (encounter.provider != null) {
-      String state = CityStateLocation.getStateName(encounter.provider.state);
-      String tz = CityStateLocation.getTimezoneByState(state);
+      String state = Location.getStateName(encounter.provider.state);
+      String tz = Location.getTimezoneByState(state);
       s.append(sta3n.addFact(encounter.provider.id, clean(encounter.provider.name) + "," + tz));
       providerSID = (Integer) encounter.provider.attributes.get(CLINICIAN_SID);
     } else {

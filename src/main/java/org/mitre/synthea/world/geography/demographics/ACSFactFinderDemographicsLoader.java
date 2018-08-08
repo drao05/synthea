@@ -1,12 +1,23 @@
 package org.mitre.synthea.world.geography.demographics;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+/**
+ * Implementation of DemographicsLoader to interface with ACS FactFinder data retrieved
+ * for the VA Telemedicine MIP project. This is probably similar to or the same as Synthea's
+ * default data, but in a different format.
+ * @author JLISTER
+ *
+ */
 
 public class ACSFactFinderDemographicsLoader extends DemographicsLoader {
   
   public ACSFactFinderDemographicsLoader() {
-    super(CSV_AGE_GROUPS_ACS, CSV_RACES_ACS, CSV_INCOMES_ACS, CSV_EDUCATIONS_ACS, CSV_SEXES_ACS, ESTIMATE_HEADER_ACS);
+    super(CSV_AGE_GROUPS_ACS, CSV_RACES_ACS, CSV_INCOMES_ACS, CSV_EDUCATIONS_ACS,
+        CSV_SEXES_ACS, CSV_GEOGRAPHY_ACS, ESTIMATE_HEADER_ACS);
   }
 
   private static final List<String> CSV_AGE_GROUPS_ACS = Arrays.asList("18..34", "35..54", "55..64", "65..74",
@@ -21,6 +32,14 @@ public class ACSFactFinderDemographicsLoader extends DemographicsLoader {
   
   private static final List<String> CSV_SEXES_ACS = Arrays.asList("TOT_MALE", "TOT_FEMALE");
   
+  private static final Map<String, String> CSV_GEOGRAPHY_ACS = new HashMap<String, String>();
+  
   private static final String ESTIMATE_HEADER_ACS = "POPESTIMATE2015";
+  
+  static {
+    CSV_GEOGRAPHY_ACS.put("state", "STNAME");
+    CSV_GEOGRAPHY_ACS.put("city", "NAME");
+    CSV_GEOGRAPHY_ACS.put("county", "CTYNAME");
+  }
 
 }

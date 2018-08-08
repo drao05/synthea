@@ -14,7 +14,8 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 
 /**
- * Class for loading demographics
+ * Class for loading demographics. Loader class is used to decide how to load
+ * demographics at runtime instead of just hard-coding csv fields.
  * @author JLISTER
  *
  */
@@ -24,8 +25,8 @@ public class DemographicsLoader {
   private static Logger demographicsLoaderLogger = LoggerFactory.getLogger(DemographicsLoader.class);
   private DemographicsOptions options; 
   
-  public DemographicsLoader(List<String> ag, List<String> r, List<String> i, List<String> e, List<String> s, String estHeader) {
-    options = new DemographicsOptions(ag, r, i, e, s, estHeader);
+  public DemographicsLoader(List<String> ag, List<String> r, List<String> i, List<String> e, List<String> s, Map<String, String> g, String estHeader) {
+    options = new DemographicsOptions(ag, r, i, e, s, g, estHeader);
   }
   
   /**
@@ -81,9 +82,10 @@ public class DemographicsLoader {
     d.population = Double.valueOf(line.get(options.getPopEstHeader())).longValue();
     // some .0's seem to sneak in there and break Long.valueOf
     
-    d.city = line.get("NAME");
-    d.state = line.get("STNAME");
-    d.county = line.get("CTYNAME");
+    // TODO
+    d.city = line.get(options.getCity());
+    d.state = line.get(options.getState());
+    d.county = line.get(options.getCounty());
     
     d.ages = new HashMap<String, Double>();
     
@@ -95,8 +97,8 @@ public class DemographicsLoader {
     }
     
     d.gender = new HashMap<String, Double>();
-    d.gender.put("male", Double.parseDouble(line.get(options.getSexes().get(0))));
-    d.gender.put("female", Double.parseDouble(line.get(options.getSexes().get(1))));
+    d.gender.put("male", Double.parseDouble(line.get(options.getMale())));
+    d.gender.put("female", Double.parseDouble(line.get(options.getFemale())));
     
     d.race = new HashMap<String, Double>();
     for (String race : options.getRaces()) {

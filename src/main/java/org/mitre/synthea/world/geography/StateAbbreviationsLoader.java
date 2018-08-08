@@ -1,5 +1,6 @@
 package org.mitre.synthea.world.geography;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,12 +11,13 @@ import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;
 
 /**
- * Implementation of AbbreviationsLoader that works with states in the USA.
+ * Loader for abbreviations for states. Incorporates fallback for if
+ * the zip file does not have all abbreviations represented.
  * @author JLISTER
  *
  */
 
-public class StateAbbreviationsLoader implements AbbreviationsLoader {
+public class StateAbbreviationsLoader {
   
   String zipFile;
   String defaultAbbreviationsFile;
@@ -31,33 +33,45 @@ public class StateAbbreviationsLoader implements AbbreviationsLoader {
   }
   
 
-  @Override
+  /**
+   * Load abbreviations for states, falling back to a default if there is some
+   * issue with the zip file.
+   * TODO: is this really necessary? We're probably sunk if we can't get our abbreviations from
+   * the zip file. Maybe we should load from both files, in case the zips file has Guam or something.
+   * @return
+   */
+  
   public Map<String, String> loadAbbreviations() {
     LinkedHashMap<String, String> abbreviations;
-    if (zipFile != null) {
+    try {
       abbreviations = loadAbbrsFromCSV(zipFile, "USPS", "ST");
+      return abbreviations;
     }
-    else {
+    catch(Exception e) {
+      System.err.println("ERROR: unable to load csv: " + zipFile);
+    }
+    
+    try {
       abbreviations = loadAbbrsFromCSV(defaultAbbreviationsFile, "State", "Abbreviation");
+      return abbreviations;
     }
-    return abbreviations;
+    catch(Exception e) {
+      System.err.println("ERROR: unable to load csv: " + zipFile);
+    }
+    return null;
   }
   
-  private LinkedHashMap<String, String> loadAbbrsFromCSV(String filename, String stateHeader, String abbrHeader) {
+  private LinkedHashMap<String, String> loadAbbrsFromCSV(String filename, String stateHeader, String abbrHeader) throws IOException {
     LinkedHashMap<String, String> abbreviations = new LinkedHashMap<String, String>();
-    try {
-      String csv = Utilities.readResource(filename);
-      List<? extends Map<String,String>> ziplist = SimpleCSV.parse(csv);
+    String csv = Utilities.readResource(filename);
+    List<? extends Map<String,String>> ziplist = SimpleCSV.parse(csv);
 
-      for (Map<String,String> line : ziplist) {
-        String state = line.get(stateHeader);
-        String abbreviation = line.get(abbrHeader);
-        abbreviations.put(state, abbreviation);
-      }
-    } catch (Exception e) {
-      System.err.println("ERROR: unable to load csv: " + filename);
-      e.printStackTrace();
+    for (Map<String,String> line : ziplist) {
+      String state = line.get(stateHeader);
+      String abbreviation = line.get(abbrHeader);
+      abbreviations.put(state, abbreviation);
     }
+
     return abbreviations;
   }
 

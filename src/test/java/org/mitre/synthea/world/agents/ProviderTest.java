@@ -9,7 +9,7 @@ import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.mitre.synthea.world.geography.location.CityStateLocation;
+import org.mitre.synthea.world.geography.location.Location;
 
 public class ProviderTest {
 
@@ -41,7 +41,7 @@ public class ProviderTest {
   public void testNearestInpatientInState() {
     Provider.loadProviders("Massachusetts");
     Person person = new Person(0L);
-    CityStateLocation CityStateLocation = new CityStateLocation("Massachusetts", null);
+    Location CityStateLocation = new Location("Massachusetts", null);
     CityStateLocation.assignPoint(person, CityStateLocation.randomCityName(person.random));
     Provider provider = Provider.findClosestService(person, Provider.INPATIENT, 0);
     Assert.assertNotNull(provider);
@@ -51,7 +51,7 @@ public class ProviderTest {
   public void testNearestAmbulatoryInState() {
     Provider.loadProviders("Massachusetts");
     Person person = new Person(0L);
-    CityStateLocation CityStateLocation = new CityStateLocation("Massachusetts", null);
+    Location CityStateLocation = new Location("Massachusetts", null);
     CityStateLocation.assignPoint(person, CityStateLocation.randomCityName(person.random));
     Provider provider = Provider.findClosestService(person, Provider.AMBULATORY, 0);
     Assert.assertNotNull(provider);
@@ -61,7 +61,7 @@ public class ProviderTest {
   public void testNearestEmergencyInState() {
     Provider.loadProviders("Massachusetts");
     Person person = new Person(0L);
-    CityStateLocation CityStateLocation = new CityStateLocation("Massachusetts", null);
+    Location CityStateLocation = new Location("Massachusetts", null);
     CityStateLocation.assignPoint(person, CityStateLocation.randomCityName(person.random));
     Provider provider = Provider.findClosestService(person, Provider.EMERGENCY, 0);
     Assert.assertNotNull(provider);
@@ -71,7 +71,7 @@ public class ProviderTest {
   public void testNearestUrgentCareInState() {
     Provider.loadProviders("Massachusetts");
     Person person = new Person(0L);
-    CityStateLocation CityStateLocation = new CityStateLocation("Massachusetts", null);
+    Location CityStateLocation = new Location("Massachusetts", null);
     CityStateLocation.assignPoint(person, CityStateLocation.randomCityName(person.random));
     Provider provider = Provider.findClosestService(person, Provider.URGENTCARE, 0);
     Assert.assertNotNull(provider); 
@@ -81,7 +81,7 @@ public class ProviderTest {
   public void testNearestInpatientInCity() {
     Provider.loadProviders("Massachusetts");
     Person person = new Person(0L);
-    CityStateLocation CityStateLocation = new CityStateLocation("Massachusetts", "Bedford");
+    Location CityStateLocation = new Location("Massachusetts", "Bedford");
     CityStateLocation.assignPoint(person, CityStateLocation.randomCityName(person.random));
     Provider provider = Provider.findClosestService(person, Provider.INPATIENT, 0);
     Assert.assertNotNull(provider);
@@ -91,7 +91,7 @@ public class ProviderTest {
   public void testNearestAmbulatoryInCity() {
     Provider.loadProviders("Massachusetts");
     Person person = new Person(0L);
-    CityStateLocation CityStateLocation = new CityStateLocation("Massachusetts", "Bedford");
+    Location CityStateLocation = new Location("Massachusetts", "Bedford");
     CityStateLocation.assignPoint(person, CityStateLocation.randomCityName(person.random));
     Provider provider = Provider.findClosestService(person, Provider.AMBULATORY, 0);
     Assert.assertNotNull(provider);
@@ -101,7 +101,7 @@ public class ProviderTest {
   public void testNearestEmergencyInCity() {
     Provider.loadProviders("Massachusetts");
     Person person = new Person(0L);
-    CityStateLocation CityStateLocation = new CityStateLocation("Massachusetts", "Bedford");
+    Location CityStateLocation = new Location("Massachusetts", "Bedford");
     CityStateLocation.assignPoint(person, CityStateLocation.randomCityName(person.random));
     Provider provider = Provider.findClosestService(person, Provider.EMERGENCY, 0);
     Assert.assertNotNull(provider);
@@ -111,7 +111,7 @@ public class ProviderTest {
   public void testNearestUrgentCareInCity() {
     Provider.loadProviders("Massachusetts");
     Person person = new Person(0L);
-    CityStateLocation CityStateLocation = new CityStateLocation("Massachusetts", "Bedford");
+    Location CityStateLocation = new Location("Massachusetts", "Bedford");
     CityStateLocation.assignPoint(person, CityStateLocation.randomCityName(person.random));
     Provider provider = Provider.findClosestService(person, Provider.URGENTCARE, 0);
     Assert.assertNotNull(provider);
