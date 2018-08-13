@@ -2,10 +2,13 @@ package org.mitre.synthea.modules;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.mitre.synthea.engine.Event;
+import org.mitre.synthea.engine.GlobalAttributes;
 import org.mitre.synthea.engine.Module;
+import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
@@ -34,6 +37,13 @@ public final class EncounterModule extends Module {
 
   public static final Code ENCOUNTER_CHECKUP = new Code("SNOMED-CT", "185349003",
       "Encounter for check up (procedure)");
+  /*
+   * Note: I don't know the SNOMED code for a telemedicine checkup but I'm just adding
+   * a code. For simplicity, we currently assume telemedicine is identical to going
+   * to a hospital.
+   */
+  public static final Code ENCOUNTER_CHECKUP_TELEMED = new Code("SNOMED-CT", "07281996",
+      "Encounter for check up through telemedicine (mocked)");
   public static final Code ENCOUNTER_EMERGENCY = new Code("SNOMED-CT", "50849002",
       "Emergency Encounter");
   public static final Code WELL_CHILD_VISIT = new Code("SNOMED-CT", "410620009",
@@ -43,13 +53,28 @@ public final class EncounterModule extends Module {
   public static final Code ENCOUNTER_URGENTCARE = new Code("SNOMED-CT", "371883000",
       "Outpatient procedure (procedure)");
   // NOTE: if new codes are added, be sure to update getAllCodes below
-
-  public EncounterModule() {
+  private Random rand;
+  
+  public EncounterModule(long seed) {
     this.name = "Encounter";
+    rand = new Random(seed);
   }
 
   @Override
   public boolean process(Person person, long time) {
+    if (Boolean.parseBoolean(
+        Config.get("generate.time_based_telehealth_adoption", "false"))) {
+      /*
+       * Inject global attributes.
+       * 
+       * Note: we may have to do something like this in every process()
+       * implementation, which may be annoying.
+       */
+      person.attributes.putAll(GlobalAttributes.attrs().getAttrsAtTime(time));
+      person.attributes.put("Total_telehealth_likelihood",
+          (Double) person.attributes.get("Telehealth_adoption")
+          * (Double) person.attributes.get("Relative_telehealth_satisfaction"));
+    }
     boolean startedEncounter = false;
 
     // add a wellness encounter if this is the right time
@@ -58,7 +83,22 @@ public final class EncounterModule extends Module {
       Encounter encounter = person.record.encounterStart(time,
           EncounterType.WELLNESS.toString());
       encounter.name = "Encounter Module Scheduled Wellness";
-      encounter.codes.add(ENCOUNTER_CHECKUP);
+      /*
+       * If we have time series telemed likelihood enabled, we have
+       * some likelihood of using a telemedicine checkup instead of a
+       * physical one.
+       */
+      if (Boolean.parseBoolean(
+          Config.get("generate.time_based_telehealth_adoption", "false"))) {
+        if (rand.nextDouble() < (Double) person.attributes.get("Total_telehealth_likelihood")) {
+          encounter.codes.add(ENCOUNTER_CHECKUP_TELEMED);
+        } else {
+          encounter.codes.add(ENCOUNTER_CHECKUP);
+        }
+      } else {
+        encounter.codes.add(ENCOUNTER_CHECKUP);
+      }
+      
       encounter.provider = person.getAmbulatoryProvider(time);
       encounter.codes.add(getWellnessVisitCode(person, time));
       person.attributes.put(ACTIVE_WELLNESS_ENCOUNTER, true);
@@ -222,7 +262,7 @@ public final class EncounterModule extends Module {
    * @return Collection of all codes and concepts this module uses
    */
   public static Collection<Code> getAllCodes() {
-    return Arrays.asList(ENCOUNTER_CHECKUP, ENCOUNTER_EMERGENCY, 
+    return Arrays.asList(ENCOUNTER_CHECKUP, ENCOUNTER_CHECKUP_TELEMED, ENCOUNTER_EMERGENCY, 
         WELL_CHILD_VISIT, GENERAL_EXAM, ENCOUNTER_URGENTCARE);
   }
 
