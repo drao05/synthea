@@ -36,7 +36,13 @@ import org.slf4j.LoggerFactory;
 
 public class Location {
   private static StateAbbreviationsLoader abbrLoader = new StateAbbreviationsLoader(Config.get("generate.geography.zipcodes.default_file"), null);
-  private static PlaceLoader placeLoader = new PlaceLoader("USPS", "ST", "NAME", "ZCTA5", "LAT", "LON");
+  private static PlaceLoader placeLoader = new PlaceLoader(
+      Config.get("generate.geography.place.headers.state_header", "USPS"),
+      Config.get("generate.geography.place.headers.abbr_header", "ST"),
+      Config.get("generate.geography.place.headers.name_header", "NAME"),
+      Config.get("generate.geography.place.headers.postal_code_header", "ZCTA5"), 
+      Config.get("generate.geography.place.headers.lat_header", "LAT"),
+      Config.get("generate.geography.place.headers.lon_header", "LON"));
   private static Logger locationLogger = LoggerFactory.getLogger(Location.class);
   private static StringWriter stackWriter = new StringWriter();
   private static PrintWriter stackPrinter = new PrintWriter(stackWriter);
