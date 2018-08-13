@@ -78,10 +78,10 @@ public class App {
             // --config.setting value
             if (currArg.contains("=")) {
               String[] parts = currArg.split("=", 2);
-              configSetting = parts[0].substring(2).substring(7);
+              configSetting = parts[0].substring(2);
               value = parts[1];
             } else {
-              configSetting = currArg.substring(2).substring(7);
+              configSetting = currArg.substring(2);
               value = argsQ.poll();
             }
 
