@@ -17,8 +17,8 @@ public class App {
     System.out.println("Usage: run_synthea [options] [state [city]]");
     System.out.println("Options: [-s seed] [-p populationSize]");
     System.out.println("         [-g gender] [-a minAge-maxAge]");
-    System.out.println("         [--config* value]");
-    System.out.println("          * any setting from src/main/resources/synthea.properties");
+    System.out.println("         [--<config> value]");
+    System.out.println("          <config> any setting from src/main/resources/synthea.properties");
     System.out.println("Examples:");
     System.out.println("run_synthea Massachusetts");
     System.out.println("run_synthea Alaska Juneau");
@@ -71,21 +71,25 @@ public class App {
               throw new Exception("Age format: minAge-maxAge. E.g. 60-65.");
             }
           } else if (currArg.startsWith("--")) {
-            String configSetting;
+            // Check if there is an alias for another command first
+            String setting;
             String value;
             // accept either:
             // --config.setting=value
             // --config.setting value
             if (currArg.contains("=")) {
               String[] parts = currArg.split("=", 2);
-              configSetting = parts[0].substring(2);
+              setting = parts[0].substring(2);
               value = parts[1];
             } else {
-              configSetting = currArg.substring(2);
+              setting = currArg.substring(2);
               value = argsQ.poll();
             }
-
-            Config.set(configSetting, value);
+            if (Config.get("alias." + setting) != null) {
+              Config.set(Config.get("alias." + setting), value);
+            } else {
+              Config.set(setting, value);
+            }
           } else if (options.state == null) {
             options.state = currArg;
           } else {

@@ -9,7 +9,7 @@ import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.mitre.synthea.world.geography.Location;
+import org.mitre.synthea.world.geography.location.Location;
 
 public class ProviderTest {
 

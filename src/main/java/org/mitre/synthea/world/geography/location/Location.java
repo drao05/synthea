@@ -1,4 +1,4 @@
-package org.mitre.synthea.world.geography;
+package org.mitre.synthea.world.geography.location;
 
 import com.google.common.collect.Table;
 
@@ -15,16 +15,51 @@ import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Person;
-
+import org.mitre.synthea.world.geography.StateAbbreviationsLoader;
+import org.mitre.synthea.world.geography.demographics.ACSFactFinderDemographicsLoader;
+import org.mitre.synthea.world.geography.demographics.CityStateDemographics;
+import org.mitre.synthea.world.geography.demographics.Demographics;
+import org.mitre.synthea.world.geography.demographics.DefaultDemographicsLoader;
+import org.mitre.synthea.world.geography.demographics.DemographicsLoader;
+import org.mitre.synthea.world.geography.place.Place;
+import org.mitre.synthea.world.geography.place.PlaceLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Location is effectively a shim used to enable runtime selection between
+ * either a single place or a group of places in a state. It is tied to the
+ * city/state geographical hierarchy.
+ * NOTE: Demographics has todos to merge the class with Location. Perhaps we
+ * or they might want to do this if we migrate to using VSAs/HSAs/HRRs.
+ */
+
 public class Location {
+  private static StateAbbreviationsLoader abbrLoader = new StateAbbreviationsLoader(Config.get("generate.geography.zipcodes.default_file"), null);
+  private static PlaceLoader placeLoader = new PlaceLoader(
+      Config.get("generate.geography.place.headers.state_header", "USPS"),
+      Config.get("generate.geography.place.headers.abbr_header", "ST"),
+      Config.get("generate.geography.place.headers.name_header", "NAME"),
+      Config.get("generate.geography.place.headers.postal_code_header", "ZCTA5"), 
+      Config.get("generate.geography.place.headers.lat_header", "LAT"),
+      Config.get("generate.geography.place.headers.lon_header", "LON"));
   private static Logger locationLogger = LoggerFactory.getLogger(Location.class);
   private static StringWriter stackWriter = new StringWriter();
   private static PrintWriter stackPrinter = new PrintWriter(stackWriter);
-  private static LinkedHashMap<String, String> stateAbbreviations = loadAbbreviations();
+  private static Map<String, String> stateAbbreviations = abbrLoader.loadAbbreviations();
   private static Map<String, String> timezones = loadTimezones();
+  private static DemographicsLoader demographicsLoader;
+  private static String demographicsFile;
+  
+  static {
+    demographicsFile = Config.get("generate.demographics.default_file");
+    String format = Config.get("generate.demographics.default_file_format");
+    if (format.equals("acs_factfinder")) {
+      demographicsLoader = new ACSFactFinderDemographicsLoader();
+    } else {
+      demographicsLoader = new DefaultDemographicsLoader();
+    }
+  }
 
   private long totalPopulation;
 
@@ -33,7 +68,7 @@ public class Location {
   private Map<String, List<Place>> zipCodes;
 
   private String city;
-  private Map<String, Demographics> demographics;
+  private Map<String, CityStateDemographics> demographics;
 
   /**
    * Location is a set of demographic and place information.
@@ -43,10 +78,10 @@ public class Location {
    *     e.g. "Columbus" or null for an entire state.
    */
   public Location(String state, String city) {
-    locationLogger.debug("Attempting to create Location(" + city + ", " + state + ")");
+    locationLogger.debug("Attempting to create CityStateLocation(" + city + ", " + state + ")");
     try {
       this.city = city;
-      Table<String,String,Demographics> allDemographics = Demographics.load(state);
+      Table<String,String,CityStateDemographics> allDemographics = demographicsLoader.load(state, demographicsFile);
       
       // this still works even if only 1 city given,
       // because allDemographics will only contain that 1 city
@@ -58,7 +93,7 @@ public class Location {
 
       long runningPopulation = 0;
       populationByCity = new LinkedHashMap<>(); // linked to ensure consistent iteration order
-      for (Demographics d : this.demographics.values()) {
+      for (CityStateDemographics d : this.demographics.values()) {
         long pop = d.population;
         runningPopulation += pop;
         populationByCity.put(d.city, pop);
@@ -81,7 +116,7 @@ public class Location {
 
       zipCodes = new HashMap<>();
       for (Map<String,String> line : ziplist) {
-        Place place = new Place(line);
+        Place place = (Place) placeLoader.placeFromRow(line);
         
         if (!place.sameState(state)) {
           continue;
@@ -219,26 +254,6 @@ public class Location {
     if (place != null) {
       person.attributes.put(Person.COORDINATE, place.getLatLon());
     }
-  }
-
-  private static LinkedHashMap<String, String> loadAbbreviations() {
-    LinkedHashMap<String, String> abbreviations = new LinkedHashMap<String, String>();
-    String filename = null;
-    try {
-      filename = Config.get("generate.geography.zipcodes.default_file");
-      String csv = Utilities.readResource(filename);
-      List<? extends Map<String,String>> ziplist = SimpleCSV.parse(csv);
-
-      for (Map<String,String> line : ziplist) {
-        String state = line.get("USPS");
-        String abbreviation = line.get("ST");
-        abbreviations.put(state, abbreviation);
-      }
-    } catch (Exception e) {
-      System.err.println("ERROR: unable to load zips csv: " + filename);
-      e.printStackTrace();
-    }
-    return abbreviations;
   }
 
   /**

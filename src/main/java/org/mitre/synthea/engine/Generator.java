@@ -26,8 +26,9 @@ import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.Costs;
 import org.mitre.synthea.world.concepts.VitalSign;
-import org.mitre.synthea.world.geography.Demographics;
-import org.mitre.synthea.world.geography.Location;
+import org.mitre.synthea.world.geography.demographics.Demographics;
+import org.mitre.synthea.world.geography.demographics.Demographics;
+import org.mitre.synthea.world.geography.location.Location;
 
 /**
  * Generator creates a population by running the generic modules each timestep per Person.
@@ -411,9 +412,7 @@ public class Generator {
   }
 
   private Map<String, Object> pickDemographics(Random random, Demographics city) {
-    Map<String, Object> out = new HashMap<>();
-    out.put(Person.CITY, city.city);
-    out.put(Person.STATE, city.state);
+    Map<String, Object> out = city.setDemographicsFields();
     
     String race = city.pickRace(random);
     out.put(Person.RACE, race);

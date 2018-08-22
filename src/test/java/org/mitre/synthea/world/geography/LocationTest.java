@@ -2,6 +2,7 @@ package org.mitre.synthea.world.geography;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.mitre.synthea.world.geography.location.Location;
 
 public class LocationTest {
 
@@ -16,7 +17,7 @@ public class LocationTest {
   }
 
   @Test
-  public void testLocation() {
+  public void testCityStateLocation() {
     Location location = new Location("Massachusetts", null);
     Assert.assertTrue(location.getPopulation("Bedford") > 0);
     Assert.assertTrue(location.getZipCode("Bedford").equals("01730"));

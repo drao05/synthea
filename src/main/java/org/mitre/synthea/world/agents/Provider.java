@@ -19,7 +19,7 @@ import org.apache.sis.index.tree.QuadTreeData;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;
-import org.mitre.synthea.world.geography.Location;
+import org.mitre.synthea.world.geography.location.Location;
 
 public class Provider implements QuadTreeData {
 
