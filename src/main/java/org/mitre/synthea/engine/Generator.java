@@ -1,5 +1,6 @@
 package org.mitre.synthea.engine;
 
+import java.time.Year;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -173,11 +174,10 @@ public class Generator {
     // set all global time series (just telehealth adoption for now)
     if (Boolean.parseBoolean(
         Config.get("generate.time_based_telehealth_adoption", "false"))) {
-      Map<Integer, Double> adoptionSteps = new HashMap<>();
-      adoptionSteps.put(1900, 0.0);
-      adoptionSteps.put(2000, 0.1);
-      TimeSeries teleHealthAdoption = TimeSeriesUtils.stepSeries(
-          "Telehealth_adoption", adoptionSteps, 2030);
+      TimeSeries teleHealthAdoption = TimeSeriesUtils.series("Telehealth_adoption",
+          Config.get("module.encounter.telemed_adoption_values", "1900:0,2000:0.1"),
+          Year.now().getValue() + 1,
+          Config.get("module.encounter.telemed_adoption_type", "step"));
       GlobalAttributes.attrs().globalTimeBasedAttrs.put("Telehealth_adoption", teleHealthAdoption);
     }
     

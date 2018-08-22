@@ -34,13 +34,17 @@ public final class EncounterModule extends Module {
   public static final int URGENT_CARE_SYMPTOM_THRESHOLD = 350;
   public static final int EMERGENCY_SYMPTOM_THRESHOLD = 500;
   public static final String LAST_VISIT_SYMPTOM_TOTAL = "last_visit_symptom_total";
-
+ 
+  
   public static final Code ENCOUNTER_CHECKUP = new Code("SNOMED-CT", "185349003",
       "Encounter for check up (procedure)");
   /*
    * Note: I don't know the SNOMED code for a telemedicine checkup but I'm just adding
    * a code. For simplicity, we currently assume telemedicine is identical to going
    * to a hospital.
+   *
+   * TODO: Denali fix this if not fixed when I leave - need a real SNOMED code or attribute
+   * which may be reusable for other telemedicine scenarios
    */
   public static final Code ENCOUNTER_CHECKUP_TELEMED = new Code("SNOMED-CT", "07281996",
       "Encounter for check up through telemedicine (mocked)");

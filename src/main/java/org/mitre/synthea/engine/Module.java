@@ -149,7 +149,7 @@ public class Module {
 
   /**
    * Process this Module with the given Person at the specified time within the simulation.
-   * 
+   * Remember to update time-based data if your processing involves it!!!
    * @param person
    *          : the person being simulated
    * @param time
