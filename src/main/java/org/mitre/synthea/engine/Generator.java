@@ -1,5 +1,6 @@
 package org.mitre.synthea.engine;
 
+import java.time.Year;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -12,10 +13,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jfree.data.time.TimeSeries;
 import org.mitre.synthea.datastore.DataStore;
 import org.mitre.synthea.export.CDWExporter;
 import org.mitre.synthea.export.Exporter;
 import org.mitre.synthea.helpers.Config;
+import org.mitre.synthea.helpers.TimeSeriesUtils;
 import org.mitre.synthea.helpers.TransitionMetrics;
 import org.mitre.synthea.modules.DeathModule;
 import org.mitre.synthea.modules.EncounterModule;
@@ -168,6 +171,16 @@ public class Generator {
     Module.getModules(); // ensure modules load early
     Costs.loadCostData(); // ensure cost data loads early
     
+    // set all global time series (just telehealth adoption for now)
+    if (Boolean.parseBoolean(
+        Config.get("generate.time_based_telehealth_adoption", "false"))) {
+      TimeSeries teleHealthAdoption = TimeSeriesUtils.series("Telehealth_adoption",
+          Config.get("module.encounter.telemed_adoption_values", "1900:0,2000:0.1"),
+          Year.now().getValue() + 1,
+          Config.get("module.encounter.telemed_adoption_type", "step"));
+      GlobalAttributes.attrs().globalTimeBasedAttrs.put("Telehealth_adoption", teleHealthAdoption);
+    }
+    
     String locationName;
     if (o.city == null) {
       locationName = o.state;
@@ -258,7 +271,7 @@ public class Generator {
       
       Map<String, Object> demoAttributes = pickDemographics(randomForDemographics, city);
       long start = (long) demoAttributes.get(Person.BIRTHDATE);
-
+      
       do {
         List<Module> modules = Module.getModules();
 
@@ -266,9 +279,20 @@ public class Generator {
         person.populationSeed = this.options.seed;
         person.attributes.putAll(demoAttributes);
         person.attributes.put(Person.LOCATION, location);
+        // Only do this if we are modeling telehealth
+        if (Boolean.parseBoolean(
+            Config.get("generate.time_based_telehealth_adoption", "false"))) {
+          /*
+           * Set initial telehealth relative likelihood. This doesn't change
+           * right now but perhaps if a patient had a good or bad experience,
+           * this may change.
+           */
+          person.attributes.put("Relative_telehealth_satisfaction", 1.0);
+        }
+
 
         LifecycleModule.birth(person, start);
-        EncounterModule encounterModule = new EncounterModule();
+        EncounterModule encounterModule = new EncounterModule(personSeed);
 
         long time = start;
         while (person.alive(time) && time < stop) {
@@ -453,4 +477,5 @@ public class Generator {
     return 
         (long) (earliestBirthdate + ((latestBirthdate - earliestBirthdate) * random.nextDouble()));
   }
+
 }
