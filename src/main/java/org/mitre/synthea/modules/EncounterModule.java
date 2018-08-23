@@ -38,16 +38,9 @@ public final class EncounterModule extends Module {
   
   public static final Code ENCOUNTER_CHECKUP = new Code("SNOMED-CT", "185349003",
       "Encounter for check up (procedure)");
-  /*
-   * Note: I don't know the SNOMED code for a telemedicine checkup but I'm just adding
-   * a code. For simplicity, we currently assume telemedicine is identical to going
-   * to a hospital.
-   *
-   * TODO: Denali fix this if not fixed when I leave - need a real SNOMED code or attribute
-   * which may be reusable for other telemedicine scenarios
-   */
-  public static final Code ENCOUNTER_CHECKUP_TELEMED = new Code("SNOMED-CT", "07281996",
-      "Encounter for check up through telemedicine (mocked)");
+
+   // TODO: Denali add a real code or other resource for telemedicine
+
   public static final Code ENCOUNTER_EMERGENCY = new Code("SNOMED-CT", "50849002",
       "Emergency Encounter");
   public static final Code WELL_CHILD_VISIT = new Code("SNOMED-CT", "410620009",
@@ -95,7 +88,8 @@ public final class EncounterModule extends Module {
       if (Boolean.parseBoolean(
           Config.get("generate.time_based_telehealth_adoption", "false"))) {
         if (rand.nextDouble() < (Double) person.attributes.get("Total_telehealth_likelihood")) {
-          encounter.codes.add(ENCOUNTER_CHECKUP_TELEMED);
+          // TODO: Denali make it a realistic telehealth encounter
+          encounter.codes.add(ENCOUNTER_CHECKUP);
         } else {
           encounter.codes.add(ENCOUNTER_CHECKUP);
         }
@@ -266,7 +260,7 @@ public final class EncounterModule extends Module {
    * @return Collection of all codes and concepts this module uses
    */
   public static Collection<Code> getAllCodes() {
-    return Arrays.asList(ENCOUNTER_CHECKUP, ENCOUNTER_CHECKUP_TELEMED, ENCOUNTER_EMERGENCY, 
+    return Arrays.asList(ENCOUNTER_CHECKUP, ENCOUNTER_EMERGENCY, 
         WELL_CHILD_VISIT, GENERAL_EXAM, ENCOUNTER_URGENTCARE);
   }
 
