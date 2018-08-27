@@ -23,8 +23,8 @@ import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.concepts.BiometricsConfig;
 import org.mitre.synthea.world.concepts.BirthStatistics;
 import org.mitre.synthea.world.concepts.HealthRecord.Code;
+import org.mitre.synthea.world.geography.location.Location;
 import org.mitre.synthea.world.concepts.VitalSign;
-import org.mitre.synthea.world.geography.Location;
 
 public final class LifecycleModule extends Module {
   @SuppressWarnings("rawtypes")
@@ -869,13 +869,13 @@ public final class LifecycleModule extends Module {
     if (person.attributes.containsKey(Person.ADHERENCE)) {
       double probability = (double) person.attributes.get(ADHERENCE_PROBABILITY);
 
-      double aherenceBaseline = Double
+      double adherenceBaseline = Double
           .parseDouble(Config.get("lifecycle.adherence.baseline", "0.05"));
       double adherenceTimestepDelta = Double
-          .parseDouble(Config.get("lifecycle.aherence.timestep_delta", "-.01"));
+          .parseDouble(Config.get("lifecycle.adherence.timestep_delta", "-.01"));
       probability += adherenceTimestepDelta;
-      if (probability < aherenceBaseline) {
-        probability = aherenceBaseline;
+      if (probability < adherenceBaseline) {
+        probability = adherenceBaseline;
       }
       person.attributes.put(ADHERENCE_PROBABILITY, probability);
 
