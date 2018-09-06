@@ -58,7 +58,7 @@ public class Controller {
 			return new ResponseEntity<>(HttpStatus.OK);
 		} catch(JSONException jex) {
 			LOGGER.error("Error while processing JSON", jex);
-			return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
+			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 		}
 	}
 }
