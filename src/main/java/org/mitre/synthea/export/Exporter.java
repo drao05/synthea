@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.function.Predicate;
 
 import org.mitre.synthea.engine.Generator;
@@ -23,14 +24,16 @@ import org.mitre.synthea.world.concepts.HealthRecord.Observation;
 import org.mitre.synthea.world.concepts.HealthRecord.Report;
 
 public abstract class Exporter {
+  
   /**
    * Export a single patient, into all the formats supported. (Formats may be enabled or disabled by
    * configuration)
    * 
    * @param person Patient to export
    * @param stopTime Time at which the simulation stopped
+   * @param personQueue Queue used to share generated Person objects (queue reference may be null)
    */
-  public static void export(Person person, long stopTime) {
+  public static void export(Person person, long stopTime, BlockingQueue<Person> personQueue) {
     int yearsOfHistory = Integer.parseInt(Config.get("exporter.years_of_history"));
     if (yearsOfHistory > 0) {
       person = filterForExport(person, yearsOfHistory, stopTime);
@@ -100,6 +103,15 @@ public abstract class Exporter {
         e.printStackTrace();
       }
     }
+    
+    // TODO: Test if export via queue is configured
+    if (personQueue !=  null) {
+    	personQueue.add(person);
+    }
+  }
+  
+  public static void export(Person person, long stopTime) {
+	  export(person, stopTime, null);
   }
 
   /**

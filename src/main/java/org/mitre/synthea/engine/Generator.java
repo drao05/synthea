@@ -202,8 +202,8 @@ public class Generator {
       System.out.println(String.format("Gender: %s", o.gender));
     }
     
-    // Create the Person queue based on configured population size
-    personQueue = new LinkedBlockingQueue<Person>(o.population);
+    // Create the Person queue
+    personQueue = new LinkedBlockingQueue<Person>();
   }
 
   /**
@@ -378,7 +378,7 @@ public class Generator {
         
         // TODO - export is DESTRUCTIVE when it filters out data
         // this means export must be the LAST THING done with the person
-        Exporter.export(person, time);
+        Exporter.export(person, time, personQueue);
       } while ((!isAlive && !onlyDeadPatients) || (isAlive && onlyDeadPatients));
       // if the patient is alive and we want only dead ones => loop & try again
       //  (and dont even export, see above)
@@ -391,8 +391,6 @@ public class Generator {
       e.printStackTrace();
       throw e;
     }
-
-    personQueue.add(person);
 
     return person;
   }
