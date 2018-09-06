@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.mitre.synthea.engine.Generator;
+import org.mitre.synthea.helpers.Config;
 
 @RestController
 @RequestMapping("/va-synthea")
@@ -32,21 +33,48 @@ public class Controller {
 
     @PostMapping(value = "/generate", consumes = APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> generate(HttpServletRequest request, HttpEntity<String> httpEntity) {
-    	    	
     	try {
 			JSONObject configuration = new JSONObject(httpEntity.getBody());
 			
+			LOGGER.info("Requested generator configuration: " + configuration.toString());
+			
 		    Generator.GeneratorOptions options = new Generator.GeneratorOptions();
-
 			JSONArray names = configuration.names();
+			
 			for (int idx=0; idx<names.length(); ++idx) {
 				String name = names.getString(idx);
-				String value = configuration.getString(name);
+				
 				switch (name) {
+				case "seed":
+					options.seed = configuration.getLong(name);
+					break;
+				case "population":
+					options.population = configuration.getInt(name);
+					break;
+				case "gender":
+					options.gender = configuration.getString(name);
+					break;
+				case "minAge":
+					options.minAge = configuration.getInt(name);
+					break;
+				case "maxAge":
+					options.maxAge = configuration.getInt(name);
+					break;
 				case "state":
-					options.state = value;
-					default:
-						break;
+					options.state = configuration.getString(name);
+					break;
+				case "city":
+					options.city = configuration.getString(name);
+					break;
+				default:
+					if (Config.get(name) != null) {
+						LOGGER.info("Requested configuration parameter found: " + name);
+						Config.set(name, configuration.getString(name));
+					} else {
+						LOGGER.error("Requested configuration parameter not found: " + name);
+					}
+					
+					break;
 				}
 			}
 						
