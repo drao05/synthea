@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,7 +29,6 @@ import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.Costs;
 import org.mitre.synthea.world.concepts.VitalSign;
-import org.mitre.synthea.world.geography.demographics.Demographics;
 import org.mitre.synthea.world.geography.demographics.Demographics;
 import org.mitre.synthea.world.geography.location.Location;
 
@@ -79,6 +80,11 @@ public class Generator {
     public String city;
     public String state;
   }
+  
+  /**
+   * Use this queue to track generated Person objects
+   */
+  private BlockingQueue<Person> personQueue;
   
   /**
    * Create a Generator, using all default settings.
@@ -195,6 +201,9 @@ public class Generator {
     if (o.gender != null) {
       System.out.println(String.format("Gender: %s", o.gender));
     }
+    
+    // Create the Person queue based on configured population size
+    personQueue = new LinkedBlockingQueue<Person>(o.population);
   }
 
   /**
@@ -366,7 +375,7 @@ public class Generator {
             start = birthdate;
           }
         }
-
+        
         // TODO - export is DESTRUCTIVE when it filters out data
         // this means export must be the LAST THING done with the person
         Exporter.export(person, time);
@@ -382,6 +391,9 @@ public class Generator {
       e.printStackTrace();
       throw e;
     }
+
+    personQueue.add(person);
+
     return person;
   }
 
@@ -478,4 +490,10 @@ public class Generator {
         (long) (earliestBirthdate + ((latestBirthdate - earliestBirthdate) * random.nextDouble()));
   }
 
+  /**
+   * Used by the consumer of this generator to get the next Person that has been generated
+   */
+  public Person getNextPerson() throws InterruptedException {
+	  return personQueue.take();
+  }
 }

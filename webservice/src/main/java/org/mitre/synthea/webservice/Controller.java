@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.mitre.synthea.engine.Generator;
 import org.mitre.synthea.helpers.Config;
+import org.mitre.synthea.world.agents.Person;
 
 @RestController
 @RequestMapping("/va-synthea")
@@ -38,9 +39,10 @@ public class Controller {
 			
 			LOGGER.info("Requested generator configuration: " + configuration.toString());
 			
+			// Configure the generator
 		    Generator.GeneratorOptions options = new Generator.GeneratorOptions();
-			JSONArray names = configuration.names();
 			
+		    JSONArray names = configuration.names();
 			for (int idx=0; idx<names.length(); ++idx) {
 				String name = names.getString(idx);
 				
@@ -68,18 +70,39 @@ public class Controller {
 					break;
 				default:
 					if (Config.get(name) != null) {
-						LOGGER.info("Requested configuration parameter found: " + name);
+						LOGGER.info("Updating existing configuration parameter: " + name);
 						Config.set(name, configuration.getString(name));
 					} else {
-						LOGGER.error("Requested configuration parameter not found: " + name);
+						LOGGER.info("Adding missing configuration parameter: " + name);
+						Config.set(name, configuration.getString(name));
 					}
 					
 					break;
 				}
 			}
-						
+			
+			// Start generating
 			Generator generator = new Generator(options);
-		    generator.run();
+			Thread generatorThread = new Thread() {
+			    public void run() {
+			    	generator.run();			    }
+			};
+			generatorThread.start();
+					    
+			// Watch for results
+		    try {
+		    	int population = generator.options.population;
+		    	int idx = 0;
+		    	Person person;
+		    	while (idx < population) {
+			    	person = generator.getNextPerson();
+		    		++idx;
+		    		LOGGER.info("Got person: " + person.attributes.get(Person.NAME));
+	            }
+	    		LOGGER.info("Generation done");
+	        } catch(InterruptedException iex) {
+	        	LOGGER.info("Interrupted while waiting for results");
+	        }
 		      
 			return new ResponseEntity<>(HttpStatus.OK);
 		} catch(JSONException jex) {
