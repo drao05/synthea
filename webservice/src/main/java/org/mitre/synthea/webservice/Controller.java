@@ -27,14 +27,12 @@ public class Controller {
 
     @RequestMapping("/")
     public String index() {
-        return "Nothing to see here";
+        return "Nothing to see here yet";
     }
 
     @PostMapping(value = "/generate", consumes = APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> generate(HttpServletRequest request, HttpEntity<String> httpEntity) {
-    	
-    	LOGGER.info("Configure endpoint called");
-    	
+    	    	
     	try {
 			JSONObject configuration = new JSONObject(httpEntity.getBody());
 			
