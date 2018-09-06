@@ -33,5 +33,7 @@ dependencies {
 }
 
 configurations {
+	
+	// Excluding the auto-included logging here to avoid conflict with existing VA Synthea logging support
     compile.exclude module: 'spring-boot-starter-logging'
 }
