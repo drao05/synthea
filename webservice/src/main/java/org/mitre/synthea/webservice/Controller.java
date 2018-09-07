@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.mitre.synthea.engine.Generator;
 import org.mitre.synthea.helpers.Config;
-import org.mitre.synthea.world.agents.Person;
 
 @RestController
 @RequestMapping("/va-synthea")
@@ -81,6 +80,8 @@ public class Controller {
 				}
 			}
 			
+			Config.set("exporter.webclient", "true");
+			
 			// Start generating
 			Generator generator = new Generator(options);
 			Thread generatorThread = new Thread() {
@@ -93,11 +94,11 @@ public class Controller {
 		    try {
 		    	int population = generator.options.population;
 		    	int idx = 0;
-		    	Person person;
+		    	String person;
 		    	while (idx < population) {
 			    	person = generator.getNextPerson();
 		    		++idx;
-		    		LOGGER.info("Got person: " + person.attributes.get(Person.NAME));
+		    		LOGGER.info("Got person: " + person);
 	            }
 	    		LOGGER.info("Generation done");
 	        } catch(InterruptedException iex) {

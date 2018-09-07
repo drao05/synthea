@@ -82,9 +82,9 @@ public class Generator {
   }
   
   /**
-   * Use this queue to track generated Person objects
+   * Use this queue to track results
    */
-  private BlockingQueue<Person> personQueue;
+  private BlockingQueue<String> personQueue;
   
   /**
    * Create a Generator, using all default settings.
@@ -202,8 +202,10 @@ public class Generator {
       System.out.println(String.format("Gender: %s", o.gender));
     }
     
-    // Create the Person queue
-    personQueue = new LinkedBlockingQueue<Person>();
+    if (Config.get("exporter.webclient") != null) {
+    	// Create the Person queue
+    	personQueue = new LinkedBlockingQueue<String>();
+    }
   }
 
   /**
@@ -489,9 +491,13 @@ public class Generator {
   }
 
   /**
-   * Used by the consumer of this generator to get the next Person that has been generated
+   * Used by the consumer of this generator to get the next result
    */
-  public Person getNextPerson() throws InterruptedException {
+  public String getNextPerson() throws InterruptedException {
+	  if (personQueue == null) {
+		  return null;
+	  }
+	  
 	  return personQueue.take();
   }
 }

@@ -31,13 +31,23 @@ public abstract class Exporter {
    * 
    * @param person Patient to export
    * @param stopTime Time at which the simulation stopped
-   * @param personQueue Queue used to share generated Person objects (queue reference may be null)
+   * @param personQueue Queue used to share results (queue reference may be null)
    */
-  public static void export(Person person, long stopTime, BlockingQueue<Person> personQueue) {
+  public static void export(Person person, long stopTime, BlockingQueue<String> personQueue) {
     int yearsOfHistory = Integer.parseInt(Config.get("exporter.years_of_history"));
     if (yearsOfHistory > 0) {
       person = filterForExport(person, yearsOfHistory, stopTime);
     }
+    
+    if (personQueue != null) {
+    	
+    	// TODO: Using FHIR for web service at the moment, but need to decide how to configure this
+    	personQueue.add(FhirStu3.convertToFHIR(person, stopTime));
+    	
+    	// Bail early if using queue (web service)
+    	return;
+    }
+    
     if (Boolean.parseBoolean(Config.get("exporter.fhir.export"))) {
       String bundleJson = FhirStu3.convertToFHIR(person, stopTime);
       File outDirectory = getOutputFolder("fhir", person);
@@ -102,11 +112,6 @@ public abstract class Exporter {
       } catch (IOException e) {
         e.printStackTrace();
       }
-    }
-    
-    // TODO: Test if export via queue is configured
-    if (personQueue !=  null) {
-    	personQueue.add(person);
     }
   }
   
