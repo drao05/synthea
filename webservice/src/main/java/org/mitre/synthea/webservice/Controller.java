@@ -21,7 +21,6 @@ import org.mitre.synthea.engine.Generator;
 import org.mitre.synthea.helpers.Config;
 
 @RestController
-@RequestMapping("/va-synthea")
 public class Controller {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
