@@ -90,22 +90,31 @@ public class Controller {
 			};
 			generatorThread.start();
 					    
-			// Watch for results
-		    try {
-		    	int population = generator.options.population;
-		    	int idx = 0;
-		    	String person;
-		    	while (idx < population) {
-			    	person = generator.getNextPerson();
+			// Collect and retrun results.
+			// TODO: For now, just build and return one JSON array string with all results. Implement streaming support later.
+			StringBuilder builder = new StringBuilder("[");
+			int population = generator.options.population;
+	    	int idx = 0;
+	    	String person;
+	    	while (idx < population) {
+	    		try {
+	    			person = generator.getNextPerson();
+	    			if (idx > 0) {
+	    				builder.append(",");
+	    			}
+	    			
+	    			builder.append("\n").append(person);
 		    		++idx;
-		    		LOGGER.info("Got person: " + person);
-	            }
-	    		LOGGER.info("Generation done");
-	        } catch(InterruptedException iex) {
-	        	LOGGER.info("Interrupted while waiting for results");
-	        }
-		      
-			return new ResponseEntity<>(HttpStatus.OK);
+		    		//LOGGER.info("Got person: " + person);
+	    		} catch(InterruptedException iex) {
+		        	LOGGER.info("Interrupted while waiting for results");
+		        }
+            }
+	    	
+	    	builder.append("\n]");
+    		LOGGER.info("Generation done");
+		    
+			return new ResponseEntity<String>(builder.toString(), HttpStatus.OK);
 		} catch(JSONException jex) {
 			LOGGER.error("Error while processing JSON", jex);
 			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
