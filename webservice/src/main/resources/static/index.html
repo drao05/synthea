@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>VA Synthea Web Service</title>
+	</head>
+	<body>
+	
+		<h1>VA Synthea Web Service</h1>
+		
+		<h2>Overview</h2>
+		
+		<p>This web service provides a RESTful API for the VA Synthea synthetic patient population simulator.</p>
+		
+		<h2>RESTful API</h2>
+		
+		<p><code>POST /va-synthea/generate</code> - Submits request to generate results based on specified VA Synthea configuration parameters (JSON).</p>
+		<p>These are the supported optional generator-specific configuration parameters. Additional VA Synthea configuration parameters can also be specified and are passed directly to that library.<p>
+		<ul>
+			<li>seed - seed for population generation (long)</li>
+			<li>population - size of generated population (int)</li>
+			<li>gender - gender of individuals in generated population (string)</li>
+			<li>minAge - minimum age of individuals in generated population (int)</li>
+			<li>maxAge - maximum age of individuals in generated population (int)</li>
+			<li>state - U.S. state to use for generated population (string)</li>
+			<li>city - city in specified state to use for generated population (string)</li>
+		</ul>
+		<p>Below is an example JSON configuration:</p>
+		<code>
+		{
+			"seed": 42,
+			"population": 50,
+			"gender": "M",
+			"minAge": 20,
+			"maxAge": 29,
+			"state": "Connecticut",
+			"city": "Danbury",
+			"generate.only_dead_patients": "true"
+		}
+		</code>
+		<p>Results returned by this endpoint:</p>
+		<ul>
+			<li>Returns status code 200 and a UUID that can be used to refer to the request in other endpoints if the request was successfully submitted.</li>
+			<li>Returns status code 400 if there was a problem processing the configuration parameters.</li>
+		</ul>
+		
+		<hr />
+		
+		<p><code>GET /va-synthea/results/&lt;UUID&gt;</code> - Retrieve results for request identified by UUID path variable. Note that this removes the results from the server once they are returned to the client.</p>
+		<p>Results returned by this endpoint:</p>
+		<ul>
+			<li>Returns status code 200 and a ZIP file with the results (FHIR format in JSON array) if available.</li>
+			<li>Returns status code 202 if results are still pending.</li>
+			<li>Returns status code 400 if UUID path variable is missing.</li>
+			<li>Returns status code 404 if request was not found.</li>
+			<li>Returns status code 500 if error was encountered while returning results.</li>
+		</ul>
+		     
+		<hr />
+		
+		<p><code>DELETE /va-synthea/terminate/&lt;UUID&gt;</code> - Attempt to terminate request identified by UUID path variable.</p>
+		<p>Results returned by this endpoint:</p>
+		<ul>
+			<li>Returns status code 200 if request was found and associated threads were interrupted, though the request processing may not terminate immediately.</li>
+			<li>Returns status code 400 if UUID path variable is missing.</li>
+			<li>Returns status code 404 request was not found.</li>
+			<li>Returns status code 500 if error was encountered while trying to terminate request.</li>
+		</ul>
+		
+		<hr />
+		
+		<h2>Other Useful Links</h2>
+		<div><a href="https://github.com/synthetichealth/synthea">Synthea (GitHub)</a></div>
+		<div><a href="https://github.com/synthetichealth/synthea/wiki">Synthea Wiki</a></div>
+		<div><a href="https://github.com/synthetichealth/synthea/wiki/Common-Configuration">Synthea Commonly-Used Configurations Options</a></div>
+	
+	</body>
+</html> 
