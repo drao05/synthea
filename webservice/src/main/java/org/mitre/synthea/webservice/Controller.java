@@ -6,7 +6,13 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,10 +26,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,7 +47,10 @@ public class Controller {
 	private Map<UUID, Thread> uuidGenerateThreadMap = new ConcurrentHashMap<UUID, Thread>();
 	private Map<UUID, Thread> uuidResultThreadMap = new ConcurrentHashMap<UUID, Thread>();
 
-	private File outputDir;
+	private Path zipOutputPath;
+	
+	@Value("${zip.maxAgeSeconds:60}")
+	private Integer maxZipAgeSeconds;
 	
 	public Controller() {
 		
@@ -52,12 +63,14 @@ public class Controller {
 			baseDir = "";
 		}
 		
-		outputDir = new File(baseDir + "zip");
+		File outputDir = new File(baseDir + "zip");
 		if (!outputDir.exists()) {
 			outputDir.mkdirs();
 		}
-		
-		LOGGER.info("Output directory: " + outputDir.toString());
+
+		LOGGER.info("ZIP output directory: " + outputDir.toString());
+
+    	zipOutputPath = Paths.get(outputDir.toURI());
 	}
 	
     /**
@@ -160,7 +173,7 @@ public class Controller {
 		    		
 			    	uuidGenerateThreadMap.remove(uuid);
 		    		
-		    		File zipFile = new File(outputDir.toString() + File.separator + uuid.toString() + ".zip");
+		    		File zipFile = new File(zipOutputPath.toString() + File.separator + uuid.toString() + ".zip");
 		    		try {
 			    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
 			    		ZipEntry e = new ZipEntry(uuid.toString() + ".json");
@@ -191,7 +204,7 @@ public class Controller {
      * Utility method for generating File object for a target ZIP file based on UUID
      */
     private File getZipFile(UUID uuid) {
-    	return new File(outputDir + File.separator + uuid.toString() + ".zip");
+    	return new File(zipOutputPath.toString() + File.separator + uuid.toString() + ".zip");
     }
 	
     /**
@@ -300,4 +313,32 @@ public class Controller {
 		
     	return new ResponseEntity<>(HttpStatus.OK);
 	}
+    
+    /**
+     * Delete file if max age has been exceeded
+     */
+    private void checkForExpiredFile(Path path, int maxAgeSeconds) {
+    	try {
+	    	BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
+	        Date now = new Date();
+	        if (now.getTime() - attributes.creationTime().toMillis() >= maxAgeSeconds * 1000) {
+	        	Files.delete(path);
+	        	LOGGER.info("Deleted expired file: " + path.getFileName());
+	        }
+    	} catch(IOException ioex) {
+    		LOGGER.error("Error while checking for expired file", ioex);
+    	}
+    }
+    
+    /**
+     * Scheduled task for deleting expired ZIP files
+     */
+    @Scheduled(fixedRateString = "${zip.expiration.testIntervalSeconds:60}000")
+    public void deleteExpiredZipFiles() {
+    	try (DirectoryStream<Path> paths = Files.newDirectoryStream(zipOutputPath, "*.zip")) {
+    	    paths.forEach(p->checkForExpiredFile(p, maxZipAgeSeconds));
+    	} catch(IOException ioex) {
+    		LOGGER.error("Error while deleting expired ZIP files", ioex);
+    	}
+    }
 }
