@@ -4,16 +4,21 @@ import org.springframework.web.bind.annotation.RestController;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
@@ -52,10 +57,11 @@ public class Controller {
 	@Value("${zip.maxAgeSeconds:60}")
 	private Integer maxZipAgeSeconds;
 	
+	private Set<String> configPropertiesWhiteList = new HashSet<String>();
+	
 	public Controller() {
 		
 		// Initialize ZIP export directory relative to VA Synthea's base directory configuration parameter
-		
 		String baseDir = Config.get("exporter.baseDirectory");
 		if (baseDir != null && !baseDir.endsWith(File.separator)) {
 			baseDir += File.separator;
@@ -64,13 +70,31 @@ public class Controller {
 		}
 		
 		File outputDir = new File(baseDir + "zip");
+    	zipOutputPath = Paths.get(outputDir.toURI());
 		if (!outputDir.exists()) {
 			outputDir.mkdirs();
 		}
 
-		LOGGER.info("ZIP output directory: " + outputDir.toString());
+		LOGGER.info("ZIP output directory: " + zipOutputPath.toString());
 
-    	zipOutputPath = Paths.get(outputDir.toURI());
+    	// Initialize config properties white list
+		InputStream whiteListStream = this.getClass().getClassLoader().getResourceAsStream("va-synthea-properties-whitelist.txt");
+		try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(whiteListStream));
+            String line;
+            while ((line = reader.readLine()) != null) {
+            	configPropertiesWhiteList.add(line);
+        		LOGGER.info("White listed config parameter: " + line);
+            }
+		} catch(IOException ioex) {
+			LOGGER.error("Error while initlizing config properties white list", ioex);
+        } finally {
+        	try {
+        		whiteListStream.close();
+        	} catch(IOException ioex) {
+    			LOGGER.error("Error while closing config properties input stream", ioex);
+            }
+        }
 	}
 	
     /**
@@ -117,14 +141,17 @@ public class Controller {
 						options.city = configuration.getString(name);
 						break;
 					default:
-						if (Config.get(name) != null) {
-							LOGGER.info("Updating existing configuration parameter: " + name);
-							Config.set(name, configuration.getString(name));
+						if (configPropertiesWhiteList.contains(name)) {
+							if (Config.get(name) != null) {
+								LOGGER.info("Updating existing configuration parameter: " + name);
+								Config.set(name, configuration.getString(name));
+							} else {
+								LOGGER.info("Adding missing configuration parameter: " + name);
+								Config.set(name, configuration.getString(name));
+							}
 						} else {
-							LOGGER.info("Adding missing configuration parameter: " + name);
-							Config.set(name, configuration.getString(name));
+							LOGGER.info("Unsupported configuration parameter: " + name);
 						}
-						
 						break;
 					}
 				}
