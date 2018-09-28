@@ -18,9 +18,11 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -49,14 +51,24 @@ public class Controller {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
+	// Maps UUID of request to generator thread
 	private Map<UUID, Thread> uuidGenerateThreadMap = new ConcurrentHashMap<UUID, Thread>();
+	
+	// Maps UUID of request to thread that is gathering the results of the request
 	private Map<UUID, Thread> uuidResultThreadMap = new ConcurrentHashMap<UUID, Thread>();
 
+	// Maps UUID of request to collection of results (used to stream results)
+	private Map<UUID, Queue<String>> uuidResultQueueMap = new ConcurrentHashMap<UUID, Queue<String>>();
+	private final static int MAX_RESULTS_QUEUE_SIZE = 1000;
+	
+	// Path to ZIP output directory
 	private Path zipOutputPath;
 	
+	// Max allowed age of ZIP files (used by scheduler task that deletes expired ZIP files)
 	@Value("${zip.maxAgeSeconds:60}")
 	private Integer maxZipAgeSeconds;
 	
+	// Subset of VA Synthea configuration properties that web service allows user to customize
 	private Set<String> configPropertiesWhiteList = new HashSet<String>();
 	
 	public Controller() {
@@ -104,12 +116,13 @@ public class Controller {
      */
     @PostMapping(value = "/generate", consumes = APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> generateResults(HttpServletRequest request, HttpEntity<String> httpEntity) {
+    	
+    	Generator.GeneratorOptions options = new Generator.GeneratorOptions();
+	    JSONObject configuration = null;
     	try {
-		    Generator.GeneratorOptions options = new Generator.GeneratorOptions();
-
 		    String requestBody = httpEntity.getBody();
 		    if (requestBody != null) {
-	    		JSONObject configuration = new JSONObject(httpEntity.getBody());
+		    	configuration = new JSONObject(httpEntity.getBody());
 				
 				LOGGER.info("Requested generator configuration: " + configuration.toString());
 				
@@ -117,6 +130,8 @@ public class Controller {
 			    JSONArray names = configuration.names();
 				for (int idx=0; idx<names.length(); ++idx) {
 					String name = names.getString(idx);
+					
+					// TODO: Check for valid config values
 					
 					switch (name) {
 					case "seed":
@@ -156,75 +171,109 @@ public class Controller {
 					}
 				}
 		    }
-			
-			// Mark this request as coming from a web client
-			Config.set("exporter.webclient", "true");
-			
-			// Start generating
-			Generator generator = new Generator(options);
-			Thread generateThread = new Thread() {
-			    public void run() {
-			    	generator.run();
-			    }
-			};
-			generateThread.start();
-			
-			// Capture the results in a zip file
-			final UUID uuid = UUID.randomUUID();
-			uuidGenerateThreadMap.put(uuid, generateThread);
-			Thread resultThread = new Thread() {
-			    public void run() {
-			    	StringBuilder builder = new StringBuilder("[");
-					int population = generator.options.population;
-			    	int idx = 0;
-			    	String person;
-			    	while (idx < population) {
-			    		try {
-			    			person = generator.getNextPerson();
-			    			if (idx > 0) {
-			    				builder.append(",");
-			    			}
-			    			
-			    			builder.append("\n").append(person);
-				    		++idx;
-			    		} catch(InterruptedException iex) {
-				        	LOGGER.error("Interrupted while waiting for results");
-				        	uuidGenerateThreadMap.remove(uuid);
-				        	uuidResultThreadMap.remove(uuid);
-				        	return;
-				        }
-		            }
-			    	
-			    	builder.append("\n]");
-		    		LOGGER.info("Generation done");
-		    		
-			    	uuidGenerateThreadMap.remove(uuid);
-		    		
-		    		File zipFile = new File(zipOutputPath.toString() + File.separator + uuid.toString() + ".zip");
-		    		try {
-			    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
-			    		ZipEntry e = new ZipEntry(uuid.toString() + ".json");
-			    		out.putNextEntry(e);
-	
-			    		byte[] data = builder.toString().getBytes();
-			    		out.write(data, 0, data.length);
-			    		out.closeEntry();
-			    		out.close();
-			    		
-			    		LOGGER.info("Results written to " + zipFile.toPath());
-		    		} catch(Exception ex) {
-		    			LOGGER.error("Exception while creating zip file for request " + uuid.toString(), ex);
-		    		}
-			    }
-			};
-			resultThread.start();
-			uuidResultThreadMap.put(uuid, resultThread);
-			
-			return new ResponseEntity<String>(uuid.toString(), HttpStatus.OK);
-		} catch(JSONException jex) {
+    	} catch(JSONException jex) {
 			LOGGER.error("Error while processing JSON", jex);
 			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 		}
+			
+		// Mark this request as coming from a web client
+		Config.set("exporter.webclient", "true");
+					
+		// Start generating
+		Generator generator = new Generator(options);
+		Thread generateThread = new Thread() {
+		    public void run() {
+		    	generator.run();
+		    }
+		};
+		generateThread.start();
+		
+		// Create JSONObject configuration if it does not already exist
+		if (configuration == null) {
+			configuration = new JSONObject();
+		}
+				
+		// Ensure that generation seed is in configuration that will be packaged with ZIP file
+		final JSONObject configToExport = configuration;
+		configToExport.put("seed", options.seed);
+		
+		// Prepare to make results available for streaming and capturing them in a ZIP file
+		final UUID uuid = UUID.randomUUID();
+		uuidGenerateThreadMap.put(uuid, generateThread);
+		uuidResultQueueMap.put(uuid, new ConcurrentLinkedQueue<String>());
+
+		// Create and start result thread
+		Thread resultThread = new Thread() {
+		    public void run() {
+		    	StringBuilder builder = new StringBuilder("[");
+				int population = generator.options.population;
+		    	int idx = 0;
+		    	String person;
+		    	Queue<String> resultQueue = uuidResultQueueMap.get(uuid);
+		    	while (idx < population) {
+		    		try {
+		    			person = generator.getNextPerson();
+		    			
+	    				synchronized(resultQueue) {
+	    					
+	    					// Remove oldest result if max queue size has been reached
+	    					if (resultQueue.size() == MAX_RESULTS_QUEUE_SIZE) {
+	    						resultQueue.remove();
+	    					}
+	    					
+	    					resultQueue.add(person);
+	    				}
+		    			
+			    		if (idx > 0) {
+			    			builder.append(",");
+			    		}
+			    		builder.append("\n").append(person);
+		    			
+			    		++idx;
+		    		} catch(InterruptedException iex) {
+			        	LOGGER.error("Interrupted while waiting for results");
+			        	uuidGenerateThreadMap.remove(uuid);
+			        	uuidResultThreadMap.remove(uuid);
+			        	return;
+			        }
+	            }
+		    	
+		    	builder.append("\n]");
+	    		LOGGER.info("Generation done");
+	    		
+		    	uuidGenerateThreadMap.remove(uuid);
+		    			    	
+		    	// Create ZIP file
+	    		File zipFile = new File(zipOutputPath.toString() + File.separator + uuid.toString() + ".zip");
+	    		try {
+		    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
+		    		
+		    		// Add config file
+		    		ZipEntry e = new ZipEntry(uuid.toString() + "-config.json");
+		    		out.putNextEntry(e);
+		    		byte[] data = configToExport.toString().getBytes();
+		    		out.write(data, 0, data.length);
+		    		out.closeEntry();
+		    		
+		    		// Add results file
+		    		e = new ZipEntry(uuid.toString() + ".json");
+		    		out.putNextEntry(e);
+		    		data = builder.toString().getBytes();
+		    		out.write(data, 0, data.length);
+		    		out.closeEntry();
+		    		
+		    		out.close();
+		    		
+		    		LOGGER.info("Results written to " + zipFile.toPath());
+	    		} catch(Exception ex) {
+	    			LOGGER.error("Exception while creating zip file for request " + uuid.toString(), ex);
+	    		}
+		    }
+		};
+		resultThread.start();
+		uuidResultThreadMap.put(uuid, resultThread);
+		
+		return new ResponseEntity<String>(uuid.toString(), HttpStatus.OK);
 	}
     
     /**
@@ -235,15 +284,15 @@ public class Controller {
     }
 	
     /**
-     * GET endpoint that retrieves ZIP file with results associated with specified UUID (that was originally returned by the associated generate request).
-     * Returns either the ZIP file or a status code:
+     * GET endpoint that retrieves results (as a ZIP file) associated with specified UUID (that was originally returned by the associated generate request).
+     * Returns a ZIP file or a status code:
      * - 202 if results are still pending
      * - 400 if UUID path variable is missing
-     * - 404 if request was not found
+     * - 404 if request was not found (either the request is complete and results have been retrieved, or the request never existed)
      * - 500 if error was encountered while returning results
      */
-    @GetMapping(value = "/results/{uuidStr}")
-	public HttpEntity<?> getResults(@PathVariable String uuidStr) {
+    @GetMapping(value = "/zip/{uuidStr}")
+	public HttpEntity<?> getResultsZip(@PathVariable String uuidStr) {
     	
     	if (uuidStr == null) {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -288,6 +337,61 @@ public class Controller {
 	}
     
     /**
+     * GET endpoint that retrieves results (as a JSON array) associated with specified UUID (that was originally returned by the associated generate request).
+     * Returns a JSON array with available results or a status code:
+     * - 400 if UUID path variable is missing
+     * - 404 if request was not found (either the request is complete and results have been retrieved, or the request never existed)
+     */
+    @GetMapping(value = "/json/{uuidStr}")
+	public HttpEntity<?> getResultsJson(@PathVariable String uuidStr) {
+    	
+    	if (uuidStr == null) {
+    		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    	}
+    	
+    	UUID uuid = UUID.fromString(uuidStr);
+
+    	Queue<String> resultQueue = uuidResultQueueMap.get(uuid);
+    	if (resultQueue == null) {
+    		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    	}
+    	
+		StringBuilder builder = new StringBuilder("[");
+		synchronized(resultQueue) {
+			if (resultQueue.size() == 0) {
+				return new ResponseEntity<String>("[]", HttpStatus.OK);
+			}
+			
+    		// Return available results as JSON array
+			int idx = 0;
+			while(resultQueue.size() > 0) {
+				String person = resultQueue.remove();
+				if (idx > 0) {
+					builder.append(",");
+				}
+
+				builder.append("\n").append(person);
+				++idx;
+			}
+			
+			if (uuidGenerateThreadMap.get(uuid) == null) {
+				
+				// Clean up if generation is done
+				uuidResultQueueMap.remove(uuid);
+				uuidResultThreadMap.remove(uuid);
+			} else {
+				
+				// Remove results that are being returned from result queue
+				resultQueue.clear();
+			}
+		}
+					
+		builder.append("\n]");
+		
+		return new ResponseEntity<String>(builder.toString(), HttpStatus.OK);
+	}
+    
+    /**
      * DELETE endpoint that attempts to terminate a pending request associated with specified UUID (that was originally returned by the associated generate request).
      * Returns a status code:
      * - 200 if request was found and associated threads were interrupted, though the request processing may not terminate immediately
@@ -318,8 +422,10 @@ public class Controller {
 	    	}
     	}
     	
+    	// Remove result thread entries from tracking collections
     	uuidResultThreadMap.remove(uuid);
-    	
+    	uuidResultQueueMap.remove(uuid);
+
     	// Try to interrupt the generator thread if it exists
     	Thread generateThread = uuidGenerateThreadMap.get(uuid);
     	if (generateThread != null && generateThread.isAlive()) {
@@ -330,6 +436,7 @@ public class Controller {
     		}
     	}
     	
+    	// Remove generation thread entry from tracking collection
 		uuidGenerateThreadMap.remove(uuid);
 		
 		// Remove associated ZIP file if it exists

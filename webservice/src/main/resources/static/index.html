@@ -32,8 +32,8 @@
 			"gender": "M",
 			"minAge": 20,
 			"maxAge": 29,
-			"state": "Connecticut",
-			"city": "Danbury",
+			"state": "Massachusetts",
+			"city": "Boston",
 			"generate.only_dead_patients": "true"
 		}
 		</code>
@@ -45,14 +45,24 @@
 		
 		<hr />
 		
-		<p><code>GET /va-synthea/results/&lt;UUID&gt;</code> - Retrieve results for request identified by UUID path variable. Note that this removes the results from the server once they are returned to the client.</p>
+		<p><code>GET /va-synthea/zip/&lt;UUID&gt;</code> - Retrieve all results (as a ZIP file) for the request identified by UUID path variable. Note that this removes all of the results from the server once they are returned to the client.</p>
 		<p>Results returned by this endpoint:</p>
 		<ul>
-			<li>Returns status code 200 and a ZIP file with the results (FHIR format in JSON array) if available.</li>
+			<li>Returns status code 200 and all results in FHIR format in a ZIP file. The file also includes the configuration (as JSON) used to generate the results.</li>
 			<li>Returns status code 202 if results are still pending.</li>
 			<li>Returns status code 400 if UUID path variable is missing.</li>
 			<li>Returns status code 404 if request was not found.</li>
 			<li>Returns status code 500 if error was encountered while returning results.</li>
+		</ul>
+		     
+		<hr />
+		
+		<p><code>GET /va-synthea/json/&lt;UUID&gt;</code> - Retrieve currently available results in FHIR format (as a JSON array) for the request identified by UUID path variable. Note that this removes the current results from the server once they are returned to the client.</p>
+		<p>Results returned by this endpoint:</p>
+		<ul>
+			<li>Returns status code 200 and currently available results in FHIR format in a JSON array in the body of the response. Up to the most recent 1000 results will be returned.</li>
+			<li>Returns status code 400 if UUID path variable is missing.</li>
+			<li>Returns status code 404 if request was not found.</li>
 		</ul>
 		     
 		<hr />
