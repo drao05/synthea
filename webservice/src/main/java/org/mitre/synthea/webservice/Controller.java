@@ -218,7 +218,7 @@ public class Controller {
 	    					
 	    					// Remove oldest result if max queue size has been reached
 	    					if (resultQueue.size() == MAX_RESULTS_QUEUE_SIZE) {
-	    						resultQueue.remove();
+	    						resultQueue.poll();
 	    					}
 	    					
 	    					resultQueue.add(person);
@@ -234,12 +234,13 @@ public class Controller {
 			        	LOGGER.error("Interrupted while waiting for results");
 			        	uuidGenerateThreadMap.remove(uuid);
 			        	uuidResultThreadMap.remove(uuid);
+			        	uuidResultQueueMap.remove(uuid);
 			        	return;
 			        }
 	            }
 		    	
 		    	builder.append("\n]");
-	    		LOGGER.info("Generation done");
+	    		LOGGER.info("Generation done for request " + uuid);
 	    		
 		    	uuidGenerateThreadMap.remove(uuid);
 		    			    	
@@ -322,7 +323,10 @@ public class Controller {
 		try {
 	    	byte[] zipContents = Files.readAllBytes(zipFile.toPath());
 	    	zipFile.delete();
+	    	
+	    	// Remove result thread entries from tracking collections
 	    	uuidResultThreadMap.remove(uuid);
+	    	uuidResultQueueMap.remove(uuid);
 	    	
 	        HttpHeaders header = new HttpHeaders();
 	        header.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipFile.getName() + "\"");
@@ -356,14 +360,16 @@ public class Controller {
     		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     	}
     	
-		StringBuilder builder = new StringBuilder("[");
 		synchronized(resultQueue) {
 			if (resultQueue.size() == 0) {
 				return new ResponseEntity<String>("[]", HttpStatus.OK);
 			}
 			
+			LOGGER.info("Current size of result set for request " + uuid + ": " + resultQueue.size());
+			
     		// Return available results as JSON array
 			int idx = 0;
+			StringBuilder builder = new StringBuilder("[");
 			while(resultQueue.size() > 0) {
 				String person = resultQueue.remove();
 				if (idx > 0) {
@@ -374,21 +380,21 @@ public class Controller {
 				++idx;
 			}
 			
+			builder.append("\n]");
+
 			if (uuidGenerateThreadMap.get(uuid) == null) {
 				
-				// Clean up if generation is done
-				uuidResultQueueMap.remove(uuid);
+		    	// Remove result thread entries from tracking collections
 				uuidResultThreadMap.remove(uuid);
+				uuidResultQueueMap.remove(uuid);
 			} else {
 				
 				// Remove results that are being returned from result queue
 				resultQueue.clear();
 			}
-		}
-					
-		builder.append("\n]");
-		
-		return new ResponseEntity<String>(builder.toString(), HttpStatus.OK);
+			
+			return new ResponseEntity<String>(builder.toString(), HttpStatus.OK);
+		}		
 	}
     
     /**
