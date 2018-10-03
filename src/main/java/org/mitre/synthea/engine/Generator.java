@@ -226,6 +226,8 @@ public class Generator {
         System.out.println("Waiting for threads to finish... " + threadPool);
       }
     } catch (InterruptedException e) {
+      System.out.println("Generator interrupted. Attempting to shut down associated thread pool.");
+      threadPool.shutdownNow();
       e.printStackTrace();
     }
 
