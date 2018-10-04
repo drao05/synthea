@@ -10,6 +10,10 @@ buildscript {
 	}
 }
 
+plugins {
+    id 'io.franzbecker.gradle-lombok' version '1.14'
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
@@ -21,6 +25,11 @@ bootWar.enabled = false
 war {
     enabled = true
     archiveName = 'va-synthea.war'
+}
+
+lombok {
+	version = '1.16.16'
+	sha256 = ""
 }
 
 group = 'va-synthea-webservice'
@@ -35,6 +44,7 @@ dependencies {
 	compile('org.springframework.boot:spring-boot-starter-web')
 	compile('org.springframework.boot:spring-boot-starter-websocket')
 	compile('org.json:json:20180813')
+	compileOnly('org.projectlombok:lombok:1.16.16')
 	compile rootProject
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }

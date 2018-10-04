@@ -20,16 +20,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -49,7 +45,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.mitre.synthea.engine.Generator;
-import org.mitre.synthea.engine.Generator.GeneratorOptions;
 import org.mitre.synthea.helpers.Config;
 
 @RestController
@@ -57,25 +52,9 @@ public class Controller {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
-	// Maps UUID of request to generator thread
-	private Map<String, Thread> uuidGenerateThreadMap = new ConcurrentHashMap<String, Thread>();
+	// Maps UUID to a request object
+	private Map<String, Request> uuidRequestMap = new ConcurrentHashMap<String, Request>();
 	
-	// Maps UUID of request to generator object
-	private Map<String, Generator> uuidGeneratorMap = new ConcurrentHashMap<String, Generator>();
-
-	// Maps UUID of request to thread that is gathering the results of the request
-	private Map<String, Thread> uuidResultThreadMap = new ConcurrentHashMap<String, Thread>();
-
-	// Maps UUID of request to collection of results (used to serve up partial results as available)
-	private Map<String, Queue<String>> uuidResultQueueMap = new ConcurrentHashMap<String, Queue<String>>();
-	private final static int MAX_RESULTS_QUEUE_SIZE = 1000;
-	
-	// Maps UUID of request to a stop flag
-	private Map<String, AtomicBoolean> uuidStopFlagMap = new ConcurrentHashMap<String, AtomicBoolean>();
-		
-	// Maps UUID of request to a pause flag (used for requests from WebSocket clients)
-	private Map<String, AtomicBoolean> uuidPauseFlagMap = new ConcurrentHashMap<String, AtomicBoolean>();
-		
 	@Autowired
 	// Template used for requests from WebSocket clients
 	private SimpMessagingTemplate messagingTemplate;         
@@ -88,11 +67,14 @@ public class Controller {
 	private Integer maxZipAgeSeconds;
 	
 	// Subset of VA Synthea configuration properties that web service allows user to customize
-	private Set<String> configPropertiesWhiteList = new HashSet<String>();
+	public final static Set<String> configPropertiesWhiteList = new HashSet<String>();
 	
-	/**
-	 * Constructor
-	 */
+	// Time in milliseconds to sleep between checks for a paused request
+	private final static int PAUSE_SLEEP_MS = 1000;
+	
+	// Max size of result queues
+	private final static int MAX_RESULTS_QUEUE_SIZE = 1000;
+
 	public Controller() {
 		
 		// Initialize ZIP export directory relative to VA Synthea's base directory configuration parameter
@@ -132,167 +114,80 @@ public class Controller {
 	}
 	
 	/**
-	 * Removes all entries in tracking collections for a specified UUID
-	 * @param uuid
+	 * Creates and initializes a new generation request based on the specified configuration
 	 */
-	private void cleanupAll(String uuid) {
-		uuidGenerateThreadMap.remove(uuid);
-    	uuidGeneratorMap.remove(uuid);
-    	uuidResultThreadMap.remove(uuid);
-    	uuidResultQueueMap.remove(uuid);
-    	uuidPauseFlagMap.remove(uuid);
-    	uuidStopFlagMap.remove(uuid);
-	}
-	
-	/**
-	 * Configure generator options with a given JSON configuration
-	 */
-	private GeneratorOptions configureGeneratorOptions(JSONObject configuration) {
-		if (configuration == null) {
-			return null;
-		}
+	private Request createRequest(String configurationStr) throws JSONException {
 		
-		LOGGER.info("Requested generator configuration: " + configuration.toString());
+		LOGGER.info("Requested generator configuration: " + configurationStr);
 		
-		GeneratorOptions options = new GeneratorOptions();
-	    JSONArray names = configuration.names();
-		for (int idx=0; idx<names.length(); ++idx) {
-			String name = names.getString(idx);
-			
-			// TODO: Check for valid config values
-			switch (name) {
-			case "seed":
-				options.seed = configuration.getLong(name);
-				break;
-			case "population":
-				options.population = configuration.getInt(name);
-				break;
-			case "gender":
-				options.gender = configuration.getString(name);
-				break;
-			case "minAge":
-				options.minAge = configuration.getInt(name);
-				break;
-			case "maxAge":
-				options.maxAge = configuration.getInt(name);
-				break;
-			case "state":
-				options.state = configuration.getString(name);
-				break;
-			case "city":
-				options.city = configuration.getString(name);
-				break;
-			default:
-				
-				// Ignore other configuration values (e.g., Synthea config)
-				break;
-			}
-		}
-		
-		return options;
-	}
-	
-	/**
-	 * Configure Synthea with a given JSON configuration
-	 */
-	private void updateSyntheaConfig(JSONObject configuration) {
-	    JSONArray names = configuration.names();
-		for (int idx=0; idx<names.length(); ++idx) {
-			String name = names.getString(idx);			
-			switch (name) {
-			case "seed":
-			case "population":
-			case "gender":
-			case "minAge":
-			case "maxAge":
-			case "state":
-			case "city":
-				// Ignore generator configuration values
-				break;
-			default:
-				// TODO: Re-enable processing of other Synthea config options once we have a solution to the static Config class issue.
-				/*
-				if (configPropertiesWhiteList.contains(name)) {
-					if (Config.get(name) != null) {
-						LOGGER.info("Updating existing configuration parameter: " + name);
-						Config.set(name, configuration.getString(name));
-					} else {
-						LOGGER.info("Adding missing configuration parameter: " + name);
-						Config.set(name, configuration.getString(name));
-					}
-				} else {
-					LOGGER.info("Unsupported configuration parameter: " + name);
-				}
-				*/
-				break;
-			}
-		}
-		
-		// Mark this request as coming from a web client
-		Config.set("exporter.webclient", "true");
-	}
-	
-    /**
-     * POST endpoint that submits request to generate results based on specified VA Synthea configuration paramaeters (JSON).
-     * If the request was successfully submitted, returns status code 200 and a UUID that can be used to refer to request in other endpoints.
-     * Returns status code 400 if there was a problem processing the configuration parameters.
-     */
-    @PostMapping(value = "/generate", consumes = APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> generateResults(HttpServletRequest request, HttpEntity<String> httpEntity) {
-		GeneratorOptions options = null;
+		// Create configuration object
 		JSONObject configuration = null;
-		String requestBody = httpEntity.getBody();
-	    if (requestBody != null) {
-	    	
-	    	// Update configuration
-	    	try {
-	    		configuration = new JSONObject(httpEntity.getBody());
-	    	} catch(JSONException jex) {
-				LOGGER.error("Error while processing JSON", jex);
-				return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+		if (configurationStr != null) {
+			try {
+				configuration = new JSONObject(configurationStr);
+			} catch(JSONException jex) {
+				LOGGER.error("Error while creating JSON object from string", jex);
+				return null;
 			}
-	    	
-	    	options = configureGeneratorOptions(configuration);
-	    	updateSyntheaConfig(configuration);
-			
-	    }
-					
-		// Start generating
-		Generator generator = options != null ? new Generator(options) : new Generator();
-		Thread generateThread = new Thread() {
-		    public void run() {
-		    	generator.run();
-		    }
-		};
-		generateThread.start();
-		
-		// Create JSONObject configuration if it does not already exist
-		if (configuration == null) {
-			configuration = new JSONObject();
 		}
-				
-		// Ensure that generation seed is in configuration that will be packaged with ZIP file
-		final JSONObject configToExport = configuration;
-		configToExport.put("seed", options.seed);
+	    	
 		
-		// Prepare to make results available for streaming and capturing them in a ZIP file
-		final String uuid = UUID.randomUUID().toString();
-		uuidGenerateThreadMap.put(uuid, generateThread);
-		uuidResultQueueMap.put(uuid, new ConcurrentLinkedQueue<String>());
-
-		// Create and start result thread
+		// Create the request
+		Request request = new Request(configuration);
+		initResultThread(request);
+		uuidRequestMap.put(request.getUuid(), request);
+		return request;
+	}
+	
+	/**
+	 * Initializes the results thread for a specified request
+	 */
+	@SuppressWarnings("unused")
+	private void initResultThread(Request request) {
+		final String uuid = request.getUuid();
+		final Generator generator = request.getGenerator();
+		final Thread generateThread = request.getGenerateThread();
+		final JSONObject configuration = request.getConfiguration();
+		final Queue<String> resultQueue = request.getResultQueue();
+    	
 		Thread resultThread = new Thread() {
 		    public void run() {
 		    	StringBuilder builder = new StringBuilder("[");
-				int population = generator.options.population;
-		    	int idx = 0;
+		    	
 		    	String person;
-		    	Queue<String> resultQueue = uuidResultQueueMap.get(uuid);
+		    	int idx = 0;
+				int population = generator.options.population;
+
 		    	while (idx < population) {
 		    		try {
-		    			person = generator.getNextPerson();
+		    			while(request.isPaused()) {
+			    			Thread.sleep(PAUSE_SLEEP_MS);
+			    		}
 		    			
-		    			// Make person available for immediately retrieval
+		    			while(request.isStopped()) {
+		    				
+		    				// Interrupt generation
+		    				generateThread.interrupt();
+		    				
+		    				// Remove associated ZIP file if it exists
+		    				File zipFile = getZipFile(uuid);
+		    				if (zipFile.exists()) {
+		    					zipFile.delete();
+		    				}
+		    				
+		    				// Remove the request
+		    				uuidRequestMap.remove(uuid);
+		    				
+			    			return;
+			    		}
+		    			
+		    			person = generator.getNextPerson();
+		    			++idx;
+		    			
+		    			// Send person to WebSocket client
+			    		messagingTemplate.convertAndSend("/json/" + uuid, person);
+			    		
+		    			// Make person available for immediately retrieval via RESTful interface
 	    				synchronized(resultQueue) {
 	    					
 	    					// Remove oldest result if max queue size has been reached
@@ -303,29 +198,35 @@ public class Controller {
 	    					resultQueue.add(person);
 	    				}
 		    			
-	    				// Add person to final ZIP contents
-			    		if (idx > 0) {
+	    				// Add person to string builder for eventual ZIP export
+			    		if (idx != 1) {
 			    			builder.append(",");
 			    		}
 			    		builder.append("\n").append(person);
 		    			
-			    		// Publish person to WebSocket
-			    		messagingTemplate.convertAndSend("/json/" + uuid, person);
-			    		
-			    		++idx;
 		    		} catch(InterruptedException iex) {
 			        	LOGGER.error("Result thread interrupted while waiting for results for request " + uuid);
-			        	cleanupAll(uuid);
+	    				uuidRequestMap.remove(uuid);
 			        	return;
-			        }
+			        } catch(Exception ex) {
+			        	LOGGER.error("Error in result thread for request " + uuid, ex);
+	    				uuidRequestMap.remove(uuid);
+			        	return;
+			        } 
 	            }
-		    	
-		    	builder.append("\n]");
+
+		    	// Mark the request as finished
+	    		request.finished();
+
 	    		LOGGER.info("Generation done for request " + uuid);
+
+	    		// Close out string builder for ZIP export
+		    	builder.append("\n]");
+
+		    	// Send completion notice to WebSocket client
+	    		messagingTemplate.convertAndSend("/json/" + uuid, "{ \"status\": \"Completed\" }");
 	    		
-		    	uuidGenerateThreadMap.remove(uuid);
-		    			    	
-		    	// Create ZIP file
+		    	// Create ZIP file for export
 	    		File zipFile = new File(zipOutputPath.toString() + File.separator + uuid + ".zip");
 	    		try {
 		    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
@@ -333,7 +234,7 @@ public class Controller {
 		    		// Add config file
 		    		ZipEntry e = new ZipEntry(uuid + "-config.json");
 		    		out.putNextEntry(e);
-		    		byte[] data = configToExport.toString().getBytes();
+		    		byte[] data = configuration.toString().getBytes();
 		    		out.write(data, 0, data.length);
 		    		out.closeEntry();
 		    		
@@ -352,10 +253,30 @@ public class Controller {
 	    		}
 		    }
 		};
-		resultThread.start();
-		uuidResultThreadMap.put(uuid, resultThread);
 		
-		return new ResponseEntity<String>(uuid, HttpStatus.OK);
+		request.setResultThread(resultThread);
+	}
+	
+	/*******************
+     * RESTful interface
+     ******************/
+	
+    /**
+     * POST endpoint that submits request to generate results based on specified VA Synthea configuration paramaeters (JSON).
+     * If the request was successfully submitted, returns status code 200 and a UUID that can be used to refer to request in other endpoints.
+     * Returns status code 400 if there was a problem processing the configuration parameters.
+     */
+    @PostMapping(value = "/generate", consumes = APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> generateResults(HttpServletRequest httpServletRequest, HttpEntity<String> httpEntity) {
+    	try {
+    		
+    		// Create and start request
+    		Request request = createRequest(httpEntity.getBody());
+    		request.start();
+    		return new ResponseEntity<String>(request.getUuid(), HttpStatus.OK);
+    	} catch(JSONException jex) {
+    		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    	}
 	}
     
     /**
@@ -380,6 +301,8 @@ public class Controller {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     	}
     	
+    	Request request = uuidRequestMap.get(uuid);
+    	
     	// Check for ZIP file
 		File zipFile = getZipFile(uuid);
 		if (!zipFile.exists()) {
@@ -387,7 +310,7 @@ public class Controller {
 			LOGGER.info("Results file " + zipFile.toString() + " not found");
 			
 			// If the ZIP file does not exist, see if request is pending or not found.
-			if (uuidResultThreadMap.containsKey(uuid)) {
+			if (request != null) {
 				
 				// Report that request was found but results are not ready yet
 				return new ResponseEntity<>(HttpStatus.ACCEPTED);
@@ -398,14 +321,16 @@ public class Controller {
 			}
 		}
 		
-		// Return the ZIP file
+		if (request != null && request.isFinished() && request.getResultQueue().size() == 0) {
+			
+			// Request is finished and all results are delivered
+			uuidRequestMap.remove(uuid);
+		}
+		
+		// Return the ZIP file and delete local copy
 		try {
 	    	byte[] zipContents = Files.readAllBytes(zipFile.toPath());
 	    	zipFile.delete();
-	    	
-	    	// Remove result thread entries from tracking collections
-	    	uuidResultThreadMap.remove(uuid);
-	    	uuidResultQueueMap.remove(uuid);
 	    	
 	        HttpHeaders header = new HttpHeaders();
 	        header.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipFile.getName() + "\"");
@@ -432,11 +357,12 @@ public class Controller {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     	}
     	
-    	Queue<String> resultQueue = uuidResultQueueMap.get(uuid);
-    	if (resultQueue == null) {
+    	Request request = uuidRequestMap.get(uuid);
+    	if (request == null) {
     		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     	}
     	
+    	Queue<String> resultQueue = request.getResultQueue();
 		synchronized(resultQueue) {
 			if (resultQueue.size() == 0) {
 				return new ResponseEntity<String>("[]", HttpStatus.OK);
@@ -459,15 +385,13 @@ public class Controller {
 			
 			builder.append("\n]");
 
-			if (uuidGenerateThreadMap.get(uuid) == null) {
+			// Remove results that are being returned from result queue
+			resultQueue.clear();
+			
+			if (request.isFinished() && resultQueue.size() == 0) {
 				
-		    	// Remove result thread entries from tracking collections
-				uuidResultThreadMap.remove(uuid);
-				uuidResultQueueMap.remove(uuid);
-			} else {
-				
-				// Remove results that are being returned from result queue
-				resultQueue.clear();
+				// Request is finished and all results are delivered
+				uuidRequestMap.remove(uuid);
 			}
 			
 			return new ResponseEntity<String>(builder.toString(), HttpStatus.OK);
@@ -480,7 +404,6 @@ public class Controller {
      * - 200 if request was found and associated threads were interrupted, though the request processing may not terminate immediately
      * - 400 if UUID path variable is missing
      * - 404 request was not found
-     * - 500 if error was encountered while trying to terminate request
      */
     @DeleteMapping(value = "/terminate/{uuid}")
 	public HttpEntity<?> deleteRequest(@PathVariable String uuid) {
@@ -488,43 +411,13 @@ public class Controller {
     	if (uuid == null) {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     	}
-    	    	
-    	// Try to interrupt the result thread
-    	Thread resultThread = uuidResultThreadMap.get(uuid);
-    	if (resultThread == null) {
+    	
+    	Request request = uuidRequestMap.get(uuid);
+    	if (request == null) {
     		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     	}
     	
-    	if (resultThread.isAlive()) {
-	    	resultThread.interrupt();
-	    	if (!resultThread.isInterrupted()) {
-	    		LOGGER.info("Could not interrupt result thread for request " + uuid);
-	    		return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-	    	}
-    	}
-    	
-    	// Remove result thread entries from tracking collections
-    	uuidResultThreadMap.remove(uuid);
-    	uuidResultQueueMap.remove(uuid);
-
-    	// Try to interrupt the generator thread if it exists
-    	Thread generateThread = uuidGenerateThreadMap.get(uuid);
-    	if (generateThread != null && generateThread.isAlive()) {
-    		generateThread.interrupt();
-    		if (!generateThread.isInterrupted()) {
-    			LOGGER.info("Could not interrupt generator thread for request " + uuid);
-    			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-    		}
-    	}
-    	
-    	// Remove generation thread entry from tracking collection
-		uuidGenerateThreadMap.remove(uuid);
-		
-		// Remove associated ZIP file if it exists
-		File zipFile = getZipFile(uuid);
-		if (zipFile.exists()) {
-			zipFile.delete();
-		}
+    	request.stop();
 		
     	return new ResponseEntity<>(HttpStatus.OK);
 	}
@@ -557,6 +450,12 @@ public class Controller {
     	}
     }
     
+    
+    /*********************
+     * WebSocket interface
+     ********************/
+    
+    
     /**
      * WebSocket endpoint for configuring a generation request based on the specified JSON configuration string.
      * Response includes the UUID and the specified configuration (including generation seed).
@@ -564,40 +463,16 @@ public class Controller {
     @MessageMapping("/configure")
     @SendToUser("/reply/configure")
     public String webSocketConfig(String configurationStr) {
-    	GeneratorOptions options = null;
-		JSONObject configuration = null;
-		
-		if (configurationStr != null) {
-	    	configuration = new JSONObject(configurationStr);
-		}
-	    	
-	    options = configureGeneratorOptions(configuration);
-	    updateSyntheaConfig(configuration);
-		
-		// Create generator
-	    Generator generator = options != null ? new Generator(options) : new Generator();
-		Thread generateThread = new Thread() {
-		    public void run() {
-		    	generator.run();
-		    }
-		};
-		
-    	String uuid = UUID.randomUUID().toString();
-    	
-		uuidGeneratorMap.put(uuid, generator);
-		uuidGenerateThreadMap.put(uuid, generateThread);
-
-		// Create JSONObject configuration if it does not already exist
-		if (configuration == null) {
-			configuration = new JSONObject();
-		}
-						
-		configuration.put("seed", options.seed);
-    	return "{ \"uuid\": \"" + uuid +"\", \"config\": " + configuration.toString() + " }";
+    	try {
+    		Request request = createRequest(configurationStr);
+    		return "{ \"status\": \"Configured\", \"uuid\": \"" + request.getUuid() +"\", \"configuration\": " + request.getConfiguration().toString() + " }";
+    	} catch(JSONException jex) {
+    		return "{ \"error\": \"Could not process specified configuration\" }";
+    	}
     }
     
     /**
-     * WebSocket endpoint for starting/resuming a generation request for the specified UUID.
+     * WebSocket endpoint for starting/resuming the generation request associated with the specified UUID.
      */
     @MessageMapping("/start")
     @SendToUser("/reply/start")
@@ -606,75 +481,33 @@ public class Controller {
     	if (uuid == null) {
     		return "{ \"error\": \"UUID required\" }";
     	}
-    	    	
-    	Thread generateThread = uuidGenerateThreadMap.get(uuid);
-    	Generator generator = uuidGeneratorMap.get(uuid);
-    	if (generateThread == null || generator == null) {
-    		return "{ \"error\": \"Request not found (may be complete)\" }";
+    	
+    	Request request = uuidRequestMap.get(uuid);
+    	if (request == null) {
+    		return "{ \"error\": \"Request not found (may be finished)\" }";
     	}
     	
-    	Thread resultThread = uuidResultThreadMap.get(uuid);
-    	
-    	// Check if request has already started
-    	if (resultThread == null) {
-    		
-    		// Create and start result thread
-			resultThread = new Thread() {
-			    public void run() {
-			    	String person;
-			    	int idx = 0;
-			    	AtomicBoolean isPaused = uuidPauseFlagMap.get(uuid);
-			    	AtomicBoolean isStopped = uuidStopFlagMap.get(uuid);
-			    	while (idx < generator.options.population) {
-			    		try {
-			    			while(isPaused.get()) {
-				    			Thread.sleep(1000);
-				    		}
-			    			
-			    			while(isStopped.get()) {
-			    				generateThread.interrupt();
-			    				cleanupAll(uuid);
-				    			return;
-				    		}
-			    			
-			    			person = generator.getNextPerson();
-			    			++idx;
-			    			
-				    		messagingTemplate.convertAndSend("/json/" + uuid, person);    		
-			    		} catch(InterruptedException iex) {
-				        	LOGGER.error("Interrupted while waiting for results");
-				        	cleanupAll(uuid);
-				        	return;
-				        }
-			    	}
-		    		
-			    	cleanupAll(uuid);
-			    	messagingTemplate.convertAndSend("/json/" + uuid, "{ \"wsStatus\": \"Completed\" }");
-			    }
-			};
-			
-			uuidResultThreadMap.put(uuid, resultThread);
-			uuidPauseFlagMap.put(uuid, new AtomicBoolean(false));
-			uuidStopFlagMap.put(uuid, new AtomicBoolean(false));
-			resultThread.start();
-			
-			// Start generating
-    		generateThread.start();
-    		
-			return "{ \"status\": \"Started\" }";
+    	if (request.isFinished()) {
+    		return "{ \"error\": \"Request has finished\" }";
     	}
     	
-    	AtomicBoolean isPaused = uuidPauseFlagMap.get(uuid);
-    	if (isPaused.get()) {
-    		isPaused.set(false);
-    		return "{ \"status\": \"Restarted\" }";
+    	if (!request.isStarted()) {
+    		
+    		// Request has not started yet
+    		request.start();
+    		return "{ \"status\": \"Started\" }";
+    	}
+    	
+    	if (request.isPaused()) {
+    		request.resume();
+    		return "{ \"status\": \"Resumed\" }";
     	} else {
-    		return "{ \"status\": \"Already started\" }";
+    		return "{ \"status\": \"Already running\" }";
     	}
     }
     
     /**
-     * WebSocket endpoint for pausing a generation request for the specified UUID.
+     * WebSocket endpoint for pausing the generation request associated with the specified UUID.
      */
     @MessageMapping("/pause")
     @SendToUser("/reply/pause")
@@ -683,29 +516,30 @@ public class Controller {
     	if (uuid == null) {
     		return "{ \"error\": \"UUID required\" }";
     	}
-    	    	
-    	Thread generateThread = uuidGenerateThreadMap.get(uuid);
-    	Generator generator = uuidGeneratorMap.get(uuid);
-    	if (generateThread == null || generator == null) {
-    		return "{ \"error\": \"Request not found (may be complete)\" }";
+    	
+    	Request request = uuidRequestMap.get(uuid);
+    	if (request == null) {
+    		return "{ \"error\": \"Request not found (may be finished)\" }";
     	}
     	
-    	Thread resultThread = uuidResultThreadMap.get(uuid);
-    	if (resultThread == null) {
-    		return "{ \"error\": \"Not started\" }";
+    	if (!request.isStarted()) {
+    		return "{ \"error\": \"Request has not started yet\" }";
     	}
     	
-    	AtomicBoolean isPaused = uuidPauseFlagMap.get(uuid);
-    	if (isPaused.get()) {
+    	if (request.isFinished()) {
+    		return "{ \"error\": \"Request has finished\" }";
+    	}
+    	
+    	if (request.isPaused()) {
     		return "{ \"status\": \"Already paused\" }";
     	} else {
-    		isPaused.set(true);
+    		request.pause();
     		return "{ \"status\": \"Paused\" }";
     	}
 	}
     
     /**
-     * WebSocket endpoint for ending a generation request for the specified UUID.
+     * WebSocket endpoint for ending the generation request associated with the specified UUID.
      */
     @MessageMapping("/stop")
     @SendToUser("/reply/stop")
@@ -714,23 +548,24 @@ public class Controller {
     	if (uuid == null) {
     		return "{ \"error\": \"UUID required\" }";
     	}
-    	    	
-    	Thread generateThread = uuidGenerateThreadMap.get(uuid);
-    	Generator generator = uuidGeneratorMap.get(uuid);
-    	if (generateThread == null || generator == null) {
-    		return "{ \"error\": \"Request not found (may be complete)\" }";
+    	
+    	Request request = uuidRequestMap.get(uuid);
+    	if (request == null) {
+    		return "{ \"error\": \"Request not found (may be finished)\" }";
     	}
     	
-    	Thread resultThread = uuidResultThreadMap.get(uuid);
-    	if (resultThread == null) {
-    		return "{ \"error\": \"Not started\" }";
+    	if (!request.isStarted()) {
+    		return "{ \"error\": \"Request has not started yet\" }";
     	}
     	
-    	AtomicBoolean isStopped = uuidStopFlagMap.get(uuid);
-    	if (isStopped.get()) {
+    	if (request.isFinished()) {
+    		return "{ \"error\": \"Request has finished\" }";
+    	}
+    	
+    	if (request.isStopped()) {
     		return "{ \"status\": \"Already stopped\" }";
     	} else {
-    		isStopped.set(true);
+    		request.stop();
     		return "{ \"status\": \"Stopped\" }";
     	}
 	}
