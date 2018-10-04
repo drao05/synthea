@@ -14,7 +14,8 @@
 		<h2>RESTful API</h2>
 		
 		<p><code>POST /va-synthea/generate</code> - Submits request to generate results based on specified VA Synthea configuration parameters (JSON).</p>
-		<p>Below are the supported generator-specific configuration parameters. Some VA Synthea configuration parameters are also supported by the web service (see <a href="./va-synthea-properties-whitelist.txt">this list</a>).<p>
+		<!-- <p>Below are the supported generator-specific configuration parameters. Some VA Synthea configuration parameters are also supported by the web service (see <a href="./va-synthea-properties-whitelist.txt">this list</a>).<p> -->
+		<p>Below are the supported generator-specific configuration parameters.<p>
 		<ul>
 			<li>seed - seed for population generation (long)</li>
 			<li>population - size of generated population (int)</li>
@@ -33,8 +34,7 @@
 			"minAge": 20,
 			"maxAge": 29,
 			"state": "Massachusetts",
-			"city": "Boston",
-			"generate.only_dead_patients": "true"
+			"city": "Boston"
 		}
 		</code>
 		<p>Results returned by this endpoint:</p>
