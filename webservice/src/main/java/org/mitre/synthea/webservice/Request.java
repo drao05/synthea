@@ -1,9 +1,13 @@
 package org.mitre.synthea.webservice;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -21,8 +25,14 @@ import lombok.Getter;
  */
 public class Request {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(Request.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(Request.class);
 
+	// Time in milliseconds to sleep between checks for a paused request
+	private final static int PAUSE_SLEEP_MS = 1000;
+		
+	// Max size of result queues
+	private final static int MAX_RESULTS_QUEUE_SIZE = 1000;
+		
 	// Request ID
 	private String uuid = UUID.randomUUID().toString();
 	
@@ -53,9 +63,14 @@ public class Request {
 	// Indicates if the request is finished;
 	private AtomicBoolean finishedFlag = new AtomicBoolean(false);
 	
-	public Request(JSONObject configuration) {
+	// Controller reference provides access to some needed methods
+	private Controller controller;
+	
+	public Request(Controller controller, JSONObject configuration) {
 		super();
 				
+		this.controller = controller;
+		
 		// Create generator and associated thread. Set exporter.webclient to true in Config first.
 		Config.set("exporter.webclient", "true");
 		GeneratorOptions options = configureGeneratorOptions(configuration);
@@ -66,6 +81,9 @@ public class Request {
 		    }
 		};
 		
+		// Initialize the result thread
+		initResultThread();
+		
 		// Create configuration object if needed
 		if (configuration != null) {
 			this.configuration = configuration;
@@ -74,7 +92,6 @@ public class Request {
 		// Save the generation seed that will be used
 		this.configuration.put("seed", options.seed);
 		
-		// Update Synthea configuration
 		// TODO: Re-enable processing of other Synthea config options once we have a solution to the static Config class issue.
 	    //updateSyntheaConfig(configuration);
 	}
@@ -161,8 +178,113 @@ public class Request {
 		}
 	}
 	
-	public void setResultThread(Thread resultThread) {
-		this.resultThread = resultThread;
+	/**
+	 * Initializes the results thread
+	 */
+	private void initResultThread() {
+		resultThread = new Thread() {
+		    public void run() {
+		    	StringBuilder builder = new StringBuilder("[");
+		    	
+		    	String person;
+		    	int idx = 0;
+				int population = generator.options.population;
+
+		    	while (idx < population) {
+		    		try {
+		    			while(isPaused()) {
+			    			Thread.sleep(PAUSE_SLEEP_MS);
+			    		}
+		    			
+		    			while(isStopped()) {
+		    				
+		    				// Interrupt generation
+		    				generateThread.interrupt();
+		    				
+		    				// Remove associated ZIP file if it exists
+		    				File zipFile = controller.getZipFile(uuid);
+		    				if (zipFile.exists()) {
+		    					zipFile.delete();
+		    				}
+		    				
+		    				// Remove the request
+		    				controller.removeRequestFromMap(uuid);
+		    				
+			    			return;
+			    		}
+		    			
+		    			person = generator.getNextPerson();
+		    			++idx;
+		    			
+		    			// Send person to WebSocket client
+			    		controller.sendMessage(uuid, person);
+			    		
+		    			// Make person available for immediately retrieval via RESTful interface
+	    				synchronized(resultQueue) {
+	    					
+	    					// Remove oldest result if max queue size has been reached
+	    					if (resultQueue.size() == MAX_RESULTS_QUEUE_SIZE) {
+	    						resultQueue.poll();
+	    					}
+	    					
+	    					resultQueue.add(person);
+	    				}
+		    			
+	    				// Add person to string builder for eventual ZIP export
+			    		if (idx != 1) {
+			    			builder.append(",");
+			    		}
+			    		builder.append("\n").append(person);
+		    			
+		    		} catch(InterruptedException iex) {
+			        	LOGGER.error("Result thread interrupted while waiting for results for request " + uuid);
+			        	controller.removeRequestFromMap(uuid);
+			        	return;
+			        } catch(Exception ex) {
+			        	LOGGER.error("Error in result thread for request " + uuid, ex);
+			        	controller.removeRequestFromMap(uuid);
+			        	return;
+			        } 
+	            }
+
+		    	// Mark the request as finished
+	    		finishedFlag.set(true);
+
+	    		LOGGER.info("Generation done for request " + uuid);
+
+	    		// Close out string builder for ZIP export
+		    	builder.append("\n]");
+
+		    	// Send completion notice to WebSocket client
+	    		controller.sendMessage(uuid, "{ \"status\": \"Completed\" }");
+	    		
+		    	// Create ZIP file for export
+	    		File zipFile = controller.getZipFile(uuid);
+	    		try {
+		    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
+		    		
+		    		// Add config file
+		    		ZipEntry e = new ZipEntry(uuid + "-config.json");
+		    		out.putNextEntry(e);
+		    		byte[] data = configuration.toString().getBytes();
+		    		out.write(data, 0, data.length);
+		    		out.closeEntry();
+		    		
+		    		// Add results file
+		    		e = new ZipEntry(uuid + ".json");
+		    		out.putNextEntry(e);
+		    		data = builder.toString().getBytes();
+		    		out.write(data, 0, data.length);
+		    		out.closeEntry();
+		    		
+		    		out.close();
+		    		
+		    		LOGGER.info("Results written to " + zipFile.toPath());
+	    		} catch(Exception ex) {
+	    			LOGGER.error("Exception while creating zip file for request " + uuid, ex);
+	    		}
+		    }
+		};		
 	}
 	
 	/**
@@ -182,27 +304,32 @@ public class Request {
 		return stopFlag.get();
 	}
 	
-	public void pause() {
-		pauseFlag.set(true);
-	}
-	
-	public void resume() {
-		pauseFlag.set(false);
-	}
-	
-	public void stop() {
-		stopFlag.set(true);
-	}
-	
-	public void finished() {
-		finishedFlag.set(true);
-	}
-	
 	public boolean isStarted() {
 		return startedFlag.get();
 	}
 	
 	public boolean isFinished() {
 		return finishedFlag.get();
+	}
+	
+	/**
+	 * Pause the request
+	 */
+	public void pause() {
+		pauseFlag.set(true);
+	}
+	
+	/**
+	 * Resume the request
+	 */
+	public void resume() {
+		pauseFlag.set(false);
+	}
+	
+	/**
+	 * Stop the request permanently
+	 */
+	public void stop() {
+		stopFlag.set(true);
 	}
 }

@@ -6,7 +6,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -21,8 +20,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -44,19 +41,18 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.mitre.synthea.engine.Generator;
 import org.mitre.synthea.helpers.Config;
 
 @RestController
 public class Controller {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
 	// Maps UUID to a request object
-	private Map<String, Request> uuidRequestMap = new ConcurrentHashMap<String, Request>();
+	private final Map<String, Request> uuidRequestMap = new ConcurrentHashMap<String, Request>();
 	
 	@Autowired
-	// Template used for requests from WebSocket clients
+	// Messaging template used for requests from WebSocket clients
 	private SimpMessagingTemplate messagingTemplate;         
 
 	// Path to ZIP output directory
@@ -68,12 +64,6 @@ public class Controller {
 	
 	// Subset of VA Synthea configuration properties that web service allows user to customize
 	public final static Set<String> configPropertiesWhiteList = new HashSet<String>();
-	
-	// Time in milliseconds to sleep between checks for a paused request
-	private final static int PAUSE_SLEEP_MS = 1000;
-	
-	// Max size of result queues
-	private final static int MAX_RESULTS_QUEUE_SIZE = 1000;
 
 	public Controller() {
 		
@@ -133,128 +123,16 @@ public class Controller {
 	    	
 		
 		// Create the request
-		Request request = new Request(configuration);
-		initResultThread(request);
+		Request request = new Request(this, configuration);
 		uuidRequestMap.put(request.getUuid(), request);
 		return request;
 	}
 	
 	/**
-	 * Initializes the results thread for a specified request
+	 * Stop tracking the specified UUID
 	 */
-	@SuppressWarnings("unused")
-	private void initResultThread(Request request) {
-		final String uuid = request.getUuid();
-		final Generator generator = request.getGenerator();
-		final Thread generateThread = request.getGenerateThread();
-		final JSONObject configuration = request.getConfiguration();
-		final Queue<String> resultQueue = request.getResultQueue();
-    	
-		Thread resultThread = new Thread() {
-		    public void run() {
-		    	StringBuilder builder = new StringBuilder("[");
-		    	
-		    	String person;
-		    	int idx = 0;
-				int population = generator.options.population;
-
-		    	while (idx < population) {
-		    		try {
-		    			while(request.isPaused()) {
-			    			Thread.sleep(PAUSE_SLEEP_MS);
-			    		}
-		    			
-		    			while(request.isStopped()) {
-		    				
-		    				// Interrupt generation
-		    				generateThread.interrupt();
-		    				
-		    				// Remove associated ZIP file if it exists
-		    				File zipFile = getZipFile(uuid);
-		    				if (zipFile.exists()) {
-		    					zipFile.delete();
-		    				}
-		    				
-		    				// Remove the request
-		    				uuidRequestMap.remove(uuid);
-		    				
-			    			return;
-			    		}
-		    			
-		    			person = generator.getNextPerson();
-		    			++idx;
-		    			
-		    			// Send person to WebSocket client
-			    		messagingTemplate.convertAndSend("/json/" + uuid, person);
-			    		
-		    			// Make person available for immediately retrieval via RESTful interface
-	    				synchronized(resultQueue) {
-	    					
-	    					// Remove oldest result if max queue size has been reached
-	    					if (resultQueue.size() == MAX_RESULTS_QUEUE_SIZE) {
-	    						resultQueue.poll();
-	    					}
-	    					
-	    					resultQueue.add(person);
-	    				}
-		    			
-	    				// Add person to string builder for eventual ZIP export
-			    		if (idx != 1) {
-			    			builder.append(",");
-			    		}
-			    		builder.append("\n").append(person);
-		    			
-		    		} catch(InterruptedException iex) {
-			        	LOGGER.error("Result thread interrupted while waiting for results for request " + uuid);
-	    				uuidRequestMap.remove(uuid);
-			        	return;
-			        } catch(Exception ex) {
-			        	LOGGER.error("Error in result thread for request " + uuid, ex);
-	    				uuidRequestMap.remove(uuid);
-			        	return;
-			        } 
-	            }
-
-		    	// Mark the request as finished
-	    		request.finished();
-
-	    		LOGGER.info("Generation done for request " + uuid);
-
-	    		// Close out string builder for ZIP export
-		    	builder.append("\n]");
-
-		    	// Send completion notice to WebSocket client
-	    		messagingTemplate.convertAndSend("/json/" + uuid, "{ \"status\": \"Completed\" }");
-	    		
-		    	// Create ZIP file for export
-	    		File zipFile = new File(zipOutputPath.toString() + File.separator + uuid + ".zip");
-	    		try {
-		    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
-		    		
-		    		// Add config file
-		    		ZipEntry e = new ZipEntry(uuid + "-config.json");
-		    		out.putNextEntry(e);
-		    		byte[] data = configuration.toString().getBytes();
-		    		out.write(data, 0, data.length);
-		    		out.closeEntry();
-		    		
-		    		// Add results file
-		    		e = new ZipEntry(uuid + ".json");
-		    		out.putNextEntry(e);
-		    		data = builder.toString().getBytes();
-		    		out.write(data, 0, data.length);
-		    		out.closeEntry();
-		    		
-		    		out.close();
-		    		
-		    		LOGGER.info("Results written to " + zipFile.toPath());
-	    		} catch(Exception ex) {
-	    			LOGGER.error("Exception while creating zip file for request " + uuid, ex);
-	    		}
-		    }
-		};
-		
-		request.setResultThread(resultThread);
+	public void removeRequestFromMap(String uuid) {
+		uuidRequestMap.remove(uuid);
 	}
 	
 	/*******************
@@ -280,9 +158,9 @@ public class Controller {
 	}
     
     /**
-     * Utility method for generating File object for a target ZIP file based on UUID
+     * Generates File object for a target ZIP file based on UUID
      */
-    private File getZipFile(String uuid) {
+    public File getZipFile(String uuid) {
     	return new File(zipOutputPath.toString() + File.separator + uuid + ".zip");
     }
 	
@@ -455,6 +333,12 @@ public class Controller {
      * WebSocket interface
      ********************/
     
+    /**
+     * Send message on channel associated with the specified UUID
+     */
+    public void sendMessage(String uuid, String jsonContent) {
+    	messagingTemplate.convertAndSend("/json/" + uuid, jsonContent);
+    }
     
     /**
      * WebSocket endpoint for configuring a generation request based on the specified JSON configuration string.
