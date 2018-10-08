@@ -9,7 +9,7 @@
 		
 		<h2>Overview</h2>
 		
-		<p>This web service provides a RESTful API for the VA Synthea synthetic patient population simulator.</p>
+		<p>This web service provides RESTful and WebSocket APIa for the VA Synthea synthetic patient population simulator.</p>
 		
 		<h2>RESTful API</h2>
 		
@@ -43,8 +43,8 @@
 			<li>Returns status code 400 if there was a problem processing the configuration parameters.</li>
 		</ul>
 		
-		<hr />
-		
+		<br />
+			
 		<p><code>GET /va-synthea/zip/&lt;UUID&gt;</code> - Retrieve all results (as a ZIP file) for the request identified by UUID path variable. Note that this removes all of the results from the server once they are returned to the client.</p>
 		<p>Results returned by this endpoint:</p>
 		<ul>
@@ -54,9 +54,9 @@
 			<li>Returns status code 404 if request was not found.</li>
 			<li>Returns status code 500 if error was encountered while returning results.</li>
 		</ul>
-		     
-		<hr />
 		
+		<br />
+			
 		<p><code>GET /va-synthea/json/&lt;UUID&gt;</code> - Retrieve currently available results in FHIR format (as a JSON array) for the request identified by UUID path variable. Note that this removes the current results from the server once they are returned to the client.</p>
 		<p>Results returned by this endpoint:</p>
 		<ul>
@@ -64,8 +64,8 @@
 			<li>Returns status code 400 if UUID path variable is missing.</li>
 			<li>Returns status code 404 if request was not found.</li>
 		</ul>
-		     
-		<hr />
+		
+		<br />
 		
 		<p><code>DELETE /va-synthea/terminate/&lt;UUID&gt;</code> - Attempt to terminate request identified by UUID path variable.</p>
 		<p>Results returned by this endpoint:</p>
@@ -75,7 +75,39 @@
 			<li>Returns status code 404 request was not found.</li>
 		</ul>
 		
-		<hr />
+		
+		<h2>WebSocket API</h2>
+		
+		<p>The WebSocket connection URL is of the form <code>ws://&lt;host:port&gt;/va-synthea/ws</code>, e.g., <code>ws://localhost:8080/va-synthea/ws</code>.</p>
+		
+		<p>There are four pairs of control/reply channels that can be subscribed to and monitored for status messages.</p>
+		
+		<p>Configure New Request</p>
+		<ul>
+			<li><code>/app/configure</code>: Used to configure a new generation request. Include your JSON configuration as a string argument (see the description of the <code>POST /va-synthea/generate</code> endpoint above for details on the configuration argument).</li>
+			<li><code>/user/reply/configure</code>: The configure reply will include a <code>uuid</code> field with the request UUID or an <code>error</code> field with an error message if there was a problem configuring the request. If there was no error, the request configuration is also returned (including the generation seed) via the <code>configuration</code> field.</li>
+		</ul>
+		
+		<p>Start Request</p>
+		<ul>
+			<li><code>/app/start</code>: Used to start (or restart) a generation request. Pass the associated request UUID as the argument.</li>
+			<li><code>/user/reply/start</code>: The start reply will include a <code>status</code> or <code>error</code> field with a message describing the status or error condition of the request.</li>
+		</ul>
+		
+		<p>Pause Request</p>
+		<ul>
+			<li><code>/app/pause</code>: Used to pause a generation request. Pass the associated request UUID as the argument.</li>
+			<li><code>/user/reply/pause</code>: The pause reply will include a <code>status</code> or <code>error</code> field with a message describing the status or error condition of the request.</li>
+		</ul>
+		
+		<p>Terminate Request</p>
+		<ul>
+			<li><code>/app/stop</code>: Used to terminate a generation request, which will also deleted the request results from the server. Pass the associated request UUID as the argument.</li>
+			<li><code>/user/reply/stop</code>: If the termination was initiated via the WebSocket API, the stop reply will include a <code>status</code> or <code>error</code> field with a message describing the status or error condition of the request.</li>
+		</ul>
+		
+		<p>Individual generated JSON results for the request are returned via the <code>/json/&lt;uuid&gt;</code> channel, where <code>&lt;uuid&gt;</code> should be replaced with the request UUID. When the request is completed, a completion message of the form <code>{ 'status': 'Completed' }</code> is sent on this channel.</p>		
+		
 		
 		<h2>Other Useful Links</h2>
 		<div><a href="https://github.com/synthetichealth/synthea">Synthea (GitHub)</a></div>

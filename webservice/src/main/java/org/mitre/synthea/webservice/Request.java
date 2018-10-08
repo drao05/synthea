@@ -17,9 +17,6 @@ import org.mitre.synthea.helpers.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import lombok.Getter;
-
-@Getter
 /**
  * Represents a request to generate synthetic patient data
  */
@@ -285,6 +282,18 @@ public class Request {
 	    		}
 		    }
 		};		
+	}
+	
+	public String getUuid() {
+		return uuid;
+	}
+	
+	public JSONObject getConfiguration() {
+		return configuration;
+	}
+	
+	public Queue<String> getResultQueue() {
+		return resultQueue;
 	}
 	
 	/**
