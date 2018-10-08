@@ -1239,9 +1239,10 @@ public abstract class State implements Cloneable {
   public static class DiagnosticReport extends ObservationGroup {
     @Override
     public boolean process(Person person, long time) {
+      if (observations.size() > 0){ // adding this check makes fewer tests fail
       for (Observation o : observations) {
         o.process(person, time);
-      }
+      }}
       String primaryCode = codes.get(0).code;
       Report report = person.record.report(time, primaryCode, observations.size());
       report.name = this.name;
