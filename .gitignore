@@ -3,14 +3,11 @@
 .project
 .settings
 .gradle
-/build/**
-bin/**
 
-/.gradle/
-/bin/
-
-/output/
-/target/
+build/
+bin/
+output/
+target/
 
 # don't commit the autobuilt version file
 src/main/resources/version.txt
