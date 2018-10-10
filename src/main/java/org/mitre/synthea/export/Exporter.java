@@ -39,7 +39,7 @@ public abstract class Exporter {
       person = filterForExport(person, yearsOfHistory, stopTime);
     }
     
-    if (personQueue != null) {
+    if (Config.get("exporter.webclient") != null) {
     	
     	// TODO: Using FHIR for web service at the moment, but need to decide how to configure this
     	personQueue.add(FhirStu3.convertToFHIR(person, stopTime));
