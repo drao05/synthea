@@ -50,7 +50,7 @@
 		<ul>
 			<li>Returns status code 200 and all results in FHIR format in a ZIP file. The file also includes the configuration (as JSON) used to generate the results.</li>
 			<li>Returns status code 202 if results are still pending.</li>
-			<li>Returns status code 400 if UUID path variable is missing.</li>
+			<li>Returns status code 400 if UUID path variable is missing or malformed.</li>
 			<li>Returns status code 404 if request was not found.</li>
 			<li>Returns status code 500 if error was encountered while returning results.</li>
 		</ul>

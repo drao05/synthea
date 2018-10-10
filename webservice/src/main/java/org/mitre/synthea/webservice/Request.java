@@ -200,7 +200,7 @@ public class Request {
 		    				
 		    				// Remove associated ZIP file if it exists
 		    				File zipFile = controller.getZipFile(uuid);
-		    				if (zipFile.exists()) {
+		    				if (zipFile != null && zipFile.exists()) {
 		    					zipFile.delete();
 		    				}
 		    				
@@ -257,28 +257,34 @@ public class Request {
 	    		
 		    	// Create ZIP file for export
 	    		File zipFile = controller.getZipFile(uuid);
-	    		try {
-		    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
-		    		
-		    		// Add config file
-		    		ZipEntry e = new ZipEntry(uuid + "-config.json");
-		    		out.putNextEntry(e);
-		    		byte[] data = configuration.toString().getBytes();
-		    		out.write(data, 0, data.length);
-		    		out.closeEntry();
-		    		
-		    		// Add results file
-		    		e = new ZipEntry(uuid + ".json");
-		    		out.putNextEntry(e);
-		    		data = builder.toString().getBytes();
-		    		out.write(data, 0, data.length);
-		    		out.closeEntry();
-		    		
-		    		out.close();
-		    		
-		    		LOGGER.info("Results written to " + zipFile.toPath());
-	    		} catch(Exception ex) {
-	    			LOGGER.error("Exception while creating zip file for request " + uuid, ex);
+	    		
+	    		// A null zipFile indicates a malformed UUID
+	    		if (zipFile == null) {
+	    			LOGGER.error("UUID is malformed: " + uuid);
+	    		} else {
+		    		try {
+			    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
+			    		
+			    		// Add config file
+			    		ZipEntry e = new ZipEntry(uuid + "-config.json");
+			    		out.putNextEntry(e);
+			    		byte[] data = configuration.toString().getBytes();
+			    		out.write(data, 0, data.length);
+			    		out.closeEntry();
+			    		
+			    		// Add results file
+			    		e = new ZipEntry(uuid + ".json");
+			    		out.putNextEntry(e);
+			    		data = builder.toString().getBytes();
+			    		out.write(data, 0, data.length);
+			    		out.closeEntry();
+			    		
+			    		out.close();
+			    		
+			    		LOGGER.info("Results written to " + zipFile.toPath());
+		    		} catch(Exception ex) {
+		    			LOGGER.error("Exception while creating zip file for request " + uuid, ex);
+		    		}
 	    		}
 		    }
 		};		

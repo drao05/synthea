@@ -59,12 +59,14 @@ public class Controller {
 	private Path zipOutputPath;
 	
 	// Max allowed age of ZIP files (used by scheduler task that deletes expired ZIP files)
-	@Value("${zip.maxAgeSeconds:60}")
+	@Value("${zip.maxAgeSeconds:86400}")
 	private Integer maxZipAgeSeconds;
 	
 	// Subset of VA Synthea configuration properties that web service allows user to customize
 	public final static Set<String> configPropertiesWhiteList = new HashSet<String>();
 
+	public final static String UUID_REGEX_PATTERN = "[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12}";
+	
 	public Controller() {
 		
 		// Initialize ZIP export directory relative to VA Synthea's base directory configuration parameter
@@ -161,14 +163,18 @@ public class Controller {
      * Generates File object for a target ZIP file based on UUID
      */
     public File getZipFile(String uuid) {
-    	return new File(zipOutputPath.toString() + File.separator + uuid + ".zip");
+    	if (uuid != null && uuid.matches(UUID_REGEX_PATTERN)) {
+    		return new File(zipOutputPath.toString() + File.separator + uuid + ".zip");
+    	} else {
+    		return null;
+    	}
     }
 	
     /**
      * GET endpoint that retrieves results (as a ZIP file) associated with specified UUID (that was originally returned by the associated generate request).
      * Returns a ZIP file or a status code:
      * - 202 if results are still pending
-     * - 400 if UUID path variable is missing
+     * - 400 if UUID path variable is missing or malformed
      * - 404 if request was not found (either the request is complete and results have been retrieved, or the request never existed)
      * - 500 if error was encountered while returning results
      */
@@ -183,6 +189,12 @@ public class Controller {
     	
     	// Check for ZIP file
 		File zipFile = getZipFile(uuid);
+		
+		// A null zipFile indicates a malformed UUID
+		if (zipFile == null) {
+			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+		}
+		
 		if (!zipFile.exists()) {
 			
 			LOGGER.info("Results file " + zipFile.toString() + " not found");
@@ -208,7 +220,8 @@ public class Controller {
 		// Return the ZIP file and delete local copy
 		try {
 	    	byte[] zipContents = Files.readAllBytes(zipFile.toPath());
-	    	zipFile.delete();
+	    	// NOTE: Uncomment this to remove ZIPs after retrieval
+	    	//zipFile.delete();
 	    	
 	        HttpHeaders header = new HttpHeaders();
 	        header.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipFile.getName() + "\"");
