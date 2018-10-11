@@ -12,10 +12,10 @@ import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
+import org.mitre.synthea.world.concepts.ClinicianSpecialty;
 import org.mitre.synthea.world.concepts.HealthRecord.Code;
 import org.mitre.synthea.world.concepts.HealthRecord.Encounter;
 import org.mitre.synthea.world.concepts.HealthRecord.EncounterType;
-
 
 public final class EncounterModule extends Module {
 
@@ -73,6 +73,7 @@ public final class EncounterModule extends Module {
           * (Double) person.attributes.get("Relative_telehealth_satisfaction"));
     }
     boolean startedEncounter = false;
+    int year = Utilities.getYear(time);
 
     // add a wellness encounter if this is the right time
     if (person.record.timeSinceLastWellnessEncounter(time)
@@ -88,7 +89,7 @@ public final class EncounterModule extends Module {
       if (Boolean.parseBoolean(
           Config.get("generate.time_based_telehealth_adoption", "false"))) {
         if (rand.nextDouble() < (Double) person.attributes.get("Total_telehealth_likelihood")) {
-          // TODO: Denali make it a realistic telehealth encounter
+          // TODO: Denali change ENCOUNTER_CODE to make it a realistic telehealth encounter
           encounter.codes.add(ENCOUNTER_CHECKUP);
         } else {
           encounter.codes.add(ENCOUNTER_CHECKUP);
@@ -96,8 +97,11 @@ public final class EncounterModule extends Module {
       } else {
         encounter.codes.add(ENCOUNTER_CHECKUP);
       }
-      
-      encounter.provider = person.getAmbulatoryProvider(time);
+      Provider prov = person.getAmbulatoryProvider(time);
+      prov.incrementEncounters(EncounterType.WELLNESS.toString(), year);
+      encounter.provider = prov;
+      encounter.clinician = prov.chooseClinicianList(ClinicianSpecialty.GENERAL_PRACTICE, 
+          person.random);
       encounter.codes.add(getWellnessVisitCode(person, time));
       person.attributes.put(ACTIVE_WELLNESS_ENCOUNTER, true);
       startedEncounter = true;
@@ -108,10 +112,14 @@ public final class EncounterModule extends Module {
       if (person.symptomTotal() != (int)person.attributes.get(LAST_VISIT_SYMPTOM_TOTAL)) {
         person.attributes.put(LAST_VISIT_SYMPTOM_TOTAL, person.symptomTotal());
         person.addressLargestSymptom();
-        Encounter encounter = person.record.encounterStart(time,
+        Encounter encounter = person.record.encounterStart(time, 
             EncounterType.EMERGENCY.toString());
         encounter.name = "Encounter Module Symptom Driven";
-        encounter.provider = person.getEmergencyProvider(time);
+        Provider prov = person.getEmergencyProvider(time);
+        prov.incrementEncounters(EncounterType.EMERGENCY.toString(), year);
+        encounter.provider = prov;
+        encounter.clinician = prov.chooseClinicianList(ClinicianSpecialty.GENERAL_PRACTICE, 
+            person.random);
         encounter.codes.add(ENCOUNTER_EMERGENCY);
         person.attributes.put(ACTIVE_EMERGENCY_ENCOUNTER, true);
         startedEncounter = true;
@@ -126,7 +134,11 @@ public final class EncounterModule extends Module {
         Encounter encounter = person.record.encounterStart(time,
             EncounterType.URGENTCARE.toString());
         encounter.name = "Encounter Module Symptom Driven";
-        encounter.provider = person.getUrgentCareProvider(time);
+        Provider prov = person.getUrgentCareProvider(time);
+        prov.incrementEncounters(EncounterType.URGENTCARE.toString(), year);
+        encounter.provider = prov;
+        encounter.clinician = prov.chooseClinicianList(ClinicianSpecialty.GENERAL_PRACTICE, 
+            person.random);
         encounter.codes.add(ENCOUNTER_URGENTCARE);
         person.attributes.put(ACTIVE_URGENT_CARE_ENCOUNTER, true);
         startedEncounter = true;
@@ -141,7 +153,11 @@ public final class EncounterModule extends Module {
         Encounter encounter = person.record.encounterStart(time,
             EncounterType.WELLNESS.toString());
         encounter.name = "Encounter Module Symptom Driven";
-        encounter.provider = person.getAmbulatoryProvider(time);
+        Provider prov = person.getAmbulatoryProvider(time);
+        prov.incrementEncounters(EncounterType.WELLNESS.toString(), year);
+        encounter.provider = prov;
+        encounter.clinician = prov.chooseClinicianList(ClinicianSpecialty.GENERAL_PRACTICE, 
+            person.random);
         encounter.codes.add(ENCOUNTER_CHECKUP);
         person.attributes.put(ACTIVE_WELLNESS_ENCOUNTER, true);
         startedEncounter = true;

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Locale;
 
 import org.apache.sis.geometry.DirectPosition2D;
 import org.mitre.synthea.engine.Event;
@@ -33,6 +34,7 @@ import org.mitre.synthea.world.concepts.HealthRecord.Observation;
 import org.mitre.synthea.world.concepts.HealthRecord.Procedure;
 import org.mitre.synthea.world.concepts.HealthRecord.Report;
 import org.mitre.synthea.world.geography.location.Location;
+//import org.mitre.synthea.world.geography.Location; // doesn't exist?
 
 /**
  * This exporter attempts to export synthetic patient data into 
@@ -411,6 +413,10 @@ public class CDWExporter {
 
     // Dim tables have smaller key ranges: only a 2 byte integer -- max of 32K
     id = (id / 2500); // this gives a range of 400 entries per state without collisions.
+    if (id == 0) {
+      // We don't want to have any keys with zero, because certain queries ignore them.
+      id = 1;
+    }
 
     sstaff.setNextId(id);
     generateClinicians();
@@ -445,10 +451,10 @@ public class CDWExporter {
    * @throws IOException if any IO error occurs
    */
   public void export(Person person, long time) throws IOException {
-    // TODO Ignore civilians, only consider the veteran population.
-//    if (!person.attributes.containsKey("veteran")) {
-//      return;
-//    }
+    // Ignore civilians, only consider the veteran population.
+    if (!person.attributes.containsKey("veteran")) {
+      return;
+    }
     int primarySta3n = -1;
     Provider provider = person.getAmbulatoryProvider(time);
     if (provider != null) {
@@ -1182,7 +1188,6 @@ public class CDWExporter {
     s.append(personID).append(',');
     s.append(iso8601Timestamp(report.start)).append(','); // LabChemSpecimenDateTime
     s.append(iso8601Timestamp(report.start)).append(','); // LabChemCompleteDateTime
-    s.append(',');
     s.append(topographySID).append(',');
     s.append(institutionSID);
     s.append(NEWLINE);
@@ -1259,12 +1264,12 @@ public class CDWExporter {
         break;
       case "29463-7": // weight
         // convert from kg to lbs
-        value = String.format("%.1f", ((Double) observation.value * 2.20462));
+        value = String.format(Locale.US, "%.1f", ((Double) observation.value * 2.20462));
         s.append(value).append(",,,");
         break;
       case "8302-2": // height
         // convert from cm to inches
-        value = String.format("%.1f", ((Double) observation.value * 0.393701));
+        value = String.format(Locale.US, "%.1f", ((Double) observation.value * 0.393701));
         s.append(value).append(",,,");
         break;
       case "72514-3": // pain

@@ -238,8 +238,8 @@
       "codes": [
         {
           "system": "RxNorm",
-          "code": "1049544",
-          "display": "oxyCODONE Hydrochloride 15 MG [OxyCONTIN]"
+          "code": "1860154",
+          "display": "Abuse-Deterrent 12 HR Oxycodone Hydrochloride 15 MG Extended Release Oral Tablet"
         }
       ],
       "direct_transition": "End_Directed_Use_Encounter"
@@ -276,8 +276,8 @@
       "codes": [
         {
           "system": "RxNorm",
-          "code": "1049639",
-          "display": "Acetaminophen 325 MG / oxyCODONE Hydrochloride 5 MG [Percocet]"
+          "code": "1049221",
+          "display": "Acetaminophen 325 MG / Oxycodone Hydrochloride 5 MG Oral Tablet"
         }
       ],
       "direct_transition": "End_Directed_Use_Encounter"
@@ -381,13 +381,17 @@
           "remarks": [
             "0.02 --> 0.13187"
           ],
-          "transition": "Opioid_Addiction_Symptom1"
+          "transition": "Active_Addiction_Symptom_Onset"
         },
         {
           "distribution": 0.681862,
           "transition": "Misuse"
         }
       ]
+    },
+    "Active_Addiction_Symptom_Onset": {
+      "type": "Simple",
+      "direct_transition": "Opioid_Addiction_Symptom1"
     },
     "Opioid_Addiction_Symptom1": {
       "type": "Symptom",

@@ -28,7 +28,7 @@
       "unit": "cm",
       "device": "Stadiometer / Height Rod",
       "performer": "Nurse",
-      "direct_transition": "Record_Weight"
+      "direct_transition": "Record_Pain"
     },
     "Record_Weight": {
       "type": "Observation",
@@ -328,7 +328,7 @@
       "unit": "mL/min/{1.73_m2}",
       "device":"Blood Collection Evacuated Tube(s), Needle (21-Gauge Hypodermic Needle or Butterfly Needle), Alcohol swab, Gauze / Cotton Balls, Blood-specimen labels, Tourniquet",
       "performer":"Nurse",      
-      "direct_transition": "Wellness_Encounter"
+      "direct_transition": "Smoker_Status_Observation"
     },
     "Lab_MetabolicPanel": {
       "type": "Simple",

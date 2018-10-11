@@ -14,6 +14,7 @@ import java.util.Random;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;
+import org.mitre.synthea.world.agents.Clinician;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.geography.StateAbbreviationsLoader;
 import org.mitre.synthea.world.geography.demographics.ACSFactFinderDemographicsLoader;
@@ -46,9 +47,12 @@ public class Location {
   private static Logger locationLogger = LoggerFactory.getLogger(Location.class);
   private static StringWriter stackWriter = new StringWriter();
   private static PrintWriter stackPrinter = new PrintWriter(stackWriter);
-  private static Map<String, String> stateAbbreviations = abbrLoader.loadAbbreviations();
-  private static Map<String, String> timezones = loadTimezones();
+  //private static Map<String, String> stateAbbreviations = abbrLoader.loadAbbreviations(); // deprecated in synthea 10/11/18
+  //private static Map<String, String> timezones = loadTimezones();                         // deprecated in synthea 10/11/18
   private static DemographicsLoader demographicsLoader;
+  private static LinkedHashMap<String, String> stateAbbreviations = loadAbbreviations();
+  private static Map<String, String> timezones = loadTimezones();
+
   private static String demographicsFile;
   
   static {
@@ -67,8 +71,10 @@ public class Location {
   private Map<String, Long> populationByCity;
   private Map<String, List<Place>> zipCodes;
 
-  private String city;
-  private Map<String, CityStateDemographics> demographics;
+  //private Map<String, CityStateDemographics> demographics;    // deprecated in synthea 10/11/18
+  public final String city;
+  public final String state;
+  private Map<String, Demographics> demographics;
 
   /**
    * Location is a set of demographic and place information.
@@ -81,7 +87,10 @@ public class Location {
     locationLogger.debug("Attempting to create CityStateLocation(" + city + ", " + state + ")");
     try {
       this.city = city;
-      Table<String,String,CityStateDemographics> allDemographics = demographicsLoader.load(state, demographicsFile);
+      //Table<String,String,CityStateDemographics> allDemographics = demographicsLoader.load(state, demographicsFile); // deprecated in synthea 10/11/18
+      this.state = state;
+      
+      Table<String,String,Demographics> allDemographics = Demographics.load(state);
       
       // this still works even if only 1 city given,
       // because allDemographics will only contain that 1 city
@@ -254,6 +263,62 @@ public class Location {
     if (place != null) {
       person.attributes.put(Person.COORDINATE, place.getLatLon());
     }
+  }
+
+  /**
+   * Assign a geographic location to the given Clinician. Location includes City, State, Zip, and
+   * Coordinate. If cityName is given, then Zip and Coordinate are restricted to valid values for
+   * that city. If cityName is not given, then picks a random city from the list of all cities.
+   * 
+   * @param clinician
+   *          Clinician to assign location information
+   * @param cityName
+   *          Name of the city, or null to choose one randomly
+   */
+  public void assignPoint(Clinician clinician, String cityName) {
+    List<Place> zipsForCity = null;
+
+    if (cityName == null) {
+      int size = zipCodes.keySet().size();
+      cityName = (String) zipCodes.keySet().toArray()[clinician.randInt(size)];
+    }
+    zipsForCity = zipCodes.get(cityName);
+
+    if (zipsForCity == null) {
+      zipsForCity = zipCodes.get(cityName + " Town");
+    }
+    
+    Place place = null;
+    if (zipsForCity.size() == 1) {
+      place = zipsForCity.get(0);
+    } else {
+      // pick a random one
+      place = zipsForCity.get(clinician.randInt(zipsForCity.size()));
+    }
+    
+    if (place != null) {
+      clinician.attributes.put(Person.COORDINATE, place.getLatLon());
+    }
+  }
+  
+  private static LinkedHashMap<String, String> loadAbbreviations() {
+    LinkedHashMap<String, String> abbreviations = new LinkedHashMap<String, String>();
+    String filename = null;
+    try {
+      filename = Config.get("generate.geography.zipcodes.default_file");
+      String csv = Utilities.readResource(filename);
+      List<? extends Map<String,String>> ziplist = SimpleCSV.parse(csv);
+
+      for (Map<String,String> line : ziplist) {
+        String state = line.get("USPS");
+        String abbreviation = line.get("ST");
+        abbreviations.put(state, abbreviation);
+      }
+    } catch (Exception e) {
+      System.err.println("ERROR: unable to load zips csv: " + filename);
+      e.printStackTrace();
+    }
+    return abbreviations;
   }
 
   /**

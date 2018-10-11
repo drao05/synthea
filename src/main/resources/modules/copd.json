@@ -782,8 +782,8 @@
             "codes": [
               {
                 "system": "RxNorm",
-                "code": "896188",
-                "display": "Fluticasone propionate 0.25 MG/ACTUAT / salmeterol 0.05 MG/ACTUAT [Advair]"
+                "code": "896209",
+                "display": "60 ACTUAT Fluticasone propionate 0.25 MG/ACTUAT / salmeterol 0.05 MG/ACTUAT Dry Powder Inhaler"
               }
             ]
           },
@@ -801,8 +801,8 @@
       "codes": [
         {
           "system": "RxNorm",
-          "code": "896188",
-          "display": "Fluticasone propionate 0.25 MG/ACTUAT / salmeterol 0.05 MG/ACTUAT [Advair]"
+          "code": "896209",
+          "display": "60 ACTUAT Fluticasone propionate 0.25 MG/ACTUAT / salmeterol 0.05 MG/ACTUAT Dry Powder Inhaler"
         }
       ],
       "direct_transition": "Consider_Surgery"

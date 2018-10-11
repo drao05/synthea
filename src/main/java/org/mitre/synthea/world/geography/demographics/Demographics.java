@@ -6,7 +6,8 @@ import java.util.Random;
 
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.RandomCollection;
-import org.mitre.synthea.world.agents.Person;
+import org.mitre.synthea.helpers.SimpleCSV;
+import org.mitre.synthea.helpers.Utilities;
 
 /**
  * Class for demographic data based on geographic location.
