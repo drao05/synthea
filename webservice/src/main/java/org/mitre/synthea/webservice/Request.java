@@ -3,6 +3,7 @@ package org.mitre.synthea.webservice;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Queue;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -16,14 +17,22 @@ import org.mitre.synthea.engine.Generator.GeneratorOptions;
 import org.mitre.synthea.helpers.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 /**
  * Represents a request to generate synthetic patient data
  */
+@Component
+@Scope("prototype")
 public class Request {
 	
 	private final static Logger LOGGER = LoggerFactory.getLogger(Request.class);
 
+	@Autowired
+	private RequestService requestService;
+	
 	// Time in milliseconds to sleep between checks for a paused request
 	private final static int PAUSE_SLEEP_MS = 1000;
 		
@@ -60,13 +69,7 @@ public class Request {
 	// Indicates if the request is finished;
 	private AtomicBoolean finishedFlag = new AtomicBoolean(false);
 	
-	// Controller reference provides access to some needed methods
-	private Controller controller;
-	
-	public Request(Controller controller, JSONObject configuration) {
-		super();
-				
-		this.controller = controller;
+	public void configure(JSONObject configuration) {
 		
 		// Create generator and associated thread. Set exporter.webclient to true in Config first.
 		Config.set("exporter.webclient", "true");
@@ -96,7 +99,7 @@ public class Request {
 	/**
 	 * Configure generator options with a given JSON configuration
 	 */
-	private static GeneratorOptions configureGeneratorOptions(JSONObject configuration) {
+	private GeneratorOptions configureGeneratorOptions(JSONObject configuration) {
 		if (configuration == null) {
 			return null;
 		}
@@ -143,7 +146,8 @@ public class Request {
 	 * Configure Synthea with a given JSON configuration
 	 */
 	@SuppressWarnings("unused")
-	private static void updateSyntheaConfig(JSONObject configuration) {
+	private void updateSyntheaConfig(JSONObject configuration) {
+		Set<String> configPropertiesWhiteList = requestService.getConfigPropertiesWhiteList();
 	    JSONArray names = configuration.names();
 		for (int idx=0; idx<names.length(); ++idx) {
 			String name = names.getString(idx);			
@@ -158,7 +162,7 @@ public class Request {
 				// Ignore generator configuration values
 				break;
 			default:
-				if (Controller.configPropertiesWhiteList.contains(name)) {
+				if (configPropertiesWhiteList.contains(name)) {
 					if (Config.get(name) != null) {
 						LOGGER.info("Updating existing configuration parameter: " + name);
 						Config.set(name, configuration.getString(name));
@@ -199,13 +203,13 @@ public class Request {
 		    				generateThread.interrupt();
 		    				
 		    				// Remove associated ZIP file if it exists
-		    				File zipFile = controller.getZipFile(uuid);
+		    				File zipFile = requestService.getZipFile(uuid);
 		    				if (zipFile != null && zipFile.exists()) {
 		    					zipFile.delete();
 		    				}
 		    				
 		    				// Remove the request
-		    				controller.removeRequestFromMap(uuid);
+		    				requestService.removeRequest(uuid);
 		    				
 			    			return;
 			    		}
@@ -214,7 +218,7 @@ public class Request {
 		    			++idx;
 		    			
 		    			// Send person to WebSocket client
-			    		controller.sendMessage(uuid, person);
+		    			requestService.sendMessage(uuid, person);
 			    		
 		    			// Make person available for immediately retrieval via RESTful interface
 	    				synchronized(resultQueue) {
@@ -235,11 +239,11 @@ public class Request {
 		    			
 		    		} catch(InterruptedException iex) {
 			        	LOGGER.error("Result thread interrupted while waiting for results for request " + uuid);
-			        	controller.removeRequestFromMap(uuid);
+			        	requestService.removeRequest(uuid);
 			        	return;
 			        } catch(Exception ex) {
 			        	LOGGER.error("Error in result thread for request " + uuid, ex);
-			        	controller.removeRequestFromMap(uuid);
+			        	requestService.removeRequest(uuid);
 			        	return;
 			        } 
 	            }
@@ -253,10 +257,10 @@ public class Request {
 		    	builder.append("\n]");
 
 		    	// Send completion notice to WebSocket client
-	    		controller.sendMessage(uuid, "{ \"status\": \"Completed\" }");
+		    	requestService.sendMessage(uuid, "{ \"status\": \"Completed\" }");
 	    		
 		    	// Create ZIP file for export
-	    		File zipFile = controller.getZipFile(uuid);
+	    		File zipFile = requestService.getZipFile(uuid);
 	    		
 	    		// A null zipFile indicates a malformed UUID
 	    		if (zipFile == null) {

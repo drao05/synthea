@@ -4,138 +4,34 @@ import org.springframework.web.bind.annotation.RestController;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.mitre.synthea.helpers.Config;
 
 @RestController
 public class Controller {
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
-	// Maps UUID to a request object
-	private final Map<String, Request> uuidRequestMap = new ConcurrentHashMap<String, Request>();
-	
 	@Autowired
-	// Messaging template used for requests from WebSocket clients
-	private SimpMessagingTemplate messagingTemplate;         
-
-	// Path to ZIP output directory
-	private Path zipOutputPath;
-	
-	// Max allowed age of ZIP files (used by scheduler task that deletes expired ZIP files)
-	@Value("${zip.maxAgeSeconds:86400}")
-	private Integer maxZipAgeSeconds;
-	
-	// Subset of VA Synthea configuration properties that web service allows user to customize
-	public final static Set<String> configPropertiesWhiteList = new HashSet<String>();
-
-	public final static String UUID_REGEX_PATTERN = "[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12}";
-	
-	public Controller() {
-		
-		// Initialize ZIP export directory relative to VA Synthea's base directory configuration parameter
-		String baseDir = Config.get("exporter.baseDirectory");
-		if (baseDir != null && !baseDir.endsWith(File.separator)) {
-			baseDir += File.separator;
-		} else {
-			baseDir = "";
-		}
-		
-		File outputDir = new File(baseDir + "zip");
-    	zipOutputPath = Paths.get(outputDir.toURI());
-		if (!outputDir.exists()) {
-			outputDir.mkdirs();
-		}
-
-		LOGGER.info("ZIP output directory: " + zipOutputPath.toString());
-
-    	// Initialize config properties white list
-		InputStream whiteListStream = this.getClass().getClassLoader().getResourceAsStream("static/va-synthea-properties-whitelist.txt");
-		try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(whiteListStream));
-            String line;
-            while ((line = reader.readLine()) != null) {
-            	configPropertiesWhiteList.add(line);
-        		LOGGER.info("White listed config parameter: " + line);
-            }
-		} catch(IOException ioex) {
-			LOGGER.error("Error while initlizing config properties white list", ioex);
-        } finally {
-        	try {
-        		whiteListStream.close();
-        	} catch(IOException ioex) {
-    			LOGGER.error("Error while closing config properties input stream", ioex);
-            }
-        }
-	}
-	
-	/**
-	 * Creates and initializes a new generation request based on the specified configuration
-	 */
-	private Request createRequest(String configurationStr) throws JSONException {
-		
-		LOGGER.info("Requested generator configuration: " + configurationStr);
-		
-		// Create configuration object
-		JSONObject configuration = null;
-		if (configurationStr != null) {
-			try {
-				configuration = new JSONObject(configurationStr);
-			} catch(JSONException jex) {
-				LOGGER.error("Error while creating JSON object from string", jex);
-				return null;
-			}
-		}
-	    	
-		
-		// Create the request
-		Request request = new Request(this, configuration);
-		uuidRequestMap.put(request.getUuid(), request);
-		return request;
-	}
-	
-	/**
-	 * Stop tracking the specified UUID
-	 */
-	public void removeRequestFromMap(String uuid) {
-		uuidRequestMap.remove(uuid);
-	}
+	private RequestService requestService;
 	
 	/*******************
      * RESTful interface
@@ -151,24 +47,13 @@ public class Controller {
     	try {
     		
     		// Create and start request
-    		Request request = createRequest(httpEntity.getBody());
+    		Request request = requestService.createRequest(httpEntity.getBody());
     		request.start();
     		return new ResponseEntity<String>(request.getUuid(), HttpStatus.OK);
     	} catch(JSONException jex) {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     	}
 	}
-    
-    /**
-     * Generates File object for a target ZIP file based on UUID
-     */
-    public File getZipFile(String uuid) {
-    	if (uuid != null && uuid.matches(UUID_REGEX_PATTERN)) {
-    		return new File(zipOutputPath.toString() + File.separator + uuid + ".zip");
-    	} else {
-    		return null;
-    	}
-    }
 	
     /**
      * GET endpoint that retrieves results (as a ZIP file) associated with specified UUID (that was originally returned by the associated generate request).
@@ -185,10 +70,10 @@ public class Controller {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     	}
     	
-    	Request request = uuidRequestMap.get(uuid);
+    	Request request = requestService.getRequest(uuid);
     	
     	// Check for ZIP file
-		File zipFile = getZipFile(uuid);
+		File zipFile = requestService.getZipFile(uuid);
 		
 		// A null zipFile indicates a malformed UUID
 		if (zipFile == null) {
@@ -214,7 +99,7 @@ public class Controller {
 		if (request != null && request.isFinished() && request.getResultQueue().size() == 0) {
 			
 			// Request is finished and all results are delivered
-			uuidRequestMap.remove(uuid);
+			requestService.removeRequest(uuid);
 		}
 		
 		// Return the ZIP file and delete local copy
@@ -248,7 +133,7 @@ public class Controller {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     	}
     	
-    	Request request = uuidRequestMap.get(uuid);
+    	Request request = requestService.getRequest(uuid);
     	if (request == null) {
     		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     	}
@@ -282,7 +167,7 @@ public class Controller {
 			if (request.isFinished() && resultQueue.size() == 0) {
 				
 				// Request is finished and all results are delivered
-				uuidRequestMap.remove(uuid);
+				requestService.removeRequest(uuid);
 			}
 			
 			return new ResponseEntity<String>(builder.toString(), HttpStatus.OK);
@@ -303,7 +188,7 @@ public class Controller {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     	}
     	
-    	Request request = uuidRequestMap.get(uuid);
+    	Request request = requestService.getRequest(uuid);
     	if (request == null) {
     		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     	}
@@ -313,45 +198,10 @@ public class Controller {
     	return new ResponseEntity<>(HttpStatus.OK);
 	}
     
-    /**
-     * Delete file if max age has been exceeded
-     */
-    private void checkForExpiredFile(Path path, int maxAgeSeconds) {
-    	try {
-	    	BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
-	        Date now = new Date();
-	        if (now.getTime() - attributes.creationTime().toMillis() >= maxAgeSeconds * 1000) {
-	        	Files.delete(path);
-	        	LOGGER.info("Deleted expired file: " + path.getFileName());
-	        }
-    	} catch(IOException ioex) {
-    		LOGGER.error("Error while checking for expired file", ioex);
-    	}
-    }
-    
-    /**
-     * Scheduled task for deleting expired ZIP files
-     */
-    @Scheduled(fixedRateString = "${zip.expiration.testIntervalSeconds:60}000")
-    public void deleteExpiredZipFiles() {
-    	try (DirectoryStream<Path> paths = Files.newDirectoryStream(zipOutputPath, "*.zip")) {
-    	    paths.forEach(p->checkForExpiredFile(p, maxZipAgeSeconds));
-    	} catch(IOException ioex) {
-    		LOGGER.error("Error while deleting expired ZIP files", ioex);
-    	}
-    }
-    
     
     /*********************
      * WebSocket interface
      ********************/
-    
-    /**
-     * Send message on channel associated with the specified UUID
-     */
-    public void sendMessage(String uuid, String jsonContent) {
-    	messagingTemplate.convertAndSend("/json/" + uuid, jsonContent);
-    }
     
     /**
      * WebSocket endpoint for configuring a generation request based on the specified JSON configuration string.
@@ -361,7 +211,7 @@ public class Controller {
     @SendToUser("/reply/configure")
     public String webSocketConfig(String configurationStr) {
     	try {
-    		Request request = createRequest(configurationStr);
+    		Request request = requestService.createRequest(configurationStr);
     		return "{ \"status\": \"Configured\", \"uuid\": \"" + request.getUuid() +"\", \"configuration\": " + request.getConfiguration().toString() + " }";
     	} catch(JSONException jex) {
     		return "{ \"error\": \"Could not process specified configuration\" }";
@@ -379,7 +229,7 @@ public class Controller {
     		return "{ \"error\": \"UUID required\" }";
     	}
     	
-    	Request request = uuidRequestMap.get(uuid);
+    	Request request = requestService.getRequest(uuid);
     	if (request == null) {
     		return "{ \"error\": \"Request not found (may be finished)\" }";
     	}
@@ -414,7 +264,7 @@ public class Controller {
     		return "{ \"error\": \"UUID required\" }";
     	}
     	
-    	Request request = uuidRequestMap.get(uuid);
+    	Request request = requestService.getRequest(uuid);
     	if (request == null) {
     		return "{ \"error\": \"Request not found (may be finished)\" }";
     	}
@@ -446,7 +296,7 @@ public class Controller {
     		return "{ \"error\": \"UUID required\" }";
     	}
     	
-    	Request request = uuidRequestMap.get(uuid);
+    	Request request = requestService.getRequest(uuid);
     	if (request == null) {
     		return "{ \"error\": \"Request not found (may be finished)\" }";
     	}
