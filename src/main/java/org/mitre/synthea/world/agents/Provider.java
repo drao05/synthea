@@ -25,8 +25,8 @@ import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.geography.location.Location;
 import org.mitre.synthea.modules.LifecycleModule;
 import org.mitre.synthea.world.concepts.ClinicianSpecialty;
-import org.mitre.synthea.world.geography.Demographics;
-import org.mitre.synthea.world.geography.Location;
+import org.mitre.synthea.world.geography.demographics.Demographics;
+//import org.mitre.synthea.world.geography.Location;
 
 public class Provider implements QuadTreeData {
 

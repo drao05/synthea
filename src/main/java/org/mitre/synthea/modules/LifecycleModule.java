@@ -26,8 +26,8 @@ import org.mitre.synthea.world.concepts.BirthStatistics;
 import org.mitre.synthea.world.concepts.HealthRecord.Code;
 import org.mitre.synthea.world.geography.location.Location;
 import org.mitre.synthea.world.concepts.VitalSign;
-import org.mitre.synthea.world.geography.Demographics;
-import org.mitre.synthea.world.geography.Location;
+import org.mitre.synthea.world.geography.demographics.Demographics;
+//import org.mitre.synthea.world.geography.Location;
 
 public final class LifecycleModule extends Module {
   @SuppressWarnings("rawtypes")
