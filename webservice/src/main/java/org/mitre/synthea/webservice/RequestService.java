@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -136,12 +137,57 @@ public class RequestService {
      * Generates File object for a target ZIP file based on UUID.
      * Returns null if the specified UUID is malformed.
      */
-    public File getZipFile(String uuid) {
+    public File getZipFileObject(String uuid) {
     	if (uuid != null && uuid.matches(UUID_REGEX_PATTERN)) {
     		return new File(zipOutputPath.toString() + File.separator + uuid + ".zip");
     	} else {
     		return null;
     	}
+    }
+    
+    /**
+     * Get the JSON array string with the current results for the request with the specified UUID.
+     * Returns null if the request is not found.
+     */
+    public String getCurrentResults(String uuid) {
+    	
+    	Request request = getRequest(uuid);
+    	if (request == null) {
+    		return null;
+    	}
+    	
+	    Queue<String> resultQueue = request.getResultQueue();
+		synchronized(resultQueue) {
+			if (resultQueue.size() == 0) {
+				return "[]";
+			}
+						
+			// Return available results as JSON array
+			int idx = 0;
+			StringBuilder builder = new StringBuilder("[");
+			while(resultQueue.size() > 0) {
+				String person = resultQueue.remove();
+				if (idx > 0) {
+					builder.append(",");
+				}
+	
+				builder.append("\n").append(person);
+				++idx;
+			}
+			
+			builder.append("\n]");
+	
+			// Remove results that are being returned from result queue
+			resultQueue.clear();
+			
+			if (request.isFinished() && resultQueue.size() == 0) {
+				
+				// Request is finished and all results are delivered
+				removeRequest(uuid);
+			}
+			
+			return builder.toString();
+		}
     }
     
     /**

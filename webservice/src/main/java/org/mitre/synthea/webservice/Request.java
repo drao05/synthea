@@ -203,7 +203,7 @@ public class Request {
 		    				generateThread.interrupt();
 		    				
 		    				// Remove associated ZIP file if it exists
-		    				File zipFile = requestService.getZipFile(uuid);
+		    				File zipFile = requestService.getZipFileObject(uuid);
 		    				if (zipFile != null && zipFile.exists()) {
 		    					zipFile.delete();
 		    				}
@@ -260,7 +260,7 @@ public class Request {
 		    	requestService.sendMessage(uuid, "{ \"status\": \"Completed\" }");
 	    		
 		    	// Create ZIP file for export
-	    		File zipFile = requestService.getZipFile(uuid);
+	    		File zipFile = requestService.getZipFileObject(uuid);
 	    		
 	    		// A null zipFile indicates a malformed UUID
 	    		if (zipFile == null) {

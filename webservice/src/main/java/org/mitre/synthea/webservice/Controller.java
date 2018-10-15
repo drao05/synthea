@@ -6,7 +6,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.util.Queue;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -73,7 +72,7 @@ public class Controller {
     	Request request = requestService.getRequest(uuid);
     	
     	// Check for ZIP file
-		File zipFile = requestService.getZipFile(uuid);
+		File zipFile = requestService.getZipFileObject(uuid);
 		
 		// A null zipFile indicates a malformed UUID
 		if (zipFile == null) {
@@ -133,45 +132,13 @@ public class Controller {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     	}
     	
-    	Request request = requestService.getRequest(uuid);
-    	if (request == null) {
-    		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    	}
+    	String results = requestService.getCurrentResults(uuid);
     	
-    	Queue<String> resultQueue = request.getResultQueue();
-		synchronized(resultQueue) {
-			if (resultQueue.size() == 0) {
-				return new ResponseEntity<String>("[]", HttpStatus.OK);
-			}
-			
-			LOGGER.info("Current size of result set for request " + uuid + ": " + resultQueue.size());
-			
-    		// Return available results as JSON array
-			int idx = 0;
-			StringBuilder builder = new StringBuilder("[");
-			while(resultQueue.size() > 0) {
-				String person = resultQueue.remove();
-				if (idx > 0) {
-					builder.append(",");
-				}
-
-				builder.append("\n").append(person);
-				++idx;
-			}
-			
-			builder.append("\n]");
-
-			// Remove results that are being returned from result queue
-			resultQueue.clear();
-			
-			if (request.isFinished() && resultQueue.size() == 0) {
-				
-				// Request is finished and all results are delivered
-				requestService.removeRequest(uuid);
-			}
-			
-			return new ResponseEntity<String>(builder.toString(), HttpStatus.OK);
-		}		
+    	if (results == null) {
+    		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    	} else {
+    		return new ResponseEntity<String>(results, HttpStatus.OK);
+    	}
 	}
     
     /**
