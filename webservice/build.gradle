@@ -23,6 +23,13 @@ war {
     archiveName = 'va-synthea.war'
 }
 
+war << {
+	exec {
+        workingDir 'build/libs'
+        commandLine 'zip', '-d', "${archiveName}", 'WEB-INF/lib/va-synthea.jar'
+    }
+}
+
 group = 'va-synthea-webservice'
 version = '0.0.1'
 sourceCompatibility = 1.8
@@ -31,11 +38,17 @@ repositories {
 	mavenCentral()
 }
 
+task unzipSynthea(type: Copy) {
+   from zipTree("../build/libs/va-synthea.jar")
+   into "build/classes/java/main"
+}
+
 dependencies {
 	compile('org.springframework.boot:spring-boot-starter-web')
 	compile('org.springframework.boot:spring-boot-starter-websocket')
 	compile('org.json:json:20180813')
 	compile rootProject
+	compileJava.dependsOn unzipSynthea
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 
