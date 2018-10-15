@@ -66,7 +66,7 @@ public class RequestService {
 		LOGGER.info("ZIP output directory: " + zipOutputPath.toString());
 		
 		// Initialize config properties white list
-		InputStream whiteListStream = this.getClass().getClassLoader().getResourceAsStream("static/va-synthea-properties-whitelist.txt");
+		InputStream whiteListStream = RequestService.class.getClassLoader().getResourceAsStream("static/va-synthea-properties-whitelist.txt");
 		try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(whiteListStream));
             String line;
