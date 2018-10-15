@@ -5,24 +5,15 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URI;
 import java.net.URL;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -58,22 +49,8 @@ public class Module {
     retVal.put("Health Insurance", new HealthInsuranceModule());
 
     try {
-      URL modulesFolder = ClassLoader.getSystemClassLoader().getResource("modules");
-      Path path;
-      FileSystem fs = null;
-      
-      if (modulesFolder != null) {
-    	  path = Paths.get(modulesFolder.toURI());
-      } else {
-    	  
-    	  // Added this processing for loading resources from jar file
-    	  modulesFolder = Module.class.getClassLoader().getResource("modules");   	  
-    	  Map<String, String> env = new HashMap<>();
-    	  String[] array = modulesFolder.toURI().toString().split("!");
-    	  fs = FileSystems.newFileSystem(URI.create(array[0]), env);
-    	  path = fs.getPath(array[1]);
-      }
-      
+      URL modulesFolder = Module.class.getClassLoader().getResource("modules");
+      Path path = Paths.get(modulesFolder.toURI());
       Files.walk(path, Integer.MAX_VALUE).filter(Files::isReadable).filter(Files::isRegularFile)
           .filter(p -> p.toString().endsWith(".json")).forEach(t -> {
             try {
@@ -85,10 +62,6 @@ public class Module {
               throw new RuntimeException(e);
             }
           });
-      
-      if (fs != null) {
-    	  fs.close();
-      }
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -108,18 +81,9 @@ public class Module {
     System.out.format("Loading %s\n", path.toString());
     boolean submodule = !path.getParent().equals(modulesFolder);
     JsonObject object = null;
-    Reader fileReader = null;
+    FileReader fileReader = null;
     JsonReader reader = null;
-    
-    try {
-    	fileReader = new FileReader(path.toString());
-    } catch(FileNotFoundException fnfex) {
-    	
-    	// Added this processing for reading files from from jar file
-    	InputStream in = Module.class.getResourceAsStream(path.toString()); 
-    	fileReader = new BufferedReader(new InputStreamReader(in));
-    }
-    
+    fileReader = new FileReader(path.toString());
     reader = new JsonReader(fileReader);
     JsonParser parser = new JsonParser();
     object = parser.parse(reader).getAsJsonObject();
