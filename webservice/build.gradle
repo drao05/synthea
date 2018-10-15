@@ -26,7 +26,7 @@ war {
 war << {
 	exec {
         workingDir 'build/libs'
-        commandLine 'zip', '-d', "${archiveName}", 'WEB-INF/lib/va-synthea.jar'
+        commandLine 'zip', '-d', "${archiveName}", 'WEB-INF/lib/va-synthea.jar' // Don't include the Synthea JAR since we are unpacking it into the web service WAR
     }
 }
 
@@ -38,6 +38,7 @@ repositories {
 	mavenCentral()
 }
 
+// Unpack Synthea JAR into the web service WAR in order to facilitate the loading of Synthea JSON modules
 task unzipSynthea(type: Copy) {
    from zipTree("../build/libs/va-synthea.jar")
    into "build/classes/java/main"
