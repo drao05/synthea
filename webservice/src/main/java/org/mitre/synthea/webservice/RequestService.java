@@ -138,8 +138,24 @@ public class RequestService {
      * Returns null if the specified UUID is malformed.
      */
     public File getZipFileObject(String uuid) {
+    	return getFileObject(uuid, "zip");
+    }
+    
+    /**
+     * Generates File object for a target JSON file based on UUID.
+     * Returns null if the specified UUID is malformed.
+     */
+    public File getJsonFileObject(String uuid) {
+    	return getFileObject(uuid, "json");
+    }
+    
+    /**
+     * Generates File object for a target file based on UUID and file extension.
+     * Returns null if the specified UUID is malformed.
+     */
+    private File getFileObject(String uuid, String extension) {
     	if (uuid != null && uuid.matches(UUID_REGEX_PATTERN)) {
-    		return new File(zipOutputPath.toString() + File.separator + uuid + ".zip");
+    		return new File(zipOutputPath.toString() + File.separator + uuid + "." + extension);
     	} else {
     		return null;
     	}

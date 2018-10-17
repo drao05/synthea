@@ -1,7 +1,10 @@
 package org.mitre.synthea.webservice;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
@@ -187,114 +190,159 @@ public class Request {
 	 */
 	private void initResultThread() {
 		resultThread = new Thread() {
-		    public void run() {
-		    	StringBuilder builder = new StringBuilder("[");
-		    	
+		    public void run() {		    	
 		    	String person;
 		    	int idx = 0;
 				int population = generator.options.population;
-
-		    	while (idx < population) {
-		    		try {
-		    			while(isPaused()) {
-			    			Thread.sleep(PAUSE_SLEEP_MS);
-			    		}
-		    			
-		    			while(isStopped()) {
-		    				
-		    				// Interrupt generation
-		    				generateThread.interrupt();
-		    				
-		    				// Remove associated ZIP file if it exists
-		    				File zipFile = requestService.getZipFileObject(uuid);
-		    				if (zipFile != null && zipFile.exists()) {
-		    					zipFile.delete();
+				
+				FileWriter jsonWriter = null;
+				File jsonFile = requestService.getJsonFileObject(uuid);
+				
+				try {
+					
+					// Prepare to capture JSON records in a file
+				    jsonWriter = new FileWriter(jsonFile, true);
+					jsonWriter.write("[");
+					
+			    	while (idx < population) {
+			    		try {
+			    			while(isPaused()) {
+				    			Thread.sleep(PAUSE_SLEEP_MS);
+				    		}
+			    			
+			    			while(isStopped()) {
+			    				
+			    				// Interrupt generation
+			    				generateThread.interrupt();
+			    				
+			    				// Close and remove associated JSON file
+			    				jsonWriter.close();
+			    				if (jsonFile.exists()) {
+			    					jsonFile.delete();
+			    				}
+			    				
+			    				// Remove associated ZIP file
+			    				File zipFile = requestService.getZipFileObject(uuid);
+			    				if (zipFile.exists()) {
+			    					zipFile.delete();
+			    				}
+			    				
+			    				// Remove the request
+			    				requestService.removeRequest(uuid);
+			    				
+				    			return;
+				    		}
+			    			
+			    			person = generator.getNextPerson();
+			    			++idx;		    			
+			    			
+			    			// Send person to WebSocket client
+			    			requestService.sendMessage(uuid, person);
+				    		
+			    			// TODO: This is just a workaround for giving the WebSocket send buffer time to clear itself before the next chunk of data arrives.
+			    			Thread.sleep(WS_SEND_BUFFER_DELAY_MS);
+	
+			    			// Make person available for immediately retrieval via RESTful interface
+		    				synchronized(resultQueue) {
+		    					
+		    					// Remove oldest result if max queue size has been reached
+		    					if (resultQueue.size() == MAX_RESULTS_QUEUE_SIZE) {
+		    						resultQueue.poll();
+		    					}
+		    					
+		    					resultQueue.add(person);
 		    				}
-		    				
-		    				// Remove the request
-		    				requestService.removeRequest(uuid);
-		    				
-			    			return;
-			    		}
-		    			
-		    			person = generator.getNextPerson();
-		    			++idx;		    			
-		    			
-		    			// Send person to WebSocket client
-		    			requestService.sendMessage(uuid, person);
-			    		
-		    			// TODO: This is just a workaround for giving the WebSocket send buffer time to clear itself before the next chunk of data arrives.
-		    			Thread.sleep(WS_SEND_BUFFER_DELAY_MS);
-
-		    			// Make person available for immediately retrieval via RESTful interface
-	    				synchronized(resultQueue) {
-	    					
-	    					// Remove oldest result if max queue size has been reached
-	    					if (resultQueue.size() == MAX_RESULTS_QUEUE_SIZE) {
-	    						resultQueue.poll();
-	    					}
-	    					
-	    					resultQueue.add(person);
-	    				}
-		    			
-	    				// Add person to string builder for eventual ZIP export
-			    		if (idx != 1) {
-			    			builder.append(",");
-			    		}
-			    		builder.append("\n").append(person);
-		    			
-		    		} catch(InterruptedException iex) {
-			        	LOGGER.error("Result thread interrupted while waiting for results for request " + uuid);
-			        	requestService.removeRequest(uuid);
-			        	return;
-			        } catch(Exception ex) {
-			        	LOGGER.error("Error in result thread for request " + uuid, ex);
-			        	requestService.removeRequest(uuid);
-			        	return;
-			        } 
-	            }
+			    			
+		    				// Add person to JSON file
+				    		if (idx != 1) {
+				    			jsonWriter.write(",");
+				    		}
+				    		jsonWriter.write("\n");
+				    		jsonWriter.write(person);
+			    			
+				    		// Write out every 100 people to disk
+				    		if (idx % 100 == 0) {
+				    			jsonWriter.close();
+				    			jsonWriter = new FileWriter(jsonFile, true);
+				    		}
+			    		} catch(InterruptedException iex) {
+				        	LOGGER.error("Result thread interrupted while waiting for results for request " + uuid);
+				        	requestService.removeRequest(uuid);
+				        	return;
+				        } catch(Exception ex) {
+				        	LOGGER.error("Error in result thread for request " + uuid, ex);
+				        	requestService.removeRequest(uuid);
+				        	return;
+				        } 
+		            }
+			    	
+		    		jsonWriter.write("\n]");
+				} catch(IOException ioex) {
+		        	LOGGER.error("Error writing JSON results file for request " + uuid, ioex);
+				} finally {
+					if (jsonWriter != null) {
+						try {
+							jsonWriter.close();
+						} catch(IOException ioex) {
+				        	LOGGER.error("Error closing JSON results file for request " + uuid, ioex);
+						}
+					}
+				}
 
 		    	// Mark the request as finished
 	    		finishedFlag.set(true);
 
 	    		LOGGER.info("Generation done for request " + uuid);
 
-	    		// Close out string builder for ZIP export
-		    	builder.append("\n]");
-
 		    	// Send completion notice to WebSocket client
 		    	requestService.sendMessage(uuid, "{ \"status\": \"Completed\" }");
 	    		
 		    	// Create ZIP file for export
 	    		File zipFile = requestService.getZipFileObject(uuid);
-	    		
-	    		// A null zipFile indicates a malformed UUID
-	    		if (zipFile == null) {
-	    			LOGGER.error("UUID is malformed: " + uuid);
-	    		} else {
+	    		try {
+		    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
+		    		
+		    		// Add config file
+		    		ZipEntry e = new ZipEntry(uuid + "-config.json");
+		    		out.putNextEntry(e);
+		    		byte[] data = configuration.toString().getBytes();
+		    		out.write(data, 0, data.length);
+		    		out.closeEntry();
+		    		
+		    		// Add results file
+		    		e = new ZipEntry(uuid + ".json");
+		    		out.putNextEntry(e);
+		    		
+		    		FileInputStream jsonFileInputStream = null;
 		    		try {
-			    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
-			    		
-			    		// Add config file
-			    		ZipEntry e = new ZipEntry(uuid + "-config.json");
-			    		out.putNextEntry(e);
-			    		byte[] data = configuration.toString().getBytes();
-			    		out.write(data, 0, data.length);
-			    		out.closeEntry();
-			    		
-			    		// Add results file
-			    		e = new ZipEntry(uuid + ".json");
-			    		out.putNextEntry(e);
-			    		data = builder.toString().getBytes();
-			    		out.write(data, 0, data.length);
-			    		out.closeEntry();
-			    		
-			    		out.close();
-			    		
-			    		LOGGER.info("Results written to " + zipFile.toPath());
+			    		byte[] byteBuffer = new byte[1024*1024];
+			            int bytesRead = -1;
+			            jsonFileInputStream = new FileInputStream(jsonFile);
+			            while ((bytesRead = jsonFileInputStream.read(byteBuffer)) != -1) {
+			            	out.write(byteBuffer, 0, bytesRead);
+			            }
 		    		} catch(Exception ex) {
-		    			LOGGER.error("Exception while creating zip file for request " + uuid, ex);
+			        	LOGGER.error("Error adding JSON file to ZIP for request " + uuid, ex);
+		    		} finally {
+		    			try {
+		    				if (jsonFileInputStream != null) {
+		    					jsonFileInputStream.close();
+		    				}
+		    			} catch(IOException ioex) {
+				        	LOGGER.error("Error closing JSON results file for request " + uuid, ioex);
+		    			}
 		    		}
+		    		
+		    		out.closeEntry();
+		    		out.close();
+		    		
+		    		LOGGER.info("Results written to " + zipFile.toPath());
+	    		} catch(Exception ex) {
+	    			LOGGER.error("Exception while creating zip file for request " + uuid, ex);
+	    		} finally {
+	    			
+	    			// Delete the temporary JSON file
+	    			jsonFile.delete();
 	    		}
 		    }
 		};		
