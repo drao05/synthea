@@ -12,7 +12,7 @@ import org.springframework.web.socket.config.annotation.WebSocketTransportRegist
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-	@Value("${ws.bufferSizeLimit:1073741824}")
+	@Value("${ws.bufferSizeLimit:2097152}")
 	private Integer bufferSizeLimit;
 	
     @Override
