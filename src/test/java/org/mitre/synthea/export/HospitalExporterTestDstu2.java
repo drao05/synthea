@@ -19,7 +19,7 @@ import org.junit.rules.TemporaryFolder;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.HealthRecord.EncounterType;
-import org.mitre.synthea.world.geography.Location;
+import org.mitre.synthea.world.geography.location.Location;
 
 public class HospitalExporterTestDstu2 {
 

@@ -47,11 +47,9 @@ public class Location {
   private static Logger locationLogger = LoggerFactory.getLogger(Location.class);
   private static StringWriter stackWriter = new StringWriter();
   private static PrintWriter stackPrinter = new PrintWriter(stackWriter);
-  //private static Map<String, String> stateAbbreviations = abbrLoader.loadAbbreviations(); // deprecated in synthea 10/11/18
-  //private static Map<String, String> timezones = loadTimezones();                         // deprecated in synthea 10/11/18
+  private static Map<String, String> stateAbbreviations = abbrLoader.loadAbbreviations(); // jlister
+  private static Map<String, String> timezones = loadTimezones();                         // jlister
   private static DemographicsLoader demographicsLoader;
-  private static LinkedHashMap<String, String> stateAbbreviations = loadAbbreviations();
-  private static Map<String, String> timezones = loadTimezones();
 
   private static String demographicsFile;
   
@@ -71,10 +69,9 @@ public class Location {
   private Map<String, Long> populationByCity;
   private Map<String, List<Place>> zipCodes;
 
-  //private Map<String, CityStateDemographics> demographics;    // deprecated in synthea 10/11/18
+  private Map<String, CityStateDemographics> demographics;    // jlister
   public final String city;
   public final String state;
-  private Map<String, Demographics> demographics;
 
   /**
    * Location is a set of demographic and place information.
@@ -84,13 +81,12 @@ public class Location {
    *     e.g. "Columbus" or null for an entire state.
    */
   public Location(String state, String city) {
-    locationLogger.debug("Attempting to create CityStateLocation(" + city + ", " + state + ")");
+    locationLogger.debug("Attempting to create Location(" + city + ", " + state + ")");
     try {
       this.city = city;
-      //Table<String,String,CityStateDemographics> allDemographics = demographicsLoader.load(state, demographicsFile); // deprecated in synthea 10/11/18
+      Table<String,String,CityStateDemographics> allDemographics = demographicsLoader.load(state, demographicsFile);
       this.state = state;
       
-      Table<String,String,Demographics> allDemographics = Demographics.load(state);
       
       // this still works even if only 1 city given,
       // because allDemographics will only contain that 1 city

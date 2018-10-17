@@ -30,13 +30,11 @@ public class Place implements QuadTreeData {
    * Create a new row from a CSV row.
    * @param row from the zip file. Each key is the column header.
    */
-  public Place(Map<String,String> row) {
-    this.state = row.get("USPS");
-    this.abbreviation = row.get("ST");
-    this.name = row.get("NAME");
-    this.postalCode = row.get("ZCTA5");
-    double lat = Double.parseDouble(row.get("LAT"));
-    double lon = Double.parseDouble(row.get("LON"));
+  public Place(String state, String abbreviation, String name, String postalCode, double lat, double lon) {
+    this.state = state;
+    this.abbreviation = abbreviation;
+    this.name = name;
+    this.postalCode = postalCode;
     this.coordinate = new DirectPosition2D(lon, lat);
   }
   

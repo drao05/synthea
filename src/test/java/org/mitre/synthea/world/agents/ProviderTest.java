@@ -71,14 +71,6 @@ public class ProviderTest {
   }
 
   @Test
-  public void testAllFacilitiesHaveAnId() {
-    Provider.loadProviders("Massachusetts");
-    for (Provider p : Provider.getProviderList()) {
-      Assert.assertNotNull(p.id);
-    }
-  }
-
-  @Test
   public void testNearestInpatientInState() {
     Provider.loadProviders(location);
     Person person = new Person(0L);
