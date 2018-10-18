@@ -16,22 +16,13 @@ function connect() {
     	// Subscribe to some status channels
     	client.subscribe('/user/reply/start', function(data) {
     		$('#start').attr('disabled', 'disabled');
-    		$('#pause').removeAttr('disabled');
     		$('#stop').removeAttr('disabled');
-    		updateMessage(data.body);
-    	});
-    	
-    	client.subscribe('/user/reply/pause', function(data) {
-    		$('#start').removeAttr('disabled');
-    		$('#pause').attr('disabled', 'disabled');
-    		$('#stop').attr('disabled', 'disabled');
     		updateMessage(data.body);
     	});
     	
     	client.subscribe('/user/reply/stop', function(data) {
     		$('#configure').removeAttr('disabled');
     		$('#start').attr('disabled', 'disabled');
-    		$('#pause').attr('disabled', 'disabled');
     		$('#stop').attr('disabled', 'disabled');
     		updateMessage(data.body);
     	});
@@ -40,7 +31,6 @@ function connect() {
     	$('#connect').removeAttr('disabled');
     	$('#configure').attr('disabled', 'disabled');
 		$('#start').attr('disabled', 'disabled');
-		$('#pause').attr('disabled', 'disabled');
 		$('#stop').attr('disabled', 'disabled');
 		updateMessage(data.body);
     });
@@ -84,7 +74,6 @@ function configure() {
 	    		if (status && status === 'Completed') {
 	    			$('#configure').removeAttr('disabled');
 	        		$('#start').attr('disabled', 'disabled');
-	        		$('#pause').attr('disabled', 'disabled');
 	        		$('#stop').attr('disabled', 'disabled');
 	        		updateMessage(data.body);
 	    		} else {
@@ -100,10 +89,6 @@ function configure() {
 
 function start() {
 	client.send('/app/start', {}, uuid);
-}
-
-function pause() {
-	client.send('/app/pause', {}, uuid);
 }
 
 function stop() {

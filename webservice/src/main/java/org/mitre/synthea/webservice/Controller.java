@@ -212,45 +212,8 @@ public class Controller {
     		return "{ \"status\": \"Started\" }";
     	}
     	
-    	if (request.isPaused()) {
-    		request.resume();
-    		return "{ \"status\": \"Resumed\" }";
-    	} else {
-    		return "{ \"status\": \"Already running\" }";
-    	}
+    	return "{ \"status\": \"Already running\" }";
     }
-    
-    /**
-     * WebSocket endpoint for pausing the generation request associated with the specified UUID.
-     */
-    @MessageMapping("/pause")
-    @SendToUser("/reply/pause")
-    public String webSocketPause(String uuid) {
-    	
-    	if (uuid == null) {
-    		return "{ \"error\": \"UUID required\" }";
-    	}
-    	
-    	Request request = requestService.getRequest(uuid);
-    	if (request == null) {
-    		return "{ \"error\": \"Request not found (may be finished)\" }";
-    	}
-    	
-    	if (!request.isStarted()) {
-    		return "{ \"error\": \"Request has not started yet\" }";
-    	}
-    	
-    	if (request.isFinished()) {
-    		return "{ \"error\": \"Request has finished\" }";
-    	}
-    	
-    	if (request.isPaused()) {
-    		return "{ \"status\": \"Already paused\" }";
-    	} else {
-    		request.pause();
-    		return "{ \"status\": \"Paused\" }";
-    	}
-	}
     
     /**
      * WebSocket endpoint for ending the generation request associated with the specified UUID.

@@ -36,9 +36,6 @@ public class Request {
 	@Autowired
 	private RequestService requestService;
 	
-	// Time in milliseconds to sleep between checks for a paused request
-	private final static int PAUSE_SLEEP_MS = 1000;
-		
 	// Max size of result queues
 	private final static int MAX_RESULTS_QUEUE_SIZE = 1000;
 	
@@ -66,9 +63,6 @@ public class Request {
 	// Stop request flag
 	private AtomicBoolean stopFlag = new AtomicBoolean(false);
 		
-	// Pause request flag
-	private AtomicBoolean pauseFlag = new AtomicBoolean(false);
-	
 	// Indicates if the request was ever started
 	private AtomicBoolean startedFlag = new AtomicBoolean(false);
 	
@@ -206,11 +200,7 @@ public class Request {
 					
 			    	while (idx < population) {
 			    		try {
-			    			while(isPaused()) {
-				    			Thread.sleep(PAUSE_SLEEP_MS);
-				    		}
-			    			
-			    			while(isStopped()) {
+			    			if(isStopped()) {
 			    				
 			    				// Interrupt generation
 			    				generateThread.interrupt();
@@ -369,10 +359,6 @@ public class Request {
 		startedFlag.set(true);
 	}
 	
-	public boolean isPaused() {
-		return pauseFlag.get();
-	}
-	
 	public boolean isStopped() {
 		return stopFlag.get();
 	}
@@ -385,23 +371,6 @@ public class Request {
 		return finishedFlag.get();
 	}
 	
-	/**
-	 * Pause the request
-	 */
-	public void pause() {
-		pauseFlag.set(true);
-	}
-	
-	/**
-	 * Resume the request
-	 */
-	public void resume() {
-		pauseFlag.set(false);
-	}
-	
-	/**
-	 * Stop the request permanently
-	 */
 	public void stop() {
 		stopFlag.set(true);
 	}
