@@ -41,8 +41,11 @@ public abstract class Exporter {
     
     if (Config.get("exporter.webclient") != null) {
     	
-    	// TODO: Using FHIR for web service at the moment, but need to decide how to configure this
-    	personQueue.add(FhirStu3.convertToFHIR(person, stopTime));
+    	try {
+			personQueue.put(FhirStu3.convertToFHIR(person, stopTime));
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
     	
     	// Bail early if using queue (web service)
     	return;

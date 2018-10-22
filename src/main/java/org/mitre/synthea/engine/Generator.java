@@ -204,7 +204,7 @@ public class Generator {
     
     if (Config.get("exporter.webclient") != null) {
     	// Create the Person queue
-    	personQueue = new LinkedBlockingQueue<String>();
+    	personQueue = new LinkedBlockingQueue<String>(1);
     }
   }
 
