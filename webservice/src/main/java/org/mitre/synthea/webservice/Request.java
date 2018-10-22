@@ -257,13 +257,15 @@ public class Request {
 				    		}
 			    		} catch(InterruptedException iex) {
 				        	LOGGER.error("Result thread interrupted while waiting for results for request " + uuid);
-				        	requestService.removeRequest(uuid);
+				        	jsonFile.delete();
+			    			requestService.removeRequest(uuid);
 				        	return;
 				        } catch(Exception ex) {
 				        	LOGGER.error("Error in result thread for request " + uuid, ex);
-				        	requestService.removeRequest(uuid);
+			    			jsonFile.delete();
+			    			requestService.removeRequest(uuid);
 				        	return;
-				        } 
+				        }
 		            }
 			    	
 		    		jsonWriter.write("\n]");
@@ -333,6 +335,9 @@ public class Request {
 	    			
 	    			// Delete the temporary JSON file
 	    			jsonFile.delete();
+	    			
+	    			// Stop tracking the request
+	    			requestService.removeRequest(uuid);
 	    		}
 		    }
 		};		
