@@ -265,6 +265,8 @@ public class Request {
 			    			jsonFile.delete();
 			    			requestService.removeRequest(uuid);
 				        	return;
+				        } finally {
+				        	resultQueue.clear();
 				        }
 		            }
 			    	
