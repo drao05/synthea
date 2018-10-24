@@ -43,8 +43,8 @@ public abstract class Exporter {
     	
     	try {
 			personQueue.put(FhirStu3.convertToFHIR(person, stopTime));
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		} catch(Exception ex) {
+			ex.printStackTrace();
 		}
     	
     	// Bail early if using queue (web service)
