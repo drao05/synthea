@@ -217,6 +217,12 @@ public class Request {
 			    					zipFile.delete();
 			    				}
 			    				
+			    				// Remove associated temporary ZIP file
+			    				File tempZipFile = requestService.getTempZipFileObject(uuid);
+			    				if (tempZipFile.exists()) {
+			    					tempZipFile.delete();
+			    				}
+			    				
 			    				// Remove the request
 			    				requestService.removeRequest(uuid);
 			    				
@@ -292,9 +298,10 @@ public class Request {
 		    	requestService.sendMessage(uuid, "{ \"status\": \"Completed\" }");
 	    		
 		    	// Create ZIP file for export
+	    		File tempZipFile = requestService.getTempZipFileObject(uuid);
 	    		File zipFile = requestService.getZipFileObject(uuid);
 	    		try {
-		    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
+		    		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(tempZipFile));
 		    		
 		    		// Add config file
 		    		ZipEntry e = new ZipEntry(uuid + "-config.json");
@@ -330,9 +337,11 @@ public class Request {
 		    		out.closeEntry();
 		    		out.close();
 		    		
+		    		tempZipFile.renameTo(zipFile);
+		    		
 		    		LOGGER.info("Results written to " + zipFile.toPath());
 	    		} catch(Exception ex) {
-	    			LOGGER.error("Exception while creating zip file for request " + uuid, ex);
+	    			LOGGER.error("Exception while creating ZIP file for request " + uuid, ex);
 	    		} finally {
 	    			
 	    			// Delete the temporary JSON file

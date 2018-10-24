@@ -142,6 +142,14 @@ public class RequestService {
     }
     
     /**
+     * Generates File object for a temporary ZIP file based on UUID.
+     * Returns null if the specified UUID is malformed.
+     */
+    public File getTempZipFileObject(String uuid) {
+    	return getFileObject(uuid, "tmp");
+    }
+    
+    /**
      * Generates File object for a target JSON file based on UUID.
      * Returns null if the specified UUID is malformed.
      */
