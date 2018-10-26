@@ -39,9 +39,6 @@ public class Request {
 	// Max size of result queues
 	private final static int MAX_RESULTS_QUEUE_SIZE = 1000;
 	
-	// Delay used to throttle writes to WebSocket buffer (in milliseconds)
-	private final static int WS_SEND_BUFFER_DELAY_MS = 200;
-		
 	// Request ID
 	private String uuid = UUID.randomUUID().toString();
 	
@@ -235,9 +232,6 @@ public class Request {
 			    			// Send person to WebSocket client
 			    			requestService.sendMessage(uuid, person);
 				    		
-			    			// TODO: This is just a workaround for giving the WebSocket send buffer time to clear itself before the next chunk of data arrives.
-			    			Thread.sleep(WS_SEND_BUFFER_DELAY_MS);
-	
 			    			// Make person available for immediately retrieval via RESTful interface
 		    				synchronized(resultQueue) {
 		    					

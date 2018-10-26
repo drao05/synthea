@@ -1,6 +1,5 @@
 package org.mitre.synthea.webservice;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -12,10 +11,7 @@ import org.springframework.web.socket.config.annotation.WebSocketTransportRegist
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-	@Value("${ws.bufferSizeLimit:2097152}")
-	private Integer bufferSizeLimit;
-	
-    @Override
+	@Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/json", "/reply");
         config.setApplicationDestinationPrefixes("/app");
@@ -28,6 +24,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     
 	@Override
 	public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
-		registry.setSendBufferSizeLimit(bufferSizeLimit);
+		registry.setSendBufferSizeLimit(Integer.MAX_VALUE);
 	}
 }
