@@ -292,6 +292,7 @@ public class Request {
 		    	requestService.sendMessage(uuid, "{ \"status\": \"Completed\" }");
 	    		
 		    	// Create ZIP file for export
+		    	LOGGER.info("Creating ZIP file for request " + uuid + "...");
 	    		File tempZipFile = requestService.getTempZipFileObject(uuid);
 	    		File zipFile = requestService.getZipFileObject(uuid);
 	    		try {
