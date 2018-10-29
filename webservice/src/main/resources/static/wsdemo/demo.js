@@ -1,108 +1,97 @@
-$(document).ready(function() {
-});
-
-let client;
-function connect() {
-	client = Stomp.client('ws://localhost:8080/va-synthea/ws');
-	
-	// Disable Stomp client debug
-	client.debug = function(str) {};
-	
-    client.connect('','', function(data) {
-    	$('#connect').attr('disabled', 'disabled');
-    	$('#configure').removeAttr('disabled');
-    	updateMessage('Connected');
-    	
-    	// Subscribe to some status channels
-    	client.subscribe('/user/reply/start', function(data) {
-    		$('#start').attr('disabled', 'disabled');
-    		$('#stop').removeAttr('disabled');
-    		updateMessage(data.body);
-    	});
-    	
-    	client.subscribe('/user/reply/stop', function(data) {
-    		$('#configure').removeAttr('disabled');
-    		$('#start').attr('disabled', 'disabled');
-    		$('#stop').attr('disabled', 'disabled');
-    		updateMessage(data.body);
-    	});
-    	
-    }, function(data) {
-    	$('#connect').removeAttr('disabled');
-    	$('#configure').attr('disabled', 'disabled');
-		$('#start').attr('disabled', 'disabled');
-		$('#stop').attr('disabled', 'disabled');
-		updateMessage(data.body);
-    });
-}
-
+let ws;
 let uuid;
 let count = 0;
-let configureSubscription = null;
-let jsonSubscription = null;
-
-function configure() {
-	let config = {};
-	config['population'] = parseInt($('#population').val());
-	if (!configureSubscription) {
-		configureSubscription = client.subscribe('/user/reply/configure', function(data) {
-			if (jsonSubscription) {
-	    		// Unsubscribe from previous result channel if needed.
-	    		jsonSubscription.unsubscribe();
-	    		jsonSubscription = null;
-	    	}
-			
-	    	let json = JSON.parse(data.body);
-	    	if (json['error']) {
-	    		updateMessage(data.body);
-	    		return;
-	    	}
-	    	
-			$('#configure').attr('disabled', 'disabled');
-			$('#start').removeAttr('disabled');
-			
-	    	uuid = json['uuid'];
-	    	updateUUID(uuid);
-	    	
-	    	count = 0;
-	    	updateCountDisplay();
-	    	updateMessage(data.body);
-	    	
-	    	jsonSubscription = client.subscribe('/json/' + uuid, function(data) {
-	    		let person = JSON.parse(data.body);
-	    		let status = person['status'];
-	    		if (status && status === 'Completed') {
-	    			$('#configure').removeAttr('disabled');
-	        		$('#start').attr('disabled', 'disabled');
-	        		$('#stop').attr('disabled', 'disabled');
-	        		updateMessage(data.body);
-	    		} else {
-	    			++count;
-	    			updateCountDisplay();
-	    		}
-	        });
-		});
-	}
-	
-	client.send('/app/configure', {}, JSON.stringify(config));
-}
-
-function start() {
-	client.send('/app/start', {}, uuid);
-}
-
-function stop() {
-	client.send('/app/stop', {}, uuid);
-}
-
-function updateUUID(uuid) {
-	$('#uuid').html(uuid);
-}
-
-function updateCountDisplay() {
-	$('#count').html(count);
-}
+let connected = false;
 
 function updateMessage(message) {
 	$('#message').html(message);
+}
+
+function connect() {
+	try {
+		ws = new WebSocket('ws://localhost:8080/va-synthea/ws');
+		ws.onopen = function(event) {
+			connected = true;
+	    	$('#connect').attr('disabled', 'disabled');
+	    	$('#configure').removeAttr('disabled');
+	    	updateMessage('Connected');
+		};
+		
+		ws.onclose = function(event) {
+			$('#connect').removeAttr('disabled');
+	    	$('#configure').attr('disabled', 'disabled');
+			$('#start').attr('disabled', 'disabled');
+			$('#stop').attr('disabled', 'disabled');
+			if (connected) {
+				connected = false;
+				updateMessage('Connection closed');
+			} else {
+				updateMessage('Could not connect');
+			}
+		};
+		
+		ws.onmessage = function(event) {
+			try {
+				
+				let data = JSON.parse(event.data);
+				if (data['uuid']) {
+					// Got UUID for configured request
+					uuid = data['uuid'];
+					$('#uuid').html(uuid);
+					
+					count = 0;
+					$('#count').html(count);
+				}
+				
+				if (data['error']) {
+					// Got error message
+					updateMessage(data['error']);
+				} else if (data['status']) {
+					// Got status message
+					updateMessage(data['status']);
+					if (data['status'] === 'Completed') {
+						// Request has completed
+						count = 0;
+						$('#configure').removeAttr('disabled');
+		        		$('#start').attr('disabled', 'disabled');
+		        		$('#stop').attr('disabled', 'disabled');
+					}
+					
+					if (data['configuration']) {
+						console.log(data['configuration']);
+					}
+					
+				} else {
+					// Got a person
+					$('#count').html(++count);
+				}
+			} catch(jex) {
+				console.error(jex);
+			}
+		};
+	} catch(ex) {
+		console.error(ex);
+	}
+}
+
+function configure() {
+	let message = {operation: 'configure', configuration: {population: parseInt($('#population').val())}};
+	ws.send(JSON.stringify(message));
+	$('#configure').attr('disabled', 'disabled');
+	$('#start').removeAttr('disabled');
+	$('#stop').attr('disabled', 'disabled');
+}
+
+function start() {
+	let message = {operation: 'start', uuid: uuid};
+	ws.send(JSON.stringify(message));
+	$('#start').attr('disabled', 'disabled');
+	$('#stop').removeAttr('disabled');
+}
+
+function stop() {
+	let message = {operation: 'stop', uuid: uuid};
+	ws.send(JSON.stringify(message));
+	$('#configure').removeAttr('disabled');
+	$('#stop').attr('disabled', 'disabled');
 }

@@ -78,30 +78,33 @@
 		
 		<h2>WebSocket API</h2>
 		
-		<p>The WebSocket connection URL is of the form <code>ws://&lt;host:port&gt;/va-synthea/ws</code>, e.g., <code>ws://localhost:8080/va-synthea/ws</code>.</p>
+		<p>The WebSocket connection URL is of the form <code>ws://&lt;host:port&gt;/va-synthea/ws</code>. For example, the code below demonstrates how to connect to a locally-hosted server from a JavaScript client:</p>
+		<p><code>var ws = new WebSocket('ws://localhost:8080/va-synthea/ws');</code></p>
 		
-		<p>There are four pairs of control/reply channels that can be subscribed to and monitored for status messages.</p>
+		<p>The WebSocket API supports three operations defined by the following JSON templates. Messages using these formats should be sent to the configured WebSocket in order to create, start, and stop generation requests.</p>
 		
-		<p>Configure New Request</p>
-		<ul>
-			<li><code>/app/configure</code>: Used to configure a new generation request. Include your JSON configuration as a string argument (see the description of the <code>POST /va-synthea/generate</code> endpoint above for details on the configuration argument).</li>
-			<li><code>/user/reply/configure</code>: The configure reply will include a <code>uuid</code> field with the request UUID or an <code>error</code> field with an error message if there was a problem configuring the request. If there was no error, the request configuration is also returned (including the generation seed) via the <code>configuration</code> field.</li>
-		</ul>
+		<h3>Configure New Request</h3>
+		<p><code>{operation: 'configure', configuration: &lt;JSON configuration&gt;}</code></p>
+		<p>Used to configure a new generation request. Include your JSON configuration as a string argument (see the description of the <code>POST /va-synthea/generate</code> endpoint above for details on the configuration argument).</p>
+		<p>Ex. <code>{operation: 'configure', configuration: {population: 100}}</code></p>
+		<p>The server will send a JSON-formatted response that includes a) a <code>uuid</code> field with the new request's UUID and a <code>status</code> field with a status message or b) an <code>error</code> field with an error message if there was a problem configuring the request. If there was no error, the request configuration is also returned (including the generation seed) via the <code>configuration</code> field.</p>
+		<p>Ex. <code>{ status: 'Configured', uuid: '6e70cac6-df9c-4552-8b05-d9ff5393edfb', configuration: { seed: 1540833144961, population: 100 } }</code></p>
 		
-		<p>Start Request</p>
-		<ul>
-			<li><code>/app/start</code>: Used to start (or restart) a generation request. Pass the associated request UUID as the argument.</li>
-			<li><code>/user/reply/start</code>: The start reply will include a <code>status</code> or <code>error</code> field with a message describing the status or error condition of the request.</li>
-		</ul>
+		<h3>Start Request</h3>
+		<p><code>{operation: 'start', uuid: &lt;UUID&gt;}</code></p>
+		<p>Used to start the generation request associated with the specified UUID.</p>
+		<p>Ex. <code>{ operation: 'start', uuid: '6e70cac6-df9c-4552-8b05-d9ff5393edfb' }</code></p>
+		<p>The server will send a JSON-formatted response that includes a <code>status</code> or <code>error</code> field with a message describing the status or error condition of the request.</p>
 		
-		<p>Terminate Request</p>
-		<ul>
-			<li><code>/app/stop</code>: Used to terminate a generation request, which will also deleted the request results from the server. Pass the associated request UUID as the argument.</li>
-			<li><code>/user/reply/stop</code>: If the termination was initiated via the WebSocket API, the stop reply will include a <code>status</code> or <code>error</code> field with a message describing the status or error condition of the request.</li>
-		</ul>
+		<h3>Stop Request</h3>
+		<p><code>{operation: 'stop', uuid: &lt;UUID&gt;}</code></p>
+		<p>Used to stop a generation request associated with the specified UUID.</p>
+		<p>Ex. <code>{ operation: 'stop', uuid: '6e70cac6-df9c-4552-8b05-d9ff5393edfb' }</code></p>
+		<p>The server will send a JSON-formatted response that includes a <code>status</code> or <code>error</code> field with a message describing the status or error condition of the request.</p>
 		
-		<p>Individual generated JSON results for the request are returned via the <code>/json/&lt;uuid&gt;</code> channel, where <code>&lt;uuid&gt;</code> should be replaced with the request UUID. When the request is completed, a completion message of the form <code>{ 'status': 'Completed' }</code> is sent on this channel.</p>		
-		
+		<h3>Generated JSON Results</h3>
+		<p>Once a generation request is successfully started, if the client receives a response from the server does not include an error or status message, it contains an individual generated JSON result (FHIR format) for the request.</p>
+		<p>When the request is completed, a JSON-formatted response of the form <code>{ status: 'Completed' }</code> is sent.</p>		
 		
 		<h2>Other Useful Links</h2>
 		<div><a href="https://github.com/synthetichealth/synthea">Synthea (GitHub)</a></div>

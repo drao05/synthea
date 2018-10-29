@@ -1,29 +1,30 @@
 package org.mitre.synthea.webservice;
 
+import java.util.concurrent.Executors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 
 @Configuration
-@EnableWebSocketMessageBroker
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
-
-	@Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/json", "/reply");
-        config.setApplicationDestinationPrefixes("/app");
-    }
-
-    @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws").setAllowedOrigins("*");
-    }
-    
-	@Override
-	public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
-		registry.setSendBufferSizeLimit(Integer.MAX_VALUE);
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
+	
+	@Autowired
+	private SocketHandler socketHandler;
+	
+	public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+		registry.addHandler(socketHandler, "/ws").setAllowedOrigins("*");
+	}
+	
+	// Need this bean in order to get scheduled tasks to work with the @EnabledWebSocket annotation above.
+	@Bean
+	public TaskScheduler taskScheduler() {
+	    return new ConcurrentTaskScheduler(Executors.newSingleThreadScheduledExecutor());
 	}
 }

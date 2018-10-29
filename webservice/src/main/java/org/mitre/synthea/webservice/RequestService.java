@@ -19,7 +19,6 @@ import org.mitre.synthea.helpers.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -40,9 +39,9 @@ public class RequestService {
 	// Subset of VA Synthea configuration properties that web service allows user to customize
 	public final Set<String> configPropertiesWhiteList = new HashSet<String>();
 
-	// Messaging template used for requests from WebSocket clients
+	// Messaging handler used for requests from WebSocket clients
 	@Autowired
-	private SimpMessagingTemplate messagingTemplate;
+	private SocketHandler socketHandler;
 	
 	@Autowired
 	private WebApplicationContext context;
@@ -215,9 +214,9 @@ public class RequestService {
     }
     
     /**
-     * Send message on channel associated with the specified UUID
+     * Send message to client for request with the specified UUID
      */
-    public void sendMessage(String uuid, String jsonContent) {
-    	messagingTemplate.convertAndSend("/json/" + uuid, jsonContent);
+    public void sendMessage(String uuid, String message) {
+    	socketHandler.sendMessage(uuid,  message);
     }
 }

@@ -17,8 +17,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,7 +35,7 @@ public class Controller {
      ******************/
 	
     /**
-     * POST endpoint that submits request to generate results based on specified VA Synthea configuration paramaeters (JSON).
+     * POST endpoint that submits request to generate results based on specified VA Synthea configuration parameters (JSON).
      * If the request was successfully submitted, returns status code 200 and a UUID that can be used to refer to request in other endpoints.
      * Returns status code 400 if there was a problem processing the configuration parameters.
      */
@@ -163,87 +161,5 @@ public class Controller {
     	request.stop();
 		
     	return new ResponseEntity<>(HttpStatus.OK);
-	}
-    
-    
-    /*********************
-     * WebSocket interface
-     ********************/
-    
-    /**
-     * WebSocket endpoint for configuring a generation request based on the specified JSON configuration string.
-     * Response includes the UUID and the specified configuration (including generation seed).
-     */
-    @MessageMapping("/configure")
-    @SendToUser("/reply/configure")
-    public String webSocketConfig(String configurationStr) {
-    	try {
-    		Request request = requestService.createRequest(configurationStr);
-    		return "{ \"status\": \"Configured\", \"uuid\": \"" + request.getUuid() +"\", \"configuration\": " + request.getConfiguration().toString() + " }";
-    	} catch(JSONException jex) {
-    		return "{ \"error\": \"Could not process specified configuration\" }";
-    	}
-    }
-    
-    /**
-     * WebSocket endpoint for starting/resuming the generation request associated with the specified UUID.
-     */
-    @MessageMapping("/start")
-    @SendToUser("/reply/start")
-    public String webSocketStart(String uuid) {
-    	
-    	if (uuid == null) {
-    		return "{ \"error\": \"UUID required\" }";
-    	}
-    	
-    	Request request = requestService.getRequest(uuid);
-    	if (request == null) {
-    		return "{ \"error\": \"Request not found (may be finished)\" }";
-    	}
-    	
-    	if (request.isFinished()) {
-    		return "{ \"error\": \"Request has finished\" }";
-    	}
-    	
-    	if (!request.isStarted()) {
-    		
-    		// Request has not started yet
-    		request.start();
-    		return "{ \"status\": \"Started\" }";
-    	}
-    	
-    	return "{ \"status\": \"Already running\" }";
-    }
-    
-    /**
-     * WebSocket endpoint for ending the generation request associated with the specified UUID.
-     */
-    @MessageMapping("/stop")
-    @SendToUser("/reply/stop")
-    public String webSocketStop(String uuid) {
-    	
-    	if (uuid == null) {
-    		return "{ \"error\": \"UUID required\" }";
-    	}
-    	
-    	Request request = requestService.getRequest(uuid);
-    	if (request == null) {
-    		return "{ \"error\": \"Request not found (may be finished)\" }";
-    	}
-    	
-    	if (!request.isStarted()) {
-    		return "{ \"error\": \"Request has not started yet\" }";
-    	}
-    	
-    	if (request.isFinished()) {
-    		return "{ \"error\": \"Request has finished\" }";
-    	}
-    	
-    	if (request.isStopped()) {
-    		return "{ \"status\": \"Already stopped\" }";
-    	} else {
-    		request.stop();
-    		return "{ \"status\": \"Stopped\" }";
-    	}
 	}
 }
