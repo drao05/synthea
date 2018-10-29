@@ -43,6 +43,7 @@ public abstract class Exporter {
     	
     	try {
 			personQueue.put(FhirStu3.convertToFHIR(person, stopTime));
+    	} catch(InterruptedException iex) {
 		} catch(Exception ex) {
 			ex.printStackTrace();
 		}
