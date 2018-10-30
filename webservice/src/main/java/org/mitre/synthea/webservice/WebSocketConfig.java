@@ -22,7 +22,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 		registry.addHandler(socketHandler, "/ws").setAllowedOrigins("*");
 	}
 	
-	// Need this bean in order to get scheduled tasks to work with the @EnabledWebSocket annotation above.
+	// Need this bean in order to get scheduled tasks to work with the @EnableWebSocket annotation above.
 	@Bean
 	public TaskScheduler taskScheduler() {
 	    return new ConcurrentTaskScheduler(Executors.newSingleThreadScheduledExecutor());
