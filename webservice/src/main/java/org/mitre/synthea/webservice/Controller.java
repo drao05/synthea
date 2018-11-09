@@ -53,7 +53,7 @@ public class Controller {
 	}
 	
     /**
-     * GET endpoint that retrieves results (as a ZIP file) associated with specified UUID (that was originally returned by the associated generate request).
+     * GET endpoint that retrieves FHIR or CSV results (as a ZIP file) associated with specified UUID (that was originally returned by the associated generate request).
      * Returns a ZIP file or a status code:
      * - 202 if results are still pending
      * - 400 if UUID path variable is missing or malformed
@@ -70,7 +70,7 @@ public class Controller {
     	Request request = requestService.getRequest(uuid);
     	
     	// Check for ZIP file
-		File zipFile = requestService.getZipFileObject(uuid);
+		File zipFile = requestService.getZipFileObject(uuid, "fhir");
 		
 		// A null zipFile indicates a malformed UUID
 		if (zipFile == null) {
@@ -79,17 +79,23 @@ public class Controller {
 		
 		if (!zipFile.exists()) {
 			
-			LOGGER.info("Results file " + zipFile.toString() + " not found");
+			// FHIR results not found. Check for CSV results.
+			zipFile = requestService.getZipFileObject(uuid, "csv");
 			
-			// If the ZIP file does not exist, see if request is pending or not found.
-			if (request != null) {
+			if (!zipFile.exists()) {
 				
-				// Report that request was found but results are not ready yet
-				return new ResponseEntity<>(HttpStatus.ACCEPTED);
-			} else {
+				LOGGER.info("Results file " + zipFile.toString() + " not found");
 				
-				// Report that request was not found
-				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+				// If the ZIP file does not exist, see if request is pending or not found.
+				if (request != null) {
+					
+					// Report that request was found but results are not ready yet
+					return new ResponseEntity<>(HttpStatus.ACCEPTED);
+				} else {
+					
+					// Report that request was not found
+					return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+				}
 			}
 		}
 		
@@ -99,7 +105,7 @@ public class Controller {
 			requestService.removeRequest(uuid);
 		}
 		
-		// Return the ZIP file and delete local copy
+		// Return the ZIP file
 		try {
 	    	byte[] zipContents = Files.readAllBytes(zipFile.toPath());
 	    	// NOTE: Uncomment this to remove ZIPs after retrieval
@@ -118,7 +124,7 @@ public class Controller {
 	}
     
     /**
-     * GET endpoint that retrieves results (as a JSON array) associated with specified UUID (that was originally returned by the associated generate request).
+     * GET endpoint that retrieves results (as a JSON array) associated with specified UUID (that was originally returned by the associated generate request). Note this is not used when for requests that were configured to generate CSV results.
      * Returns a JSON array with available results or a status code:
      * - 400 if UUID path variable is missing
      * - 404 if request was not found (either the request is complete and results have been retrieved, or the request never existed)

@@ -89,9 +89,10 @@ public class CSVExporter {
    * Constructor for the CSVExporter -
    *  initialize the 9 specified files and store the writers in fields.
    */
-  private CSVExporter() {
+  public CSVExporter(String subDirectoryName) {
     try {
-      File output = Exporter.getOutputFolder("csv", null);
+      String outputDirectoryName = subDirectoryName == null ? "csv" : "csv" + File.separator + subDirectoryName;
+      File output = Exporter.getOutputFolder(outputDirectoryName, null);
       output.mkdirs();
       Path outputDirectory = output.toPath();
       File patientsFile = outputDirectory.resolve("patients.csv").toFile();
@@ -122,6 +123,10 @@ public class CSVExporter {
       // and if these do throw ioexceptions there's nothing we can do anyway
       throw new RuntimeException(e);
     }
+  }
+  
+  private CSVExporter() {
+	  this(null);
   }
 
   /**

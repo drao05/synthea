@@ -35,6 +35,9 @@ public class RequestService {
 	
 	// Path to ZIP output directory
 	private Path zipOutputPath;
+	
+	// Path to CSV output directory
+	private Path csvOutputPath;
 		
 	// Subset of VA Synthea configuration properties that web service allows user to customize
 	public final Set<String> configPropertiesWhiteList = new HashSet<String>();
@@ -56,13 +59,19 @@ public class RequestService {
 			baseDir = "";
 		}
 		
-		File outputDir = new File(baseDir + "zip");
-    	zipOutputPath = Paths.get(outputDir.toURI());
-		if (!outputDir.exists()) {
-			outputDir.mkdirs();
+		File zipOutputDir = new File(baseDir + "zip");
+    	zipOutputPath = Paths.get(zipOutputDir.toURI());
+		if (!zipOutputDir.exists()) {
+			zipOutputDir.mkdirs();
 		}
-
 		LOGGER.info("ZIP output directory: " + zipOutputPath.toString());
+		
+		File csvOutputDir = new File(baseDir + "csv");
+    	csvOutputPath = Paths.get(csvOutputDir.toURI());
+		if (!csvOutputDir.exists()) {
+			csvOutputDir.mkdirs();
+		}
+		LOGGER.info("CSV output directory: " + csvOutputPath.toString());
 		
 		// Initialize config properties white list
 		InputStream whiteListStream = RequestService.class.getClassLoader().getResourceAsStream("static/va-synthea-properties-whitelist.txt");
@@ -133,19 +142,19 @@ public class RequestService {
 	}
 	
 	/**
-     * Generates File object for a target ZIP file based on UUID.
+     * Generates File object for a target ZIP file based on UUID and type (currently "fhir" or "csv").
      * Returns null if the specified UUID is malformed.
      */
-    public File getZipFileObject(String uuid) {
-    	return getFileObject(uuid, "zip");
+    public File getZipFileObject(String uuid, String type) {
+    	return getFileObject(uuid, type, "zip");
     }
     
     /**
-     * Generates File object for a temporary ZIP file based on UUID.
+     * Generates File object for a temporary ZIP file based on UUID and type (currently "fhir" or "csv").
      * Returns null if the specified UUID is malformed.
      */
-    public File getTempZipFileObject(String uuid) {
-    	return getFileObject(uuid, "tmp");
+    public File getTempZipFileObject(String uuid, String type) {
+    	return getFileObject(uuid, type, "tmp");
     }
     
     /**
@@ -153,16 +162,41 @@ public class RequestService {
      * Returns null if the specified UUID is malformed.
      */
     public File getJsonFileObject(String uuid) {
-    	return getFileObject(uuid, "json");
+    	return getFileObject(uuid, "fhir", "json");
     }
     
     /**
-     * Generates File object for a target file based on UUID and file extension.
+     * Generates CSV File object for a target file based on UUID and filenam.
      * Returns null if the specified UUID is malformed.
      */
-    private File getFileObject(String uuid, String extension) {
+    public File getCsvFileObject(String uuid, String filename) {
     	if (uuid != null && uuid.matches(UUID_REGEX_PATTERN)) {
-    		return new File(zipOutputPath.toString() + File.separator + uuid + "." + extension);
+    		return new File(csvOutputPath.toString() + File.separator + uuid + File.separator + filename);
+    	} else {
+    		return null;
+    	}
+    }
+        
+    /**
+     * Generates File object for a target file based on UUID, type (currently "fhir" or "csv"), and file extension.
+     * Returns null if the specified UUID is malformed.
+     */
+    private File getFileObject(String uuid, String type, String extension) {
+    	if (uuid != null && uuid.matches(UUID_REGEX_PATTERN)) {
+    		
+    		if (extension.equals("zip")) {
+    			// Return a file in the ZIP directory
+    			return new File(zipOutputPath.toString() + File.separator + uuid + "-" + type + "." + extension);
+    		}
+    		
+    		switch(type) {
+	    		case "fhir":
+	    			return new File(zipOutputPath.toString() + File.separator + uuid + "-" + type + "." + extension);
+	    		case "csv":
+	    			return new File(csvOutputPath.toString() + File.separator + uuid + "-" + type + "." + extension);
+	    		default:
+	    			return null;
+    		}
     	} else {
     		return null;
     	}

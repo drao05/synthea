@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jfree.data.time.TimeSeries;
 import org.mitre.synthea.datastore.DataStore;
 import org.mitre.synthea.export.CDWExporter;
+import org.mitre.synthea.export.CSVExporter;
 import org.mitre.synthea.export.Exporter;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.TimeSeriesUtils;
@@ -86,6 +87,11 @@ public class Generator {
    */
   private BlockingQueue<String> personQueue;
   
+  /**
+   * Non-static instance of CSV exporter
+   */
+  private CSVExporter csvExporter;
+    
   /**
    * Create a Generator, using all default settings.
    */
@@ -205,6 +211,12 @@ public class Generator {
     if (Config.get("exporter.webclient") != null) {
     	// Create the Person queue
     	personQueue = new LinkedBlockingQueue<String>(1);
+    }
+    
+    String subDirectoryName = Config.get("exporter.webclient.csv.uuid");
+    if (subDirectoryName != null) {
+    	// Create the CSV exporter
+    	csvExporter = new CSVExporter(subDirectoryName);
     }
   }
 
@@ -382,7 +394,7 @@ public class Generator {
         
         // TODO - export is DESTRUCTIVE when it filters out data
         // this means export must be the LAST THING done with the person
-        Exporter.export(person, time, personQueue);
+        Exporter.export(person, time, personQueue, csvExporter);
       } while ((!isAlive && !onlyDeadPatients) || (isAlive && onlyDeadPatients));
       // if the patient is alive and we want only dead ones => loop & try again
       //  (and dont even export, see above)

@@ -25,9 +25,9 @@
 			<li>state - U.S. state to use for generated population (string)</li>
 			<li>city - city in specified state to use for generated population (string)</li>
 		</ul>
+		<p>The configuration can also contain a parameter <code>generateCSV</code> that, if set to <code>true</code>, will configure the request to generate CSV results instead of FHIR results.</p>
 		<p>Below is an example JSON configuration:</p>
-		<code>{	seed: 42, population: 50, gender: 'M', minAge: 20, maxAge: 29, state: 'Massachusetts', city: 'Boston' }
-		</code>
+		<code>{	seed: 42, population: 50, gender: 'M', minAge: 20, maxAge: 29, state: 'Massachusetts', city: 'Boston' }</code>
 		<p>Results returned by this endpoint:</p>
 		<ul>
 			<li>Returns status code 200 and a UUID that can be used to refer to the request in other endpoints if the request was successfully submitted.</li>
@@ -36,10 +36,10 @@
 		
 		<br />
 			
-		<p><code>GET /va-synthea/zip/&lt;UUID&gt;</code> - Retrieve all results (as a ZIP file) for the request identified by UUID path variable. Note that this removes all of the results from the server once they are returned to the client.</p>
+		<p><code>GET /va-synthea/zip/&lt;UUID&gt;</code> - Retrieve all FHIR or CSV results (if the request was configured to generate CSV) as a ZIP file for the request identified by UUID path variable.</p>
 		<p>Results returned by this endpoint:</p>
 		<ul>
-			<li>Returns status code 200 and all results in FHIR format in a ZIP file. The file also includes the configuration (as JSON) used to generate the results.</li>
+			<li>Returns status code 200 and all results in FHIR or CSV format in a ZIP file. The file also includes the configuration (as JSON) used to generate the results.</li>
 			<li>Returns status code 202 if results are still pending.</li>
 			<li>Returns status code 400 if UUID path variable is missing or malformed.</li>
 			<li>Returns status code 404 if request was not found.</li>
@@ -48,7 +48,7 @@
 		
 		<br />
 			
-		<p><code>GET /va-synthea/json/&lt;UUID&gt;</code> - Retrieve currently available results in FHIR format (as a JSON array) for the request identified by UUID path variable. Note that this removes the current results from the server once they are returned to the client.</p>
+		<p><code>GET /va-synthea/json/&lt;UUID&gt;</code> - Retrieve currently available FHIR results, if any, in a JSON array for the request identified by UUID path variable. Note that this removes the current results from the server once they are returned to the client.</p>
 		<p>Results returned by this endpoint:</p>
 		<ul>
 			<li>Returns status code 200 and currently available results in FHIR format in a JSON array in the body of the response. Up to the most recent 1000 results will be returned.</li>
