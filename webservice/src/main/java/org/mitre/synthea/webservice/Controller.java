@@ -46,7 +46,7 @@ public class Controller {
     		// Create and start request
     		Request request = requestService.createRequest(httpEntity.getBody());
     		request.start();
-    		return new ResponseEntity<String>(request.getUuid(), HttpStatus.OK);
+    		return new ResponseEntity<String>("{ \"uuid\": \"" + request.getUuid() + "\"}", HttpStatus.OK);
     	} catch(JSONException jex) {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     	}
