@@ -248,7 +248,7 @@ public class RequestService {
     }
     
     /**
-     * Send message to client for request with the specified UUID
+     * Send message to Web Socket client for request with the specified UUID
      */
     public void sendMessage(String uuid, String message) {
     	socketHandler.sendMessage(uuid,  message);
