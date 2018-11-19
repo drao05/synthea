@@ -48,6 +48,8 @@ dependencies {
 	compile('org.springframework.boot:spring-boot-starter-web')
 	compile('org.springframework.boot:spring-boot-starter-websocket')
 	compile('org.json:json:20180813')
+	compile('org.apache.httpcomponents:httpclient:4.5.6')
+	compile('org.apache.httpcomponents:httpcore:4.4.10')
 	compile rootProject
 	compileJava.dependsOn unzipSynthea
 	testCompile('org.springframework.boot:spring-boot-starter-test')
