@@ -21,7 +21,7 @@ import org.json.JSONObject;
  * To run in Windows (assuming a JRE 8+ is available along with a local running instance of the VA Synthea web service):
  * > set JAVA_HOME=C:\devel\jdk8
  * > set WS_DIR=C:\devel\apache-tomcat-9.0.7\webapps\va-synthea
- * > %JAVA_HOME%\bin\java.exe -classpath %WS_DIR%\WEB-INF\classes;%WS_DIR%\WEB-INF\lib\commons-io-2.5.jar;%WS_DIR%\WEB-INF\lib\httpclient-4.5.6.jar;%WS_DIR%\WEB-INF\lib\httpcore-4.4.10.jar;%WS_DIR%\WEB-INF\lib\jackson-core-2.9.6.jar;%WS_DIR%\WEB-INF\lib\json-20180813.jar;%WS_DIR%\WEB-INF\lib\jcl-over-slf4j-1.7.25.jar;%WS_DIR%\WEB-INF\lib\slf4j-api-1.7.25.jar;%WS_DIR%\WEB-INF\lib\log4j-slf4j-impl-2.10.0.jar;%WS_DIR%\WEB-INF\lib\log4j-api-2.10.0.jar;%WS_DIR%\WEB-INF\lib\log4j-core-2.10.0.jar org.mitre.synthea.webservice.RESTFulClient
+ * > %JAVA_HOME%\bin\java.exe -classpath %WS_DIR%\WEB-INF\classes;%WS_DIR%\WEB-INF\lib\commons-io-2.5.jar;%WS_DIR%\WEB-INF\lib\httpclient-4.5.6.jar;%WS_DIR%\WEB-INF\lib\httpcore-4.4.10.jar;%WS_DIR%\WEB-INF\lib\jackson-core-2.9.6.jar;%WS_DIR%\WEB-INF\lib\json-20180813.jar;%WS_DIR%\WEB-INF\lib\commons-logging-1.2.jar org.mitre.synthea.webservice.RESTFulClient
  */
 public class RESTFulClient {
 	public static void main(String[] args) {
