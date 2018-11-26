@@ -26,7 +26,7 @@ import org.json.JSONObject;
 public class RESTFulClient {
 	public static void main(String[] args) {
 
-		final String baseUrl = "http://localhost:8080/va-synthea/";
+		final String baseUrl = "http://localhost:8080/va-synthea";
 		String uuid;
 
 		CloseableHttpClient client = HttpClients.createDefault();
@@ -53,7 +53,7 @@ public class RESTFulClient {
 			}
 
 			// Wait for and retrieve the results
-			HttpGet httpGet = new HttpGet(baseUrl + "zip/" + uuid);
+			HttpGet httpGet = new HttpGet(baseUrl + "/zip/" + uuid);
 			response = client.execute(httpGet);
 			int statusCode = response.getStatusLine().getStatusCode();
 			while (statusCode != HttpStatus.SC_OK) { // GET succeeded
