@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.function.Predicate;
 
 import org.mitre.synthea.engine.Generator;
@@ -29,12 +30,38 @@ public abstract class Exporter {
    *
    * @param person   Patient to export
    * @param stopTime Time at which the simulation stopped
+   * @param personQueue Queue used to share results (may be null)
+   * @param csvExporter CSVExporter used to export CSV results for a specific web client (may be null)
    */
-  public static void export(Person person, long stopTime) {
+  public static void export(Person person, long stopTime, BlockingQueue<String> personQueue, CSVExporter csvExporter) {
     int yearsOfHistory = Integer.parseInt(Config.get("exporter.years_of_history"));
     if (yearsOfHistory > 0) {
       person = filterForExport(person, yearsOfHistory, stopTime);
     }
+    
+    if (Config.get("exporter.webclient") != null) {
+    	
+    	if (csvExporter != null) {
+    		try {
+    			csvExporter.export(person, stopTime);
+    		} catch (IOException ioex) {
+    			ioex.printStackTrace();
+    		}
+    	}
+    	
+    	if (personQueue != null) {
+	    	try {
+				personQueue.put(FhirStu3.convertToFHIR(person, stopTime));
+	    	} catch(InterruptedException iex) {
+			} catch(Exception ex) {
+				ex.printStackTrace();
+			}
+    	}
+    	
+    	// Bail early if using queue (web service)
+    	return;
+    }
+    
     // Defaults to STU3 output
     if (Boolean.parseBoolean(Config.get("exporter.fhir.export"))) {
       String bundleJson = FhirStu3.convertToFHIR(person, stopTime);
@@ -112,6 +139,10 @@ public abstract class Exporter {
         e.printStackTrace();
       }
     }
+  }
+
+  public static void export(Person person, long stopTime) {
+	  export(person, stopTime, null, null);
   }
 
   /**

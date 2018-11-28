@@ -49,7 +49,7 @@ public class Module {
     retVal.put("Health Insurance", new HealthInsuranceModule());
 
     try {
-      URL modulesFolder = ClassLoader.getSystemClassLoader().getResource("modules");
+      URL modulesFolder = Module.class.getClassLoader().getResource("modules");
       Path path = Paths.get(modulesFolder.toURI());
       Files.walk(path, Integer.MAX_VALUE).filter(Files::isReadable).filter(Files::isRegularFile)
           .filter(p -> p.toString().endsWith(".json")).forEach(t -> {

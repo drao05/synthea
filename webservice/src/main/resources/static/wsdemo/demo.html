@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>VA Synthea WebSocket Demonstration Client</title>
+		<meta charset="UTF-8"> 
+		<script src="./jquery-3.3.1.min.js"></script>
+		<script src="./demo.js"></script>
+	</head>
+	<body>
+		<h1>VA Synthea WebSocket Demonstration Client</h1>
+		<label>Population: </label>
+		<input id="population" type="text" value="100">
+		<div>
+			<span>UUID: </span>
+			<span id="uuid">None</span>
+		</div>
+		<div>
+			<span>Status: </span>
+			<span id="message">Not connected</span>
+		</div>
+		<br />
+		<div>
+			<span>Result count: </span>
+			<span id="count">0</span>
+		</div>
+		<br />
+		<div>
+			<button id="connect" type="button" onclick="connect();">Connect</button>
+			<button id="configure" type="button" onclick="configure();" disabled>Configure</button>
+			<button id="start" type="button" onclick="start();" disabled>Start</button>
+			<button id="stop" type="button" onclick="stop();" disabled>Stop</button>
+		</div>
+	</body>
+</html>

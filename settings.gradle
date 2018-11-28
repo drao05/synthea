@@ -15,4 +15,6 @@ include 'api'
 include 'services:webservice'
 */
 
+include 'webservice'
+
 rootProject.name = 'va-synthea'

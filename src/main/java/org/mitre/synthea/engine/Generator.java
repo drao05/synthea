@@ -8,14 +8,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jfree.data.time.TimeSeries;
 import org.mitre.synthea.datastore.DataStore;
 import org.mitre.synthea.export.CDWExporter;
+import org.mitre.synthea.export.CSVExporter;
 import org.mitre.synthea.export.Exporter;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.TimeSeriesUtils;
@@ -27,7 +30,6 @@ import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.Costs;
 import org.mitre.synthea.world.concepts.VitalSign;
-import org.mitre.synthea.world.geography.demographics.Demographics;
 import org.mitre.synthea.world.geography.demographics.Demographics;
 import org.mitre.synthea.world.geography.location.Location;
 
@@ -80,6 +82,16 @@ public class Generator {
     public String state;
   }
   
+  /**
+   * Use this queue to track results
+   */
+  private BlockingQueue<String> personQueue;
+  
+  /**
+   * Non-static instance of CSV exporter
+   */
+  private CSVExporter csvExporter;
+    
   /**
    * Create a Generator, using all default settings.
    */
@@ -197,6 +209,17 @@ public class Generator {
     if (o.gender != null) {
       System.out.println(String.format("Gender: %s", o.gender));
     }
+    
+    if (Config.get("exporter.webclient") != null) {
+    	// Create the Person queue
+    	personQueue = new LinkedBlockingQueue<String>(1);
+    }
+    
+    String subDirectoryName = Config.get("exporter.webclient.csv.uuid");
+    if (subDirectoryName != null) {
+    	// Create the CSV exporter
+    	csvExporter = new CSVExporter(subDirectoryName);
+    }
   }
 
   /**
@@ -217,6 +240,8 @@ public class Generator {
         System.out.println("Waiting for threads to finish... " + threadPool);
       }
     } catch (InterruptedException e) {
+      System.out.println("Generator interrupted. Attempting to shut down associated thread pool.");
+      threadPool.shutdownNow();
       e.printStackTrace();
     }
 
@@ -368,10 +393,10 @@ public class Generator {
             start = birthdate;
           }
         }
-
+        
         // TODO - export is DESTRUCTIVE when it filters out data
         // this means export must be the LAST THING done with the person
-        Exporter.export(person, time);
+        Exporter.export(person, time, personQueue, csvExporter);
       } while ((!isAlive && !onlyDeadPatients) || (isAlive && onlyDeadPatients));
       // if the patient is alive and we want only dead ones => loop & try again
       //  (and dont even export, see above)
@@ -384,6 +409,7 @@ public class Generator {
       e.printStackTrace();
       throw e;
     }
+
     return person;
   }
 
@@ -480,4 +506,14 @@ public class Generator {
         (long) (earliestBirthdate + ((latestBirthdate - earliestBirthdate) * random.nextDouble()));
   }
 
+  /**
+   * Used by the consumer of this generator to get the next result
+   */
+  public String getNextPerson() throws InterruptedException {
+	  if (personQueue == null) {
+		  return null;
+	  }
+	  
+	  return personQueue.take();
+  }
 }

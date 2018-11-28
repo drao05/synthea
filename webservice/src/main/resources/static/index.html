@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>VA Synthea Web Service</title>
+	</head>
+	<body>
+	
+		<h1>VA Synthea Web Service</h1>
+		
+		<h2>Overview</h2>
+		
+		<p>This web service provides RESTful and WebSocket APIa for the VA Synthea synthetic patient population simulator.</p>
+		
+		<h2>RESTful API</h2>
+		
+		<p><code>POST /va-synthea/generate</code> - Submits request to generate results based on specified VA Synthea configuration parameters (JSON).</p>
+		<!-- <p>Below are the supported generator-specific configuration parameters. Some VA Synthea configuration parameters are also supported by the web service (see <a href="./va-synthea-properties-whitelist.txt">this list</a>).<p> -->
+		<p>Below are the supported generator-specific configuration parameters.<p>
+		<ul>
+			<li>seed - seed for population generation (long)</li>
+			<li>population - size of generated population (int)</li>
+			<li>gender - gender of individuals in generated population (string)</li>
+			<li>minAge - minimum age of individuals in generated population (int)</li>
+			<li>maxAge - maximum age of individuals in generated population (int)</li>
+			<li>state - U.S. state to use for generated population (string)</li>
+			<li>city - city in specified state to use for generated population (string)</li>
+		</ul>
+		<p>The configuration can also contain a parameter <code>generateCSV</code> that, if set to <code>true</code>, will configure the request to generate CSV results instead of FHIR results.</p>
+		<p>Below is an example JSON configuration:</p>
+		<code>{	seed: 42, population: 50, gender: 'M', minAge: 20, maxAge: 29, state: 'Massachusetts', city: 'Boston' }</code>
+		<p>Results returned by this endpoint:</p>
+		<ul>
+			<li>Returns status code 200 and a UUID (in "uuid" field of response's JSON body) that can be used to refer to the request in other endpoints if the request was successfully submitted.</li>
+			<li>Returns status code 400 if there was a problem processing the configuration parameters.</li>
+		</ul>
+		
+		<br />
+			
+		<p><code>GET /va-synthea/zip/&lt;UUID&gt;</code> - Retrieve all FHIR or CSV results (if the request was configured to generate CSV) as a ZIP file for the request identified by UUID path variable.</p>
+		<p>Results returned by this endpoint:</p>
+		<ul>
+			<li>Returns status code 200 and all results in FHIR or CSV format in a ZIP file. The file also includes the configuration (as JSON) used to generate the results.</li>
+			<li>Returns status code 202 if results are still pending.</li>
+			<li>Returns status code 400 if UUID path variable is missing or malformed.</li>
+			<li>Returns status code 404 if request was not found.</li>
+			<li>Returns status code 500 if error was encountered while returning results.</li>
+		</ul>
+		
+		<br />
+			
+		<p><code>GET /va-synthea/json/&lt;UUID&gt;</code> - Retrieve currently available FHIR results, if any, in a JSON array for the request identified by UUID path variable. Note that this removes the current results from the server once they are returned to the client.</p>
+		<p>Results returned by this endpoint:</p>
+		<ul>
+			<li>Returns status code 200 and currently available results in FHIR format in a JSON array in the body of the response. Up to the most recent 1000 results will be returned.</li>
+			<li>Returns status code 400 if UUID path variable is missing.</li>
+			<li>Returns status code 404 if request was not found.</li>
+		</ul>
+		
+		<br />
+		
+		<p><code>DELETE /va-synthea/terminate/&lt;UUID&gt;</code> - Attempt to terminate request identified by UUID path variable.</p>
+		<p>Results returned by this endpoint:</p>
+		<ul>
+			<li>Returns status code 200 if request was found and associated threads were interrupted, though the request processing may not terminate immediately.</li>
+			<li>Returns status code 400 if UUID path variable is missing.</li>
+			<li>Returns status code 404 request was not found.</li>
+		</ul>
+		
+		
+		<h2>WebSocket API</h2>
+		
+		<p>The WebSocket connection URL is of the form <code>ws://&lt;host:port&gt;/va-synthea/ws</code>. For example, the code below demonstrates how to connect to a locally-hosted server from a JavaScript client:</p>
+		<p><code>var ws = new WebSocket('ws://localhost:8080/va-synthea/ws');</code></p>
+		
+		<p>The WebSocket API supports three operations defined by the following JSON templates. Messages using these formats should be sent to the configured WebSocket in order to create, start, and stop generation requests.</p>
+		
+		<h3>Configure New Request</h3>
+		<p><code>{ operation: 'configure', configuration: &lt;JSON configuration&gt; }</code></p>
+		<p>Used to configure a new generation request. See the description of the <code>POST /va-synthea/generate</code> endpoint above for details on the configuration argument.</p>
+		<p>Ex. <code>{ operation: 'configure', configuration: { population: 100 } }</code></p>
+		<p>The server will send a JSON-formatted response that includes a) a <code>uuid</code> field with the new request's UUID and a <code>status</code> field with a status message or b) an <code>error</code> field with an error message if there was a problem configuring the request. If there was no error, the request configuration is also returned (including the generation seed) via the <code>configuration</code> field.</p>
+		<p>Ex. <code>{ status: 'Configured', uuid: '6e70cac6-df9c-4552-8b05-d9ff5393edfb', configuration: { seed: 1540833144961, population: 100 } }</code></p>
+		
+		<h3>Start Request</h3>
+		<p><code>{ operation: 'start', uuid: &lt;UUID&gt; }</code></p>
+		<p>Used to start the generation request associated with the specified UUID.</p>
+		<p>Ex. <code>{ operation: 'start', uuid: '6e70cac6-df9c-4552-8b05-d9ff5393edfb' }</code></p>
+		<p>The server will send a JSON-formatted response that includes a <code>status</code> or <code>error</code> field with a message describing the status or error condition of the request.</p>
+		
+		<h3>Stop Request</h3>
+		<p><code>{ operation: 'stop', uuid: &lt;UUID&gt; }</code></p>
+		<p>Used to terminate a generation request associated with the specified UUID.</p>
+		<p>Ex. <code>{ operation: 'stop', uuid: '6e70cac6-df9c-4552-8b05-d9ff5393edfb' }</code></p>
+		<p>The server will send a JSON-formatted response that includes a <code>status</code> or <code>error</code> field with a message describing the status or error condition of the request.</p>
+		
+		<h3>Generated JSON Results</h3>
+		<p>Once a generation request is successfully started, if the client receives a response from the server does not include an error or status message, it contains an individual generated JSON result (FHIR format) for the request.</p>
+		<p>When the request is completed, a JSON-formatted response of the form <code>{ status: 'Completed' }</code> is sent.</p>		
+		
+		<h2>Other Useful Links</h2>
+		<div><a href="https://github.com/synthetichealth/synthea">Synthea (GitHub)</a></div>
+		<div><a href="https://github.com/synthetichealth/synthea/wiki">Synthea Wiki</a></div>
+	
+	</body>
+</html> 
