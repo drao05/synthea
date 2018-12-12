@@ -481,7 +481,7 @@ public class Generator {
     out.put(Person.SOCIOECONOMIC_CATEGORY, city.socioeconomicCategory(sesScore));
 
     if (this.onlyVeterans) {
-      out.put("veteran_population_override", Boolean.TRUE);
+      out.put("veteran", Boolean.TRUE);
     }
 
     int targetAge;
