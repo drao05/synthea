@@ -136,17 +136,27 @@ public class Provider implements QuadTreeData {
    * Will this provider accept the given person as a patient at the given time?.
    * @param person Person to consider
    * @param time Time the person seeks care
+   * @param onlyVA if true, only consider VA facilities
    * @return whether or not the person can receive care by this provider
    */
-  public boolean accepts(Person person, long time) {
+  public boolean accepts(Person person, long time, boolean onlyVA) {
     // for now assume every provider accepts every patient
     // UNLESS it's a VA facility and the person is not a veteran
     // eventually we may want to expand this (ex. capacity?)
 
+	// If onlyVA is true, only consider VA facilities
+	if (onlyVA && !"VA Facility".equals(this.type)) {
+		return false;
+	}
+	
     if ("VA Facility".equals(this.type) && !person.attributes.containsKey("veteran")) {
       return false;
     }
     return true;
+  }
+  
+  public boolean accepts(Person person, long time) {
+	  return accepts(person, time, false);
   }
 
   /**
@@ -168,6 +178,7 @@ public class Provider implements QuadTreeData {
       }
       distance += step;
     }
+        
     return null;
   }
 
@@ -189,18 +200,41 @@ public class Provider implements QuadTreeData {
     double minDistance = Double.MAX_VALUE;
     double distance;
 
-    for (QuadTreeData item : results) {
-      provider = (Provider) item;
-      if (provider.accepts(person, time)
-          && (provider.hasService(service) || service == null)) {
-        distance = item.getLatLon().distance(coord);
-        if (distance < minDistance) {
-          closest = (Provider) item;
-          minDistance = distance;
-        }
-      }
+    if(person.attributes.containsKey("veteran")) {
+    	// If person is a veteran, first try to get a VA facility.
+    	// If that fails, we will try to get any facility later on.
+	    for (QuadTreeData item : results) {
+	      provider = (Provider) item;
+	      if (provider.accepts(person, time, true)
+	          && (provider.hasService(service) || service == null)) {
+	        distance = item.getLatLon().distance(coord);
+	        if (distance < minDistance) {
+	          closest = (Provider) item;
+	          minDistance = distance;
+	        }
+	      }
+	    }
+    }
+    
+    if (closest == null) {
+    	// Either the person is not a veteran or we could not find a VA facility for a veteran
+	    for (QuadTreeData item : results) {
+	        provider = (Provider) item;
+	        if (provider.accepts(person, time)
+	            && (provider.hasService(service) || service == null)) {
+	          distance = item.getLatLon().distance(coord);
+	          if (distance < minDistance) {
+	            closest = (Provider) item;
+	            minDistance = distance;
+	          }
+	        }
+	      }
     }
 
+    if (closest == null) {
+    	System.out.println("WARNING: No provider (" + service + ") found for " + person.attributes.get("name"));
+    }
+    
     return closest;
   }
 
