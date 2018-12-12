@@ -179,6 +179,8 @@ public class Provider implements QuadTreeData {
       distance += step;
     }
         
+	System.out.println("WARNING: No provider (" + service + ") found for " + person.attributes.get("name"));
+
     return null;
   }
 
@@ -229,10 +231,6 @@ public class Provider implements QuadTreeData {
 	          }
 	        }
 	      }
-    }
-
-    if (closest == null) {
-    	System.out.println("WARNING: No provider (" + service + ") found for " + person.attributes.get("name"));
     }
     
     return closest;
