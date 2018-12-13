@@ -3,7 +3,10 @@ package org.mitre.synthea.modules;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.mitre.synthea.world.agents.Clinician;
 import org.mitre.synthea.world.agents.Person;
+import org.mitre.synthea.world.agents.Provider;
+import org.mitre.synthea.world.concepts.ClinicianSpecialty;
 import org.mitre.synthea.world.concepts.HealthRecord.Code;
 import org.mitre.synthea.world.concepts.HealthRecord.Encounter;
 import org.mitre.synthea.world.concepts.HealthRecord.Observation;
@@ -22,17 +25,25 @@ public class DeathModule {
     if (!person.alive(time) && person.attributes.containsKey(Person.CAUSE_OF_DEATH)) {
       // create an encounter, diagnostic report, and observation
 
-      Code causeOfDeath = (Code) person.attributes.get(Person.CAUSE_OF_DEATH);
-
-      Encounter deathCertification = person.record.encounterStart(time, "ambulatory");
-      deathCertification.codes.add(DEATH_CERTIFICATION);
-
-      Observation codObs = person.record.observation(time, CAUSE_OF_DEATH_CODE.code, causeOfDeath);
-      codObs.codes.add(CAUSE_OF_DEATH_CODE);
-      codObs.category = "exam";
-
-      Report deathCert = person.record.report(time, DEATH_CERTIFICATE.code, 1);
-      deathCert.codes.add(DEATH_CERTIFICATE);
+      Provider provider = person.getAmbulatoryProvider(time);
+      if (provider != null) {
+    	  Clinician clinician = provider.chooseClinicianList(ClinicianSpecialty.PATHOLOGY, person.random);
+    	  if (clinician != null) {
+		      Code causeOfDeath = (Code) person.attributes.get(Person.CAUSE_OF_DEATH);
+		
+		      Encounter deathCertification = person.record.encounterStart(time, "ambulatory");
+		      deathCertification.codes.add(DEATH_CERTIFICATION);
+		      deathCertification.provider = provider;
+		      deathCertification.clinician = clinician;
+			    
+		      Observation codObs = person.record.observation(time, CAUSE_OF_DEATH_CODE.code, causeOfDeath);
+		      codObs.codes.add(CAUSE_OF_DEATH_CODE);
+		      codObs.category = "exam";
+		
+		      Report deathCert = person.record.report(time, DEATH_CERTIFICATE.code, 1);
+		      deathCert.codes.add(DEATH_CERTIFICATE);
+    	  }
+      }
     }
   }
 
