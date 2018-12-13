@@ -44,9 +44,13 @@ public class Module {
     Map<String, Module> retVal = new ConcurrentHashMap<String, Module>();
 
     retVal.put("Lifecycle", new LifecycleModule());
+    System.out.println("Instantiated Lifecycle module");
     retVal.put("Cardiovascular Disease", new CardiovascularDiseaseModule());
+    System.out.println("Instantiated Cardiovascular Disease module");
     retVal.put("Quality Of Life", new QualityOfLifeModule());
+    System.out.println("Instantiated Quality Of Life module");
     retVal.put("Health Insurance", new HealthInsuranceModule());
+    System.out.println("Instantiated Health Insurance module");
 
     try {
       URL modulesFolder = Module.class.getClassLoader().getResource("modules");
