@@ -462,6 +462,11 @@ public class Provider implements QuadTreeData {
    */
   public Clinician chooseClinicianList(String specialty, Random random) {
     ArrayList<Clinician> clinicians = this.clinicianMap.get(specialty);
+    if (clinicians == null || clinicians.size() == 0) {
+        System.out.println("WARNING: No clinician (" + specialty + ") found for " + name);
+    	return null;
+    }
+    
     Clinician doc = clinicians.get(random.nextInt(clinicians.size()));
     doc.incrementEncounters();
     return doc;
