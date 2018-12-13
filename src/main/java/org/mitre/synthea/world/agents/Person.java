@@ -163,6 +163,11 @@ public class Person implements Serializable, QuadTreeData {
       LocalDate now = Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).toLocalDate();
       LocalDate birthdate = Instant.ofEpochMilli((long) attributes.get(BIRTHDATE))
           .atZone(ZoneId.systemDefault()).toLocalDate();
+      
+      if (birthdate.isAfter(now)) {
+      	System.out.println("WARNING: Birth date (" + birthdate.toString() + ") is after \"now\" (" + now.toString() + ") for " + this.attributes.get("name"));
+      }
+      
       age = Period.between(birthdate, now);
     }
     return age;
