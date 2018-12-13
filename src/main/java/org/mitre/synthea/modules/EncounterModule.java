@@ -10,6 +10,7 @@ import org.mitre.synthea.engine.GlobalAttributes;
 import org.mitre.synthea.engine.Module;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.Utilities;
+import org.mitre.synthea.world.agents.Clinician;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.ClinicianSpecialty;
@@ -213,25 +214,39 @@ public final class EncounterModule extends Module {
   public static void emergencyEncounter(Person person, long time) {
     // find closest service provider with emergency service
     Provider provider = person.getEmergencyProvider(time);
-    provider.incrementEncounters("emergency", Utilities.getYear(time));
-
-    Encounter encounter = person.record.encounterStart(time, "emergency");
-    encounter.codes.add(ENCOUNTER_EMERGENCY);
-    // TODO: emergency encounters need their duration to be defined by the activities performed
-    // based on the emergencies given here (heart attack, stroke)
-    // assume people will be in the hospital for observation for a few days
-    person.record.encounterEnd(time + TimeUnit.DAYS.toMillis(4), "emergency");
+    if (provider != null) {
+    	Clinician clinician = provider.chooseClinicianList(ClinicianSpecialty.EMERGENCY_MEDICINE, person.random);
+    	if (clinician != null) {
+		    provider.incrementEncounters("emergency", Utilities.getYear(time));
+		
+		    Encounter encounter = person.record.encounterStart(time, "emergency");
+		    encounter.provider = provider;
+		    encounter.clinician = clinician;
+		    encounter.codes.add(ENCOUNTER_EMERGENCY);
+		    // TODO: emergency encounters need their duration to be defined by the activities performed
+		    // based on the emergencies given here (heart attack, stroke)
+		    // assume people will be in the hospital for observation for a few days
+		    person.record.encounterEnd(time + TimeUnit.DAYS.toMillis(4), "emergency");
+    	}
+    }
   }
 
   public static void urgentCareEncounter(Person person, long time) {
     // find closest service provider with urgent care service
     Provider provider = person.getUrgentCareProvider(time);
-    provider.incrementEncounters("urgent_care", Utilities.getYear(time));
-
-    Encounter encounter = person.record.encounterStart(time, "urgent_care");
-    encounter.codes.add(ENCOUNTER_URGENTCARE);
-    // assume people will be in urgent care for one hour
-    person.record.encounterEnd(time + TimeUnit.HOURS.toMillis(1), "urgent_care");
+    if (provider != null) {
+    	Clinician clinician = provider.chooseClinicianList(ClinicianSpecialty.GENERAL_PRACTICE, person.random);
+    	if (clinician != null) {
+		    provider.incrementEncounters("urgent_care", Utilities.getYear(time));
+		
+		    Encounter encounter = person.record.encounterStart(time, "urgent_care");
+		    encounter.provider = provider;
+		    encounter.clinician = clinician;
+		    encounter.codes.add(ENCOUNTER_URGENTCARE);
+		    // assume people will be in urgent care for one hour
+		    person.record.encounterEnd(time + TimeUnit.HOURS.toMillis(1), "urgent_care");
+    	}
+    }
   }
 
 
