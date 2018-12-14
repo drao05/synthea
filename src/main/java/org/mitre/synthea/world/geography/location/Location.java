@@ -297,6 +297,7 @@ public class Location {
     }
   }
   
+  /*
   private static LinkedHashMap<String, String> loadAbbreviations() {
     LinkedHashMap<String, String> abbreviations = new LinkedHashMap<String, String>();
     String filename = null;
@@ -316,7 +317,8 @@ public class Location {
     }
     return abbreviations;
   }
-
+  */
+  
   /**
    * Get the abbreviation for a state.
    * @param state State name. e.g. "Massachusetts"
