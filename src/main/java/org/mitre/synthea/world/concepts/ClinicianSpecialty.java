@@ -1,7 +1,5 @@
 package org.mitre.synthea.world.concepts;
 
-import java.util.ArrayList;
-
 public class ClinicianSpecialty {
 
   public static final String ADDICTION_MEDICINE = "ADDICTION MEDICINE";

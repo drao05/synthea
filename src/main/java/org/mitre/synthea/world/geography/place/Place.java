@@ -1,11 +1,7 @@
 package org.mitre.synthea.world.geography.place;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.sis.geometry.DirectPosition2D;
 import org.apache.sis.index.tree.QuadTreeData;
-import org.mitre.synthea.world.agents.Person;
 
 /**
  * Place represents a named place with a postal code and coordinate.
