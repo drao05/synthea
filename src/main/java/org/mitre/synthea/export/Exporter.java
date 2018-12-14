@@ -54,7 +54,7 @@ public abstract class Exporter {
     	
     	if (personQueue != null) {
 	    	try {
-				personQueue.put(FhirStu3.convertToFHIR(person, stopTime));
+				personQueue.put(FhirStu3.convertToFHIRJson(person, stopTime));
 	    	} catch(InterruptedException iex) {
 			} catch(Exception ex) {
 				ex.printStackTrace();
