@@ -159,17 +159,14 @@ public class FhirDstu2 {
   }
 
   /**
-   * Convert the given Person into a JSON String, containing a FHIR Bundle of the Person and the
+   * Convert the given Person into a FHIR Bundle with the Patient and the
    * associated entries from their health record.
    *
-   * @param person
-   *          Person to generate the FHIR JSON for
-   * @param stopTime
-   *          Time the simulation ended
-   * @return String containing a JSON representation of a FHIR Bundle containing the Person's health
-   *         record
+   * @param person Person to generate the FHIR Bundle
+   * @param stopTime Time the simulation ended
+   * @return String containing a FHIR Bundle containing the Person's health record
    */
-  public static String convertToFHIR(Person person, long stopTime) {
+  public static Bundle convertToFHIR(Person person, long stopTime) {
     Bundle bundle = new Bundle();
     if (TRANSACTION_BUNDLE) {
       bundle.setType(BundleTypeEnum.TRANSACTION);
@@ -221,10 +218,24 @@ public class FhirDstu2 {
       // one claim per encounter
       encounterClaim(personEntry, bundle, encounterEntry, encounter.claim);
     }
+    return bundle;
+  }
 
+  /**
+   * Convert the given Person into a JSON String, containing a FHIR Bundle of the Person and the
+   * associated entries from their health record.
+   *
+   * @param person
+   *          Person to generate the FHIR JSON for
+   * @param stopTime
+   *          Time the simulation ended
+   * @return String containing a JSON representation of a FHIR Bundle containing the Person's health
+   *         record
+   */
+  public static String convertToFHIRJson(Person person, long stopTime) {
+    Bundle bundle = convertToFHIR(person, stopTime);
     String bundleJson = FHIR_CTX.newJsonParser().setPrettyPrint(true)
         .encodeResourceToString(bundle);
-
     return bundleJson;
   }
 
@@ -973,6 +984,9 @@ public class FhirDstu2 {
 
     medicationResource.setPatient(new ResourceReferenceDt(personEntry.getFullUrl()));
     medicationResource.setEncounter(new ResourceReferenceDt(encounterEntry.getFullUrl()));
+    ca.uhn.fhir.model.dstu2.resource.Encounter encounter =
+        (ca.uhn.fhir.model.dstu2.resource.Encounter) encounterEntry.getResource();
+    medicationResource.setPrescriber(encounter.getParticipantFirstRep().getIndividual());
     medicationResource.setMedication(mapCodeToCodeableConcept(medication.codes.get(0), RXNORM_URI));
 
     medicationResource.setDateWritten(new DateTimeDt(new Date(medication.start)));
@@ -1114,6 +1128,11 @@ public class FhirDstu2 {
 
     Code code = carePlan.codes.get(0);
     careplanResource.addCategory(mapCodeToCodeableConcept(code, SNOMED_URI));
+
+    NarrativeDt narrative = new NarrativeDt();
+    narrative.setStatus(NarrativeStatusEnum.GENERATED);
+    narrative.setDiv(code.display);
+    careplanResource.setText(narrative);
 
     CarePlanActivityStatusEnum activityStatus;
     GoalStatusEnum goalStatus;

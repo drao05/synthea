@@ -73,6 +73,7 @@ import org.hl7.fhir.dstu3.model.Immunization.ImmunizationStatus;
 import org.hl7.fhir.dstu3.model.IntegerType;
 import org.hl7.fhir.dstu3.model.MedicationRequest;
 import org.hl7.fhir.dstu3.model.MedicationRequest.MedicationRequestIntent;
+import org.hl7.fhir.dstu3.model.MedicationRequest.MedicationRequestRequesterComponent;
 import org.hl7.fhir.dstu3.model.MedicationRequest.MedicationRequestStatus;
 import org.hl7.fhir.dstu3.model.Meta;
 import org.hl7.fhir.dstu3.model.Money;
@@ -203,15 +204,14 @@ public class FhirStu3 {
   }
 
   /**
-   * Convert the given Person into a JSON String, containing a FHIR Bundle of the Person and the
+   * Convert the given Person into a FHIR Bundle, containing the Patient and the
    * associated entries from their health record.
    *
-   * @param person Person to generate the FHIR JSON for
+   * @param person Person to generate the FHIR from
    * @param stopTime Time the simulation ended
-   * @return String containing a JSON representation of a FHIR Bundle containing the Person's 
-   *     health record.
+   * @return FHIR Bundle containing the Person's health record.
    */
-  public static String convertToFHIR(Person person, long stopTime) {
+  public static Bundle convertToFHIR(Person person, long stopTime) {
     Bundle bundle = new Bundle();
     if (TRANSACTION_BUNDLE) {
       bundle.setType(BundleType.TRANSACTION);
@@ -267,10 +267,22 @@ public class FhirStu3 {
       explanationOfBenefit(personEntry,bundle,encounterEntry,person,
           encounterClaim, encounter);
     }
+    return bundle;
+  }
 
+  /**
+   * Convert the given Person into a JSON String, containing a FHIR Bundle of the Person and the
+   * associated entries from their health record.
+   *
+   * @param person Person to generate the FHIR JSON for
+   * @param stopTime Time the simulation ended
+   * @return String containing a JSON representation of a FHIR Bundle containing the Person's 
+   *     health record.
+   */
+  public static String convertToFHIRJson(Person person, long stopTime) {
+    Bundle bundle = convertToFHIR(person, stopTime);
     String bundleJson = FHIR_CTX.newJsonParser().setPrettyPrint(true)
         .encodeResourceToString(bundle);
-
     return bundleJson;
   }
 
@@ -885,7 +897,6 @@ public class FhirStu3 {
                                            Encounter encounter) {
     boolean inpatient = false;
     boolean outpatient = false;
-    org.hl7.fhir.dstu3.model.Claim claim = (org.hl7.fhir.dstu3.model.Claim) claimEntry.getResource();
     if (encounter.type.equals(Provider.INPATIENT) || encounter.type.equals(Provider.AMBULATORY)) {
       inpatient = true;
       // Provider enum doesn't include outpatient, but it can still be
@@ -1108,7 +1119,15 @@ public class FhirStu3 {
 
     // Set References
     eob.setPatient(new Reference(personEntry.getFullUrl()));
-    eob.setOrganizationTarget(claim.getOrganizationTarget());
+    if (encounter.provider != null) {
+      // This is what should happen if BlueButton 2.0 wasn't needlessly restrictive
+      // String providerUrl = findProviderUrl(encounter.provider, bundle);
+      // eob.setOrganization(new Reference().setReference(providerUrl));
+      // Instead, we'll create the BlueButton 2.0 reference via identifier...
+      Identifier identifier = new Identifier();
+      identifier.setValue(encounter.provider.getResourceID());
+      eob.setOrganization(new Reference().setIdentifier(identifier));
+    }
 
     // get the insurance info at the time that the encounter happened
     String insurance = HealthInsuranceModule.getCurrentInsurance(person, encounter.start);
@@ -1121,6 +1140,8 @@ public class FhirStu3 {
     insuranceComponent.setCoverage(new Reference("#coverage"));
     eob.setInsurance(insuranceComponent);
 
+    org.hl7.fhir.dstu3.model.Claim claim =
+        (org.hl7.fhir.dstu3.model.Claim) claimEntry.getResource();
     eob.addIdentifier()
         .setSystem("https://bluebutton.cms.gov/resources/variables/clm_id")
         .setValue(claim.getId());
@@ -1391,16 +1412,18 @@ public class FhirStu3 {
         .setRecipient(recipientList)
         .setId("1"));
 
-    Provider provider = person.getProvider(encounter.type, encounterResource
-        .getPeriod()
-        .getEnd()
-        .getTime());
-    if (!inpatient && !outpatient) {
-      eob.setProvider(new Reference().setReference(findProviderUrl(provider, bundle)));
+    if (encounter.clinician != null) {
+      // This is what should happen if BlueButton 2.0 wasn't needlessly restrictive
+      // String practitionerFullUrl = findPractitioner(encounter.clinician, bundle);
+      // eob.setProvider(new Reference().setReference(practitionerFullUrl));
+      // Instead, we'll create the BlueButton 2.0 reference via identifier...
+      Identifier identifier = new Identifier();
+      identifier.setValue(encounter.clinician.getResourceID());
+      eob.setProvider(new Reference().setIdentifier(identifier));
     } else {
-      eob.setProviderTarget(new Practitioner()
-          .addIdentifier(new Identifier()
-              .setValue("yes")));
+      Identifier identifier = new Identifier();
+      identifier.setValue("Unknown");
+      eob.setProvider(new Reference().setIdentifier(identifier));
     }
 
     eob.addCareTeam(new ExplanationOfBenefit.CareTeamComponent()
@@ -1749,6 +1772,12 @@ public class FhirStu3 {
 
     medicationResource.setAuthoredOn(new Date(medication.start));
     medicationResource.setIntent(MedicationRequestIntent.ORDER);
+    org.hl7.fhir.dstu3.model.Encounter encounter =
+        (org.hl7.fhir.dstu3.model.Encounter) encounterEntry.getResource();
+    MedicationRequestRequesterComponent requester = new MedicationRequestRequesterComponent();
+    requester.setAgent(encounter.getParticipantFirstRep().getIndividual());
+    requester.setOnBehalfOf(encounter.getServiceProvider());
+    medicationResource.setRequester(requester);
 
     if (medication.stop != 0L) {
       medicationResource.setStatus(MedicationRequestStatus.STOPPED);
