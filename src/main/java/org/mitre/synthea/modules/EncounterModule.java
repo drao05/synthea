@@ -39,9 +39,8 @@ public final class EncounterModule extends Module {
   
   public static final Code ENCOUNTER_CHECKUP = new Code("SNOMED-CT", "185349003",
       "Encounter for check up (procedure)");
-
-   // TODO: Denali add a real code or other resource for telemedicine
-
+  public static final Code ENCOUNTER_TELEMEDICINE = new Code("SNOMED-CT", "448337001",
+	      "Telemedicine consultation with patient (procedure)");
   public static final Code ENCOUNTER_EMERGENCY = new Code("SNOMED-CT", "50849002",
       "Emergency Encounter");
   public static final Code WELL_CHILD_VISIT = new Code("SNOMED-CT", "410620009",
@@ -90,8 +89,7 @@ public final class EncounterModule extends Module {
       if (Boolean.parseBoolean(
           Config.get("generate.time_based_telehealth_adoption", "false"))) {
         if (rand.nextDouble() < (Double) person.attributes.get("Total_telehealth_likelihood")) {
-          // TODO: Denali change ENCOUNTER_CODE to make it a realistic telehealth encounter
-          encounter.codes.add(ENCOUNTER_CHECKUP);
+          encounter.codes.add(ENCOUNTER_TELEMEDICINE);
         } else {
           encounter.codes.add(ENCOUNTER_CHECKUP);
         }
