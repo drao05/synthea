@@ -58,7 +58,7 @@ public class FHIRSTU3ExporterTest {
       Config.set("exporter.fhir.export", "true");
       Config.set("exporter.fhir.use_shr_extensions", "true");
       FhirStu3.TRANSACTION_BUNDLE = person.random.nextBoolean();
-      String fhirJson = FhirStu3.convertToFHIR(person, System.currentTimeMillis());
+      String fhirJson = FhirStu3.convertToFHIRJson(person, System.currentTimeMillis());
       IBaseResource resource = ctx.newJsonParser().parseResource(fhirJson);
       ValidationResult result = validator.validateWithResult(resource);
       if (!result.isSuccessful()) {
@@ -86,6 +86,14 @@ public class FHIRSTU3ExporterTest {
                  * so we must manually validate.
                  */
                 valid = validateCon4((Condition) entry.getResource());
+              } else if (emessage.getMessage().contains("@ MedicationRequest mps-1")) {
+                /*
+                 * The mps-1 invariant says MedicationRequest.requester.onBehalfOf can only be
+                 * specified if MedicationRequest.requester.agent is practitioner or device.
+                 * But the invariant is poorly written and does not correctly handle references
+                 * starting with "urn:uuid"
+                 */
+                valid = true; // ignore this error
               }
 
               if (!valid) {
