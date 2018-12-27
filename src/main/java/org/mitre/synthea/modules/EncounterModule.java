@@ -289,7 +289,7 @@ public final class EncounterModule extends Module {
    * @return Collection of all codes and concepts this module uses
    */
   public static Collection<Code> getAllCodes() {
-    return Arrays.asList(ENCOUNTER_CHECKUP, ENCOUNTER_EMERGENCY, 
+    return Arrays.asList(ENCOUNTER_CHECKUP, ENCOUNTER_TELEMEDICINE, ENCOUNTER_EMERGENCY, 
         WELL_CHILD_VISIT, GENERAL_EXAM, ENCOUNTER_URGENTCARE);
   }
 
