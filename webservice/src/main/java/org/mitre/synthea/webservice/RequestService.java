@@ -270,6 +270,7 @@ public class RequestService {
 			case "maxAge":
 			case "state":
 			case "city":
+			case "generateCSV":
 				// Ignore generator configuration values
 				break;
 			default:
