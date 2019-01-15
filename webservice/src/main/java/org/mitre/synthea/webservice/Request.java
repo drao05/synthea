@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Queue;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -101,8 +100,7 @@ public class Request {
 		// Save the generation seed that will be used
 		this.configuration.put("seed", options.seed);
 		
-		// TODO: Re-enable processing of other Synthea config options once we have a solution to the static Config class issue.
-	    //updateSyntheaConfig(configuration);
+	    RequestService.updateSyntheaConfig(configuration);
 	}
 	
 	/**
@@ -149,43 +147,6 @@ public class Request {
 		}
 		
 		return options;
-	}
-	
-	/**
-	 * Configure Synthea with a given JSON configuration
-	 */
-	@SuppressWarnings("unused")
-	private void updateSyntheaConfig(JSONObject configuration) {
-		Set<String> configPropertiesWhiteList = requestService.getConfigPropertiesWhiteList();
-	    JSONArray names = configuration.names();
-		for (int idx=0; idx<names.length(); ++idx) {
-			String name = names.getString(idx);			
-			switch (name) {
-			case "seed":
-			case "population":
-			case "gender":
-			case "minAge":
-			case "maxAge":
-			case "state":
-			case "city":
-				// Ignore generator configuration values
-				break;
-			default:
-				if (configPropertiesWhiteList.contains(name)) {
-					if (Config.get(name) != null) {
-						LOGGER.info("Updating existing configuration parameter: " + name);
-						Config.set(name, configuration.getString(name));
-					} else {
-						LOGGER.info("Adding missing configuration parameter: " + name);
-						Config.set(name, configuration.getString(name));
-					}
-				} else {
-					LOGGER.info("Unsupported configuration parameter: " + name);
-				}
-				
-				break;
-			}
-		}
 	}
 	
 	/**

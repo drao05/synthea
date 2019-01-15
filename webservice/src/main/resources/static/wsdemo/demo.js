@@ -14,12 +14,14 @@ function connect() {
 			connected = true;
 	    	$('#connect').attr('disabled', 'disabled');
 	    	$('#configure').removeAttr('disabled');
+	    	$('#configure-server').removeAttr('disabled');
 	    	updateMessage('Connected');
 		};
 		
 		ws.onclose = function(event) {
 			$('#connect').removeAttr('disabled');
 	    	$('#configure').attr('disabled', 'disabled');
+	    	$('#configure-server').attr('disabled', 'disabled');
 			$('#start').attr('disabled', 'disabled');
 			$('#stop').attr('disabled', 'disabled');
 			if (connected) {
@@ -41,6 +43,9 @@ function connect() {
 					
 					count = 0;
 					$('#count').html(count);
+					
+					$('#start').removeAttr('disabled');
+					$('#stop').attr('disabled', 'disabled');
 				}
 				
 				if (data['error']) {
@@ -75,14 +80,14 @@ function connect() {
 }
 
 function configure() {
+	updateMessage('Please wait...');
 	let message = {operation: 'configure', configuration: {population: parseInt($('#population').val())}};
 	ws.send(JSON.stringify(message));
 	$('#configure').attr('disabled', 'disabled');
-	$('#start').removeAttr('disabled');
-	$('#stop').attr('disabled', 'disabled');
 }
 
 function start() {
+	updateMessage('Please wait...');
 	let message = {operation: 'start', uuid: uuid};
 	ws.send(JSON.stringify(message));
 	$('#start').attr('disabled', 'disabled');
@@ -90,8 +95,15 @@ function start() {
 }
 
 function stop() {
+	updateMessage('Please wait...');
 	let message = {operation: 'stop', uuid: uuid};
 	ws.send(JSON.stringify(message));
 	$('#configure').removeAttr('disabled');
 	$('#stop').attr('disabled', 'disabled');
+}
+
+function configureServer() {
+	updateMessage('Please wait...');
+	let message = {operation: 'configure-server', configuration: { 'module.encounter.telemed_adoption_values': '1900:0,2000:0,2017:0.9' }};
+	ws.send(JSON.stringify(message));
 }

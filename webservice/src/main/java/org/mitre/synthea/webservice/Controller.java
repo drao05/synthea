@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import javax.servlet.http.HttpServletRequest;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,21 @@ public class Controller {
     		Request request = requestService.createRequest(httpEntity.getBody());
     		request.start();
     		return new ResponseEntity<String>("{ \"uuid\": \"" + request.getUuid() + "\"}", HttpStatus.OK);
+    	} catch(JSONException jex) {
+    		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    	}
+	}
+    
+    /**
+     * POST endpoint that updates server configuration based on specified VA Synthea configuration parameters (JSON).
+     * If the request was successfully submitted, returns status code 200.
+     * Returns status code 400 if there was a problem processing the configuration parameters.
+     */
+    @PostMapping(value = "/configure-server", consumes = APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> configureServer(HttpServletRequest httpServletRequest, HttpEntity<String> httpEntity) {
+    	try {
+    		RequestService.updateSyntheaConfig(new JSONObject(httpEntity.getBody()));
+    		return new ResponseEntity<>(HttpStatus.OK);
     	} catch(JSONException jex) {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     	}

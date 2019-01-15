@@ -61,6 +61,15 @@ public class SocketHandler extends TextWebSocketHandler {
 			    		sendMessage(session, "{ \"error\": \"Could not process specified configuration\" }");
 			    	}
 					break;
+				case "configure-server":
+					try {
+			    		RequestService.updateSyntheaConfig(new JSONObject(json.get("configuration").toString()));
+			    		sendMessage(session, "{ \"status\": \"Configured server\" }");
+			    		return;
+			    	} catch(JSONException jex) {
+			    		sendMessage(session, "{ \"error\": \"Could not process specified configuration\" }");
+			    	}
+					break;
 				case "start":
 					try {
 						String uuid = json.getString("uuid");

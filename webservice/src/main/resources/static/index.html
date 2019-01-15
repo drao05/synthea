@@ -14,7 +14,6 @@
 		<h2>RESTful API</h2>
 		
 		<p><code>POST /va-synthea/generate</code> - Submits request to generate results based on specified VA Synthea configuration parameters (JSON).</p>
-		<!-- <p>Below are the supported generator-specific configuration parameters. Some VA Synthea configuration parameters are also supported by the web service (see <a href="./va-synthea-properties-whitelist.txt">this list</a>).<p> -->
 		<p>Below are the supported generator-specific configuration parameters.<p>
 		<ul>
 			<li>seed - seed for population generation (long)</li>
@@ -25,12 +24,23 @@
 			<li>state - U.S. state to use for generated population (string)</li>
 			<li>city - city in specified state to use for generated population (string)</li>
 		</ul>
+		<p>Some additional VA Synthea configuration parameters are also supported by the web service (see <a href="./va-synthea-properties-whitelist.txt">this list</a>). However, note that changes to those parameters will affect all requests being handled by the service.<p>
 		<p>The configuration can also contain a parameter <code>generateCSV</code> that, if set to <code>true</code>, will configure the request to generate CSV results instead of FHIR results.</p>
 		<p>Below is an example JSON configuration:</p>
 		<code>{	seed: 42, population: 50, gender: 'M', minAge: 20, maxAge: 29, state: 'Massachusetts', city: 'Boston' }</code>
 		<p>Results returned by this endpoint:</p>
 		<ul>
 			<li>Returns status code 200 and a UUID (in "uuid" field of response's JSON body) that can be used to refer to the request in other endpoints if the request was successfully submitted.</li>
+			<li>Returns status code 400 if there was a problem processing the configuration parameters.</li>
+		</ul>
+		
+		<br />
+		
+		<p><code>POST /va-synthea/configure-server</code> - Updates server configuration based on specified VA Synthea configuration parameters (JSON).</p>
+		<p>See <a href="./va-synthea-properties-whitelist.txt">this list</a> for the parameters that can be changed, and note that changes to those parameters will affect all requests being handled by the service.<p>
+		<p>Results returned by this endpoint:</p>
+		<ul>
+			<li>Returns status code 200 if the request was successfully submitted.</li>
 			<li>Returns status code 400 if there was a problem processing the configuration parameters.</li>
 		</ul>
 		
@@ -80,6 +90,13 @@
 		<p>Ex. <code>{ operation: 'configure', configuration: { population: 100 } }</code></p>
 		<p>The server will send a JSON-formatted response that includes a) a <code>uuid</code> field with the new request's UUID and a <code>status</code> field with a status message or b) an <code>error</code> field with an error message if there was a problem configuring the request. If there was no error, the request configuration is also returned (including the generation seed) via the <code>configuration</code> field.</p>
 		<p>Ex. <code>{ status: 'Configured', uuid: '6e70cac6-df9c-4552-8b05-d9ff5393edfb', configuration: { seed: 1540833144961, population: 100 } }</code></p>
+		
+		<h3>Configure Server</h3>
+		<p><code>{ operation: 'configure-server', configuration: &lt;JSON configuration&gt; }</code></p>
+		<p>Used to change the server configuration. See the description of the <code>POST /va-synthea/configure-server</code> endpoint above for details on the configuration argument.</p>
+		<p>Ex. <code>{ operation: 'configure-server', configuration: { 'module.encounter.telemed_adoption_values' : '1900:0,2000:0,2017:0.9' } }</code></p>
+		<p>The server will send a JSON-formatted response that includes a <code>status</code> field with a status message or an <code>error</code> field with an error message if there was a problem configuring the request.</p>
+		<p>Ex. <code>{ status: 'Configured server' }</code></p>
 		
 		<h3>Start Request</h3>
 		<p><code>{ operation: 'start', uuid: &lt;UUID&gt; }</code></p>
