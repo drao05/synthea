@@ -81,6 +81,8 @@ public class Request {
 		} catch(JSONException jex) {
 		}
 		
+	    RequestService.updateSyntheaConfig(configuration);
+
 		GeneratorOptions options = configureGeneratorOptions(configuration);
 		generator = options != null ? new Generator(options) : new Generator();
 		generateThread = new Thread() {
@@ -99,8 +101,6 @@ public class Request {
 		
 		// Save the generation seed that will be used
 		this.configuration.put("seed", options.seed);
-		
-	    RequestService.updateSyntheaConfig(configuration);
 	}
 	
 	/**
@@ -147,6 +147,30 @@ public class Request {
 		}
 		
 		return options;
+	}
+	
+	/**
+	 * Update this request's configuration
+	 */
+	public void updateConfig(JSONObject configuration) {
+		if (configuration == null) {
+			return;
+		}
+				
+	    JSONArray names = configuration.names();
+		for (int idx=0; idx<names.length(); ++idx) {
+			String name = names.getString(idx);
+			
+			switch (name) {
+			case "module.encounter.telemed_adoption_values":
+				generator.updateTelehealthAdoption(configuration.getString(name));
+				this.configuration.put(name, configuration.getString(name));
+			default:
+				
+				// Ignore other configuration values for now
+				break;
+			}
+		}
 	}
 	
 	/**

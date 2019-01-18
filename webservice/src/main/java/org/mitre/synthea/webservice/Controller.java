@@ -54,14 +54,26 @@ public class Controller {
 	}
     
     /**
-     * POST endpoint that updates server configuration based on specified VA Synthea configuration parameters (JSON).
-     * If the request was successfully submitted, returns status code 200.
-     * Returns status code 400 if there was a problem processing the configuration parameters.
+     * POST endpoint that updates request configuration associated with specified UUID (that was originally returned by the associated generate request) based on specified VA Synthea configuration parameters (JSON).
+     * Returns a status code:
+     * - 200 if reconfiguration was successful
+     * - 400 if there was a problem processing the configuration parameters
+     * - 404 if request was not found (either the request is complete and results have been retrieved, or the request never existed)
      */
-    @PostMapping(value = "/configure-server", consumes = APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> configureServer(HttpServletRequest httpServletRequest, HttpEntity<String> httpEntity) {
+    @PostMapping(value = "/update-request/{uuid}", consumes = APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> configureServer(HttpServletRequest httpServletRequest, HttpEntity<String> httpEntity, @PathVariable String uuid) {
+    	
+    	if (uuid == null) {
+    		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    	}
+    	
+    	Request request = requestService.getRequest(uuid);
+    	if (request == null) {
+    		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    	}
+    	
     	try {
-    		RequestService.updateSyntheaConfig(new JSONObject(httpEntity.getBody()));
+    		request.updateConfig(new JSONObject(httpEntity.getBody()));
     		return new ResponseEntity<>(HttpStatus.OK);
     	} catch(JSONException jex) {
     		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

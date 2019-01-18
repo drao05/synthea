@@ -14,14 +14,13 @@ function connect() {
 			connected = true;
 	    	$('#connect').attr('disabled', 'disabled');
 	    	$('#configure').removeAttr('disabled');
-	    	$('#configure-server').removeAttr('disabled');
 	    	updateMessage('Connected');
 		};
 		
 		ws.onclose = function(event) {
 			$('#connect').removeAttr('disabled');
 	    	$('#configure').attr('disabled', 'disabled');
-	    	$('#configure-server').attr('disabled', 'disabled');
+	    	$('#update-request').attr('disabled', 'disabled');
 			$('#start').attr('disabled', 'disabled');
 			$('#stop').attr('disabled', 'disabled');
 			if (connected) {
@@ -46,6 +45,7 @@ function connect() {
 					
 					$('#start').removeAttr('disabled');
 					$('#stop').attr('disabled', 'disabled');
+					$('#update-request').removeAttr('disabled');
 				}
 				
 				if (data['error']) {
@@ -60,6 +60,7 @@ function connect() {
 						$('#configure').removeAttr('disabled');
 		        		$('#start').attr('disabled', 'disabled');
 		        		$('#stop').attr('disabled', 'disabled');
+		        		$('#update-request').attr('disabled', 'disabled');
 					}
 					
 					if (data['configuration']) {
@@ -102,8 +103,8 @@ function stop() {
 	$('#stop').attr('disabled', 'disabled');
 }
 
-function configureServer() {
+function updateRequest() {
 	updateMessage('Please wait...');
-	let message = {operation: 'configure-server', configuration: { 'module.encounter.telemed_adoption_values': '1900:0,2000:0,2017:0.9' }};
+	let message = {operation: 'update-request', uuid: uuid, configuration: { 'module.encounter.telemed_adoption_values': '1900:0,2000:0,2017:0.9' }};
 	ws.send(JSON.stringify(message));
 }

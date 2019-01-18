@@ -6,7 +6,6 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.mitre.synthea.engine.Event;
-import org.mitre.synthea.engine.GlobalAttributes;
 import org.mitre.synthea.engine.Module;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.Utilities;
@@ -59,19 +58,7 @@ public final class EncounterModule extends Module {
 
   @Override
   public boolean process(Person person, long time) {
-    if (Boolean.parseBoolean(
-        Config.get("generate.time_based_telehealth_adoption", "false"))) {
-      /*
-       * Inject global attributes.
-       * 
-       * Note: we may have to do something like this in every process()
-       * implementation, which may be annoying.
-       */
-      person.attributes.putAll(GlobalAttributes.attrs().getAttrsAtTime(time));
-      person.attributes.put("Total_telehealth_likelihood",
-          (Double) person.attributes.get("Telehealth_adoption")
-          * (Double) person.attributes.get("Relative_telehealth_satisfaction"));
-    }
+    
     boolean startedEncounter = false;
     int year = Utilities.getYear(time);
 

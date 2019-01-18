@@ -7,20 +7,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Year;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jfree.data.time.TimeSeries;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mitre.synthea.engine.GlobalAttributes;
 import org.mitre.synthea.helpers.Config;
-import org.mitre.synthea.helpers.TimeSeriesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -281,19 +277,6 @@ public class RequestService {
 					} else {
 						LOGGER.info("Adding missing configuration parameter: " + name);
 						Config.set(name, configuration.getString(name));
-					}
-					
-					// Config options that require special handling
-					switch(name) {
-					case "module.encounter.telemed_adoption_values":
-						TimeSeries teleHealthAdoption = TimeSeriesUtils.series("Telehealth_adoption",
-								Config.get("module.encounter.telemed_adoption_values", "1900:0,2000:0.1"),
-								Year.now().getValue() + 1,
-								Config.get("module.encounter.telemed_adoption_type", "step"));
-						GlobalAttributes.attrs().globalTimeBasedAttrs.put("Telehealth_adoption", teleHealthAdoption);
-						break;
-					default:
-						break;
 					}
 				} else {
 					LOGGER.info("Unsupported configuration parameter: " + name);

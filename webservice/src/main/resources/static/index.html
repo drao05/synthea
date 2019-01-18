@@ -36,12 +36,13 @@
 		
 		<br />
 		
-		<p><code>POST /va-synthea/configure-server</code> - Updates server configuration based on specified VA Synthea configuration parameters (JSON).</p>
-		<p>See <a href="./va-synthea-properties-whitelist.txt">this list</a> for the parameters that can be changed, and note that changes to those parameters will affect all requests being handled by the service.<p>
+		<p><code>POST /va-synthea/update-request/&lt;UUID&gt;</code> - Updates configuration of request associated with specified UUID (that was originally returned by the associated generate request) based on specified VA Synthea configuration parameters (JSON).</p>
+		<p>Currently only supports updating the <code>module.encounter.telemed_adoption_values</code> configuration parameter.</p>
 		<p>Results returned by this endpoint:</p>
 		<ul>
-			<li>Returns status code 200 if the request was successfully submitted.</li>
+			<li>Returns status code 200 if the reconfiguration was successful.</li>
 			<li>Returns status code 400 if there was a problem processing the configuration parameters.</li>
+			<li>Returns status code 404 if request was not found.</li>
 		</ul>
 		
 		<br />
@@ -82,7 +83,7 @@
 		<p>The WebSocket connection URL is of the form <code>ws://&lt;host:port&gt;/va-synthea/ws</code>. For example, the code below demonstrates how to connect to a locally-hosted server from a JavaScript client:</p>
 		<p><code>var ws = new WebSocket('ws://localhost:8080/va-synthea/ws');</code></p>
 		
-		<p>The WebSocket API supports three operations defined by the following JSON templates. Messages using these formats should be sent to the configured WebSocket in order to create, start, and stop generation requests.</p>
+		<p>The WebSocket API supports four operations defined by the following JSON templates. Messages using these formats should be sent to the configured WebSocket in order to create, reconfigure, start, and stop generation requests.</p>
 		
 		<h3>Configure New Request</h3>
 		<p><code>{ operation: 'configure', configuration: &lt;JSON configuration&gt; }</code></p>
@@ -91,12 +92,12 @@
 		<p>The server will send a JSON-formatted response that includes a) a <code>uuid</code> field with the new request's UUID and a <code>status</code> field with a status message or b) an <code>error</code> field with an error message if there was a problem configuring the request. If there was no error, the request configuration is also returned (including the generation seed) via the <code>configuration</code> field.</p>
 		<p>Ex. <code>{ status: 'Configured', uuid: '6e70cac6-df9c-4552-8b05-d9ff5393edfb', configuration: { seed: 1540833144961, population: 100 } }</code></p>
 		
-		<h3>Configure Server</h3>
-		<p><code>{ operation: 'configure-server', configuration: &lt;JSON configuration&gt; }</code></p>
-		<p>Used to change the server configuration. See the description of the <code>POST /va-synthea/configure-server</code> endpoint above for details on the configuration argument.</p>
-		<p>Ex. <code>{ operation: 'configure-server', configuration: { 'module.encounter.telemed_adoption_values' : '1900:0,2000:0,2017:0.9' } }</code></p>
+		<h3>Update Request</h3>
+		<p><code>{ operation: 'update-request', uuid: &lt;UUID&gt;, configuration: &lt;JSON configuration&gt; }</code></p>
+		<p>Used to change a request configuration. See the description of the <code>POST /va-synthea/update-request</code> endpoint above for details on the configuration argument.</p>
+		<p>Ex. <code>{ operation: 'update-request', uuid: '6e70cac6-df9c-4552-8b05-d9ff5393edfb', configuration: { 'module.encounter.telemed_adoption_values' : '1900:0,2000:0,2017:0.9' } }</code></p>
 		<p>The server will send a JSON-formatted response that includes a <code>status</code> field with a status message or an <code>error</code> field with an error message if there was a problem configuring the request.</p>
-		<p>Ex. <code>{ status: 'Configured server' }</code></p>
+		<p>Ex. <code>{ status: 'Configured request' }</code></p>
 		
 		<h3>Start Request</h3>
 		<p><code>{ operation: 'start', uuid: &lt;UUID&gt; }</code></p>

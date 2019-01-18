@@ -61,13 +61,27 @@ public class SocketHandler extends TextWebSocketHandler {
 			    		sendMessage(session, "{ \"error\": \"Could not process specified configuration\" }");
 			    	}
 					break;
-				case "configure-server":
+				case "update-request":
 					try {
-			    		RequestService.updateSyntheaConfig(new JSONObject(json.get("configuration").toString()));
-			    		sendMessage(session, "{ \"status\": \"Configured server\" }");
+						String uuid = json.getString("uuid");
+						WebSocketSession mappedSession = sessions.get(uuid);
+						Request request = requestService.getRequest(uuid);
+				    	if (request == null) {
+				    		sendMessage(mappedSession, "{ \"error\": \"Request not found (may be finished)\" }");
+				    		return;
+				    	}
+				    	
+				    	if (request.isFinished()) {
+				    		sendMessage(mappedSession, "{ \"error\": \"Request has finished\" }");
+				    		return;
+				    	}
+				    	
+				    	String configurationStr = json.get("configuration").toString();
+			    		request.updateConfig(new JSONObject(configurationStr));
+			    		sendMessage(session, "{ \"status\": \"Configured request\" }");
 			    		return;
 			    	} catch(JSONException jex) {
-			    		sendMessage(session, "{ \"error\": \"Could not process specified configuration\" }");
+			    		sendMessage(session, "{ \"error\": \"UUID missing or could not process specified configuration\" }");
 			    	}
 					break;
 				case "start":

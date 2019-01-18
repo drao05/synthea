@@ -2,6 +2,7 @@ package org.mitre.synthea.engine;
 
 import java.time.Year;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -82,6 +83,7 @@ public class Generator {
     public int maxAge = 140;
     public String city;
     public String state;
+    public Map<String, TimeSeries> timeBasedAttrs = new HashMap<String, TimeSeries>();
   }
   
   /**
@@ -135,6 +137,20 @@ public class Generator {
     init(o);
   }
 
+  /**
+   * Updates the generator's telehealth adoption configuration.
+   * @param telehealthAdoptionValues Time series string (e.g., "1900:0,2000:0.1")
+   */
+  public void updateTelehealthAdoption(String telehealthAdoptionValues) {
+	  if (telehealthAdoptionValues != null) {
+		  TimeSeries teleHealthAdoption = TimeSeriesUtils.series("Telehealth_adoption",
+				  telehealthAdoptionValues,
+				  Year.now().getValue() + 1,
+				  Config.get("module.encounter.telemed_adoption_type", "step"));
+		  options.timeBasedAttrs.put("Telehealth_adoption", teleHealthAdoption);
+	  }
+  }
+  
   private void init(GeneratorOptions o) {
     String dbType = Config.get("generate.database_type");
 
@@ -187,14 +203,9 @@ public class Generator {
     Module.getModules(); // ensure modules load early
     Costs.loadCostData(); // ensure cost data loads early
     
-    // set all global time series (just telehealth adoption for now)
-    if (Boolean.parseBoolean(
-        Config.get("generate.time_based_telehealth_adoption", "false"))) {
-      TimeSeries teleHealthAdoption = TimeSeriesUtils.series("Telehealth_adoption",
-          Config.get("module.encounter.telemed_adoption_values", "1900:0,2000:0.1"),
-          Year.now().getValue() + 1,
-          Config.get("module.encounter.telemed_adoption_type", "step"));
-      GlobalAttributes.attrs().globalTimeBasedAttrs.put("Telehealth_adoption", teleHealthAdoption);
+    // configure telehealth adoption
+    if (Boolean.parseBoolean(Config.get("generate.time_based_telehealth_adoption", "false"))) {
+   		updateTelehealthAdoption(Config.get("module.encounter.telemed_adoption_values", "1900:0,2000:0.1"));
     }
     
     String locationName;
@@ -277,6 +288,14 @@ public class Generator {
     return generatePerson(index, personSeed);
   }
 
+  private Map<String, Object> getAttrsAtTime(long t) {
+	  Map<String, Object> attrs = new HashMap<>();
+	  for (String attr: options.timeBasedAttrs.keySet()) {
+		  attrs.put(attr, options.timeBasedAttrs.get(attr).getDataItem(new org.jfree.data.time.Year(new Date(t))).getValue());
+	  }
+	  return attrs;
+  }
+  
   /**
    * Generate a random Person, from the given seed. The returned person will be alive at the end of
    * the simulation. This means that if in the course of the simulation the person dies, a new
@@ -325,6 +344,12 @@ public class Generator {
 
         long time = start;
         while (person.alive(time) && time < stop) {
+        	
+          if (Boolean.parseBoolean(Config.get("generate.time_based_telehealth_adoption", "false"))) {
+        	  person.attributes.putAll(getAttrsAtTime(time));
+        	  person.attributes.put("Total_telehealth_likelihood", (Double) person.attributes.get("Telehealth_adoption") * (Double) person.attributes.get("Relative_telehealth_satisfaction"));
+          }
+          
           encounterModule.process(person, time);
           Iterator<Module> iter = modules.iterator();
           while (iter.hasNext()) {
