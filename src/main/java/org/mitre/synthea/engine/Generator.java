@@ -84,6 +84,8 @@ public class Generator {
     public String city;
     public String state;
     public Map<String, TimeSeries> timeBasedAttrs = new HashMap<String, TimeSeries>();
+    public String telemedAdoptionValues = null;
+    public int yearsOfHistory=Integer.parseInt(Config.get("exporter.years_of_history"));
   }
   
   /**
@@ -204,7 +206,9 @@ public class Generator {
     Costs.loadCostData(); // ensure cost data loads early
     
     // configure telehealth adoption
-    if (Boolean.parseBoolean(Config.get("generate.time_based_telehealth_adoption", "false"))) {
+    if (options.telemedAdoptionValues != null) {
+    	updateTelehealthAdoption(options.telemedAdoptionValues);
+    } else if (Boolean.parseBoolean(Config.get("generate.time_based_telehealth_adoption", "false"))) {
    		updateTelehealthAdoption(Config.get("module.encounter.telemed_adoption_values", "1900:0,2000:0.1"));
     }
     
@@ -423,7 +427,7 @@ public class Generator {
         
         // TODO - export is DESTRUCTIVE when it filters out data
         // this means export must be the LAST THING done with the person
-        Exporter.export(person, time, personQueue, csvExporter);
+        Exporter.export(person, time, personQueue, csvExporter, options.yearsOfHistory);
       } while ((!isAlive && !onlyDeadPatients && this.options.overflow) || (isAlive && onlyDeadPatients));
       // if the patient is alive and we want only dead ones => loop & try again
       //  (and dont even export, see above)

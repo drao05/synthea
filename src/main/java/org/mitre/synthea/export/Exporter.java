@@ -37,7 +37,20 @@ public abstract class Exporter {
    * @param csvExporter CSVExporter used to export CSV results for a specific web client (may be null)
    */
   public static void export(Person person, long stopTime, BlockingQueue<String> personQueue, CSVExporter csvExporter) {
-    int yearsOfHistory = Integer.parseInt(Config.get("exporter.years_of_history"));
+	    export(person, stopTime, personQueue, csvExporter, Integer.parseInt(Config.get("exporter.years_of_history")));
+  }
+  
+  /**
+   * Export a single patient, into all the formats supported. (Formats may be enabled or disabled by
+   * configuration)
+   *
+   * @param person   Patient to export
+   * @param stopTime Time at which the simulation stopped
+   * @param personQueue Queue used to share results (may be null)
+   * @param csvExporter CSVExporter used to export CSV results for a specific web client (may be null)
+   * @param yearsOfHistory The number of years of patient history to include in patient records. Set this to 0 to keep all history in the patient record.
+   */
+  public static void export(Person person, long stopTime, BlockingQueue<String> personQueue, CSVExporter csvExporter, int yearsOfHistory) {
     if (yearsOfHistory > 0) {
       person = filterForExport(person, yearsOfHistory, stopTime);
     }

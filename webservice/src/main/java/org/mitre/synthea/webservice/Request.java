@@ -139,6 +139,12 @@ public class Request {
 			case "city":
 				options.city = configuration.getString(name);
 				break;
+			case "telemedAdoptionValues":
+				options.telemedAdoptionValues = configuration.getString(name);
+				break;
+			case "yearsOfHistory":
+				options.yearsOfHistory = configuration.getInt(name);
+				break;
 			default:
 				
 				// Ignore other configuration values (e.g., Synthea config)
@@ -162,7 +168,7 @@ public class Request {
 			String name = names.getString(idx);
 			
 			switch (name) {
-			case "module.encounter.telemed_adoption_values":
+			case "telemedAdoptionValues":
 				generator.updateTelehealthAdoption(configuration.getString(name));
 				this.configuration.put(name, configuration.getString(name));
 			default:

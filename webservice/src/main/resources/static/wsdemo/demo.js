@@ -105,6 +105,6 @@ function stop() {
 
 function updateRequest() {
 	updateMessage('Please wait...');
-	let message = {operation: 'update-request', uuid: uuid, configuration: { 'module.encounter.telemed_adoption_values': '1900:0,2000:0,2017:0.9' }};
+	let message = {operation: 'update-request', uuid: uuid, configuration: { 'telemedAdoptionValues': '1900:0,2000:0,2017:0.9' }};
 	ws.send(JSON.stringify(message));
 }

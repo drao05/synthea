@@ -14,20 +14,24 @@
 		<h2>RESTful API</h2>
 		
 		<p><code>POST /va-synthea/generate</code> - Submits request to generate results based on specified VA Synthea configuration parameters (JSON).</p>
-		<p>Below are the supported generator-specific configuration parameters.<p>
+		<p>Below are the supported generator-specific configuration parameters:<p>
 		<ul>
-			<li>seed - seed for population generation (long)</li>
-			<li>population - size of generated population (int)</li>
-			<li>gender - gender of individuals in generated population (string)</li>
-			<li>minAge - minimum age of individuals in generated population (int)</li>
-			<li>maxAge - maximum age of individuals in generated population (int)</li>
+			<li>seed - Seed for population generation (long)</li>
+			<li>population - Size of generated population (int)</li>
+			<li>gender - Gender of individuals in generated population (string)</li>
+			<li>minAge - Minimum age of individuals in generated population (int)</li>
+			<li>maxAge - Maximum age of individuals in generated population (int)</li>
 			<li>state - U.S. state to use for generated population (string)</li>
-			<li>city - city in specified state to use for generated population (string)</li>
+			<li>city - City in specified state to use for generated population (string)</li>
 		</ul>
-		<p>Some additional VA Synthea configuration parameters are also supported by the web service (see <a href="./va-synthea-properties-whitelist.txt">this list</a>). However, note that changes to those parameters will affect all requests being handled by the service.<p>
-		<p>The configuration can also contain a parameter <code>generateCSV</code> that, if set to <code>true</code>, will configure the request to generate CSV results instead of FHIR results.</p>
+		<p>The configuration can also contain these additional parameters:<p>
+		<ul>
+			<li>generateCSV - If set to <code>true</code>, will configure the request to generate CSV results instead of FHIR results.</li>
+			<li>telemedAdoptionValues - Defines the telemedicine adoption percentages for different periods of time, e.g., <code>"1900:0,2000:0,2017:0.2"</code>.</li>
+			<li>yearsOfHistory - The number of years of patient history to include in patient records. Set this to 0 to keep all history in the patient record.</li>
+		</ul>
 		<p>Below is an example JSON configuration:</p>
-		<code>{	seed: 42, population: 50, gender: 'M', minAge: 20, maxAge: 29, state: 'Massachusetts', city: 'Boston' }</code>
+		<code>{	"seed": 42, "population": 50, "gender": "M", "minAge": 20, "maxAge": 29, "state": "Massachusetts", "city": "Boston", "generateCSV": true }</code>
 		<p>Results returned by this endpoint:</p>
 		<ul>
 			<li>Returns status code 200 and a UUID (in "uuid" field of response's JSON body) that can be used to refer to the request in other endpoints if the request was successfully submitted.</li>
@@ -36,8 +40,8 @@
 		
 		<br />
 		
-		<p><code>POST /va-synthea/update-request/&lt;UUID&gt;</code> - Updates configuration of request associated with specified UUID (that was originally returned by the associated generate request) based on specified VA Synthea configuration parameters (JSON).</p>
-		<p>Currently only supports updating the <code>module.encounter.telemed_adoption_values</code> configuration parameter.</p>
+		<p><code>POST /va-synthea/update-request/&lt;UUID&gt;</code> - Updates configuration of an existing (and possibly executing) request associated with specified UUID (that was originally returned by the associated generate request).</p>
+		<p>Currently only supports updating the <code>telemedAdoptionValues</code> configuration parameter.</p>
 		<p>Results returned by this endpoint:</p>
 		<ul>
 			<li>Returns status code 200 if the reconfiguration was successful.</li>
@@ -95,7 +99,7 @@
 		<h3>Update Request</h3>
 		<p><code>{ operation: 'update-request', uuid: &lt;UUID&gt;, configuration: &lt;JSON configuration&gt; }</code></p>
 		<p>Used to change a request configuration. See the description of the <code>POST /va-synthea/update-request</code> endpoint above for details on the configuration argument.</p>
-		<p>Ex. <code>{ operation: 'update-request', uuid: '6e70cac6-df9c-4552-8b05-d9ff5393edfb', configuration: { 'module.encounter.telemed_adoption_values' : '1900:0,2000:0,2017:0.9' } }</code></p>
+		<p>Ex. <code>{ operation: 'update-request', uuid: '6e70cac6-df9c-4552-8b05-d9ff5393edfb', configuration: { 'telemedAdoptionValues' : '1900:0,2000:0,2017:0.9' } }</code></p>
 		<p>The server will send a JSON-formatted response that includes a <code>status</code> field with a status message or an <code>error</code> field with an error message if there was a problem configuring the request.</p>
 		<p>Ex. <code>{ status: 'Configured request' }</code></p>
 		

@@ -1,1 +1,0 @@
-module.encounter.telemed_adoption_values

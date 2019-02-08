@@ -54,7 +54,7 @@ public class Controller {
 	}
     
     /**
-     * POST endpoint that updates request configuration associated with specified UUID (that was originally returned by the associated generate request) based on specified VA Synthea configuration parameters (JSON).
+     * POST endpoint that updates request configuration associated with specified UUID (that was originally returned by the associated generate request). Currently only supports updating the telemedAdoptionValues parameter.
      * Returns a status code:
      * - 200 if reconfiguration was successful
      * - 400 if there was a problem processing the configuration parameters
