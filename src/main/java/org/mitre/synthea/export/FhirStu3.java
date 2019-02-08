@@ -2097,7 +2097,7 @@ public class FhirStu3 {
 
     DirectPosition2D coord = provider.getLatLon();
     if (coord != null) {
-      Extension geolocation = organizationResource.addExtension();
+      Extension geolocation = address.addExtension();
       geolocation.setUrl("http://hl7.org/fhir/StructureDefinition/geolocation");
       geolocation.addExtension("latitude", new DecimalType(coord.getY()));
       geolocation.addExtension("longitude", new DecimalType(coord.getX()));
