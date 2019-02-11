@@ -71,7 +71,8 @@ public class Generator {
   public static class GeneratorOptions {
     public int population = Integer.parseInt(Config.get("generate.default_population", "1"));
     public long seed = System.currentTimeMillis();
-    /** Population as exclusively live persons or including deceased. True for live, false includes deceased */
+    /** Population as exclusively live persons or including deceased.
+     * True for live, false includes deceased */
     public boolean overflow = true;
     /** Gender to be generated. M for Male, F for Female, null for any. */
     public String gender;

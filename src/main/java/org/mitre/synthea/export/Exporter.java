@@ -1,5 +1,8 @@
 package org.mitre.synthea.export;
 
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.IParser;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,9 +25,6 @@ import org.mitre.synthea.world.concepts.HealthRecord;
 import org.mitre.synthea.world.concepts.HealthRecord.Encounter;
 import org.mitre.synthea.world.concepts.HealthRecord.Observation;
 import org.mitre.synthea.world.concepts.HealthRecord.Report;
-
-import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.parser.IParser;
 
 public abstract class Exporter {
   /**
@@ -188,7 +188,7 @@ public abstract class Exporter {
    * @param file Path to the new file.
    * @param contents The contents of the file.
    */
-  private static void appendToFile(Path file, String contents) {
+  private static synchronized void appendToFile(Path file, String contents) {
     try {
       if (Files.notExists(file)) {
         Files.createFile(file);
@@ -271,6 +271,14 @@ public abstract class Exporter {
 
     if (Boolean.parseBoolean(Config.get("exporter.cdw.export"))) {
       CDWExporter.getInstance().writeFactTables();
+    }
+
+    if (Boolean.parseBoolean(Config.get("exporter.csv.export"))) {
+      try {
+        CSVExporter.getInstance().exportOrganizationsAndProviders();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
   }
 

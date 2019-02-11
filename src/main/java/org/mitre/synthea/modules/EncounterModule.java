@@ -51,8 +51,12 @@ public final class EncounterModule extends Module {
   // NOTE: if new codes are added, be sure to update getAllCodes below
   private Random rand;
   
-  public EncounterModule(long seed) {
+  public EncounterModule() {
     this.name = "Encounter";
+  }
+  
+  public EncounterModule(long seed) {
+    this();
     rand = new Random(seed);
   }
 
@@ -169,18 +173,18 @@ public final class EncounterModule extends Module {
     }
   }
 
+  /**
+   * Process all emergency events. Emergency events must be processed immediately rather
+   * than waiting until the next timestep. Patient may die before the next timestep.
+   * @param person The patient having the emergency encounter.
+   * @param time The time of the encounter in milliseconds.
+   */
   public static void emergencyVisit(Person person, long time) {
-    // processes all emergency events. Implemented as a function instead of a rule because
-    // emergency events must be processed immediately rather than waiting til the next time
-    // period. Patient may die, resulting in rule not being called.
-
     for (Event event : person.events.before(time, "emergency_encounter")) {
       if (event.processed) {
         continue;
       }
-
       event.processed = true;
-
       emergencyEncounter(person, time);
     }
 
@@ -189,11 +193,8 @@ public final class EncounterModule extends Module {
           || event.type.equals("cardiac_arrest") || event.type.equals("stroke"))) {
         continue;
       }
-
       event.processed = true;
-
       CardiovascularDiseaseModule.performEmergency(person, time, event.type);
-
     }
   }
 

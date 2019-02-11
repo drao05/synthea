@@ -165,7 +165,18 @@ public final class LifecycleModule extends Module {
       // should never happen in practice, but can happen in unit tests
       location.assignPoint(person, city);
       person.attributes.put(Person.ZIP, location.getZipCode(city));
-      attributes.put(Person.BIRTHPLACE, location.randomCityName(person.random));
+      String[] birthPlace;
+      if ("english".equalsIgnoreCase((String) attributes.get(Person.FIRST_LANGUAGE))) {
+        birthPlace = location.randomBirthPlace(person.random);
+      } else {
+        birthPlace = location.randomBirthplaceByEthnicity(
+            person.random, (String) person.attributes.get(Person.ETHNICITY));
+      }
+      attributes.put(Person.BIRTH_CITY, birthPlace[0]);
+      attributes.put(Person.BIRTH_STATE, birthPlace[1]);
+      attributes.put(Person.BIRTH_COUNTRY, birthPlace[2]);
+      // For CSV exports so we don't break any existing schemas
+      attributes.put(Person.BIRTHPLACE, birthPlace[3]);
     }
     
     boolean hasStreetAddress2 = person.rand() < 0.5;
@@ -205,7 +216,14 @@ public final class LifecycleModule extends Module {
     String orientation = sexualOrientationData.next(person.random);
     attributes.put(Person.SEXUAL_ORIENTATION, orientation);
   }
-  
+
+  /**
+   * Generate a first name appropriate for a given gender and language.
+   * @param gender Gender of the name, "M" or "F"
+   * @param language Origin language of the name, "english", "spanish"
+   * @param random Random number generator to use.
+   * @return First name.
+   */
   @SuppressWarnings("unchecked")
   public static String fakeFirstName(String gender, String language, Random random) {
     List<String> choices;
@@ -218,6 +236,12 @@ public final class LifecycleModule extends Module {
     return choices.get(random.nextInt(choices.size()));
   }
   
+  /**
+   * Generate a surname appropriate for a given language.
+   * @param language Origin language of the name, "english", "spanish"
+   * @param random Random number generator to use.
+   * @return Surname or Family Name.
+   */
   @SuppressWarnings("unchecked")
   public static String fakeLastName(String language, Random random) {
     List<String> choices;
@@ -229,7 +253,14 @@ public final class LifecycleModule extends Module {
     // pick a random item from the list
     return choices.get(random.nextInt(choices.size()));
   }
-  
+
+  /**
+   * Generate a Street Address.
+   * @param includeLine2 Whether or not the address should have a second line,
+   *     which can take the form of an apartment, unit, or suite number.
+   * @param random Random number generator to use.
+   * @return First name.
+   */
   @SuppressWarnings("unchecked")
   public static String fakeAddress(boolean includeLine2, Random random) {
     int number = random.nextInt(1000) + 100;

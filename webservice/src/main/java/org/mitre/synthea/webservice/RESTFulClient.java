@@ -2,8 +2,8 @@ package org.mitre.synthea.webservice;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -97,7 +97,13 @@ public class RESTFulClient {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			IOUtils.closeQuietly(client);
+			if (client != null) {
+				try {
+					client.close();
+				} catch (IOException ioe) {
+					ioe.printStackTrace();
+				}
+			}
 		}
 	}
 }
