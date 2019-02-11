@@ -27,7 +27,7 @@ public class DeathModule {
 
       Provider provider = person.getAmbulatoryProvider(time);
       if (provider != null) {
-    	  Clinician clinician = provider.chooseClinicianList(ClinicianSpecialty.PATHOLOGY, person.random);
+    	  Clinician clinician = provider.chooseClinicianList(ClinicianSpecialty.GENERAL_PRACTICE, person.random);
     	  if (clinician != null) {
 		      Code causeOfDeath = (Code) person.attributes.get(Person.CAUSE_OF_DEATH);
 		

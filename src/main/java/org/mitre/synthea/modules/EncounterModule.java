@@ -202,7 +202,7 @@ public final class EncounterModule extends Module {
     // find closest service provider with emergency service
     Provider provider = person.getEmergencyProvider(time);
     if (provider != null) {
-    	Clinician clinician = provider.chooseClinicianList(ClinicianSpecialty.EMERGENCY_MEDICINE, person.random);
+    	Clinician clinician = provider.chooseClinicianList(ClinicianSpecialty.GENERAL_PRACTICE, person.random);
     	if (clinician != null) {
 		    provider.incrementEncounters("emergency", Utilities.getYear(time));
 		

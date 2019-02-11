@@ -15,12 +15,15 @@ import org.mitre.synthea.world.concepts.HealthRecord.Code;
 import org.mitre.synthea.world.concepts.HealthRecord.Encounter;
 import org.mitre.synthea.world.concepts.HealthRecord.Observation;
 import org.mitre.synthea.world.concepts.HealthRecord.Report;
+import org.mitre.synthea.world.geography.Location;
 import org.mockito.Mockito;
 
 public class DeathModuleTest {
 
   private Person person;
   private long time;
+
+  private Location city = new Location("Massachusetts", "Bedford");
 
   /**
    * Setup for Death Module tests.
@@ -56,6 +59,10 @@ public class DeathModuleTest {
     Code causeOfDeath = new Code("SNOMED-CT", "12345", "Some disease");
     person.recordDeath(time, causeOfDeath, DeathModuleTest.class.getName());
 
+    person.attributes.remove(Person.PREFERREDAMBULATORYPROVIDER);
+    Provider.loadProviders(city);
+    city.assignPoint(person, city.randomCityName(person.random));
+    
     DeathModule.process(person, time);
 
     Encounter enc = person.record.encounters.get(0);

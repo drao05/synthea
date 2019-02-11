@@ -8,8 +8,10 @@ import org.junit.Test;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.modules.DeathModule;
 import org.mitre.synthea.world.agents.Person;
+import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.HealthRecord;
 import org.mitre.synthea.world.concepts.HealthRecord.Encounter;
+import org.mitre.synthea.world.geography.Location;
 
 public class ExporterTest {
 
@@ -20,6 +22,8 @@ public class ExporterTest {
   private HealthRecord record;
   
   private static final HealthRecord.Code DUMMY_CODE = new HealthRecord.Code("", "", "");
+  
+  private Location city = new Location("Massachusetts", "Bedford");
   
   /**
    * Setup test data.
@@ -150,6 +154,9 @@ public class ExporterTest {
     HealthRecord.Code causeOfDeath = 
         new HealthRecord.Code("SNOMED-CT", "Todo-lookup-code", "Rabies");
     patient.recordDeath(time - years(20), causeOfDeath, "death");
+    
+    Provider.loadProviders(city);
+    city.assignPoint(patient, city.randomCityName(patient.random));
     
     DeathModule.process(patient, time - years(20));
     Person filtered = Exporter.filterForExport(patient, yearsToKeep, endTime);
