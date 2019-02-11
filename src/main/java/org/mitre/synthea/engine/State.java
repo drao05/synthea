@@ -542,7 +542,7 @@ public abstract class State implements Cloneable {
       for (State state : person.history) {
         if (state instanceof OnsetState) {
           OnsetState onset = (OnsetState) state;
-          
+
           if (!onset.diagnosed && this.name.equals(onset.targetEncounter)) {
             onset.diagnose(person, time);
           }
@@ -1313,6 +1313,7 @@ public abstract class State implements Cloneable {
   public static class Symptom extends State {
     private String symptom;
     private String cause;
+    private Double probability;
     private Range<Integer> range;
     private Exact<Integer> exact;
     public boolean addressed;
@@ -1323,6 +1324,9 @@ public abstract class State implements Cloneable {
       if (cause == null) {
         cause = module.name;
       }
+      if (probability == null || probability > 1 || probability < 0) {
+        probability = 1.0;
+      }
       addressed = false;
     }
 
@@ -1331,6 +1335,7 @@ public abstract class State implements Cloneable {
       Symptom clone = (Symptom) super.clone();
       clone.symptom = symptom;
       clone.cause = cause;
+      clone.probability = probability;
       clone.range = range;
       clone.exact = exact;
       clone.addressed = addressed;
@@ -1339,12 +1344,14 @@ public abstract class State implements Cloneable {
 
     @Override
     public boolean process(Person person, long time) {
-      if (exact != null) {
-        person.setSymptom(cause, symptom, exact.quantity, addressed);
-      } else if (range != null) {
-        person.setSymptom(cause, symptom, (int) person.rand(range.low, range.high), addressed);
-      } else {
-        person.setSymptom(cause, symptom, 0, addressed);
+      if (person.rand() <= probability) {
+        if (exact != null) {
+          person.setSymptom(cause, symptom, exact.quantity, addressed);
+        } else if (range != null) {
+          person.setSymptom(cause, symptom, (int) person.rand(range.low, range.high), addressed);
+        } else {
+          person.setSymptom(cause, symptom, 0, addressed);
+        }
       }
       return true;
     }

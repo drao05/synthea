@@ -94,6 +94,7 @@ test {
   testLogging {
     exceptionFormat = 'full'
   }
+  maxHeapSize = "2048m"
 }
 
 buildscript {
