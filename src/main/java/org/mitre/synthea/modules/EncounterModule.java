@@ -78,7 +78,7 @@ public final class EncounterModule extends Module {
        * physical one.
        */
       if (Boolean.parseBoolean(
-          Config.get("generate.time_based_telehealth_adoption", "false"))) {
+          Config.get("generate.time_based_telehealth_adoption", "false")) && person.attributes.containsKey("Total_telehealth_likelihood")) {
         if (rand.nextDouble() < (Double) person.attributes.get("Total_telehealth_likelihood")) {
           encounter.codes.add(ENCOUNTER_TELEMEDICINE);
           encounter.type = EncounterType.VIRTUAL.toString();
