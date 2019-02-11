@@ -31,8 +31,8 @@ import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.Costs;
 import org.mitre.synthea.world.concepts.VitalSign;
-import org.mitre.synthea.world.geography.demographics.Demographics;
-import org.mitre.synthea.world.geography.location.Location;
+import org.mitre.synthea.world.geography.Demographics;
+import org.mitre.synthea.world.geography.Location;
 
 /**
  * Generator creates a population by running the generic modules each timestep per Person.

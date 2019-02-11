@@ -1,4 +1,4 @@
-package org.mitre.synthea.world.geography.place;
+package org.mitre.synthea.world.geography;
 
 import org.apache.sis.geometry.DirectPosition2D;
 import org.apache.sis.index.tree.QuadTreeData;

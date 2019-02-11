@@ -1,4 +1,4 @@
-package org.mitre.synthea.world.geography.location;
+package org.mitre.synthea.world.geography;
 
 import com.google.common.collect.Table;
 
@@ -16,14 +16,6 @@ import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Clinician;
 import org.mitre.synthea.world.agents.Person;
-import org.mitre.synthea.world.geography.StateAbbreviationsLoader;
-import org.mitre.synthea.world.geography.demographics.ACSFactFinderDemographicsLoader;
-import org.mitre.synthea.world.geography.demographics.CityStateDemographics;
-import org.mitre.synthea.world.geography.demographics.Demographics;
-import org.mitre.synthea.world.geography.demographics.DefaultDemographicsLoader;
-import org.mitre.synthea.world.geography.demographics.DemographicsLoader;
-import org.mitre.synthea.world.geography.place.Place;
-import org.mitre.synthea.world.geography.place.PlaceLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

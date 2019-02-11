@@ -23,7 +23,7 @@ import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.concepts.BiometricsConfig;
 import org.mitre.synthea.world.concepts.BirthStatistics;
 import org.mitre.synthea.world.concepts.HealthRecord.Code;
-import org.mitre.synthea.world.geography.location.Location;
+import org.mitre.synthea.world.geography.Location;
 import org.mitre.synthea.world.concepts.VitalSign;
 
 public final class LifecycleModule extends Module {

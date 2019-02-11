@@ -33,8 +33,7 @@ import org.mitre.synthea.world.concepts.HealthRecord.Medication;
 import org.mitre.synthea.world.concepts.HealthRecord.Observation;
 import org.mitre.synthea.world.concepts.HealthRecord.Procedure;
 import org.mitre.synthea.world.concepts.HealthRecord.Report;
-import org.mitre.synthea.world.geography.location.Location;
-//import org.mitre.synthea.world.geography.Location; // doesn't exist?
+import org.mitre.synthea.world.geography.Location;
 
 /**
  * This exporter attempts to export synthetic patient data into 

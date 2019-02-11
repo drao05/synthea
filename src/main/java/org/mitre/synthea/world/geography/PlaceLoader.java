@@ -1,4 +1,4 @@
-package org.mitre.synthea.world.geography.place;
+package org.mitre.synthea.world.geography;
 
 import java.util.Map;
 

@@ -9,7 +9,6 @@ import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.mitre.synthea.world.geography.location.Location; // exists?
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;

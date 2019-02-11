@@ -15,7 +15,7 @@ import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.HealthRecord.Entry;
-import org.mitre.synthea.world.geography.location.Location;
+import org.mitre.synthea.world.geography.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
