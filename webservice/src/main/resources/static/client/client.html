@@ -156,7 +156,7 @@
       });
     </script>
 
-    <!-- websocket -->
+    <!-- switch this to a module that handles talking to the server, maybe push the new records as events-->
     <script type="text/javascript">
       let ws;
       let uuid;
@@ -248,20 +248,20 @@
 
     </script>
 
-    <!-- patient munging code -->
-    <!-- some of this should be absorbed into a FHIR class that parses records -->
-    <!-- some of it should be moved out to a vizualization class, maybe off event broadcasts -->
+    <!-- become a FHIR module that parses records-->
     <script type="text/javascript">
 
-      let known_patients = new Array();
+      let known_patients = [];
+      let known_organizations = [];
+
       let encounterTimeBoundaries = {earliest: Number.MAX_SAFE_INTEGER, last: Number.MIN_SAFE_INTEGER};
       let encounterStats = {"Waiting For Data": 1};
       function processFHIR(fhir) {
 
         let home_locs = processPatientLocations(fhir);
         mapPatient(home_locs);
-        let org_locs = processOrganizationLocations(fhir);
-        mapOrganizations(org_locs);
+        let organizations = processOrganizations(fhir);
+        mapOrganizations(organizations);
         let encounterInfo = processPatientEncounters(fhir);
         let patientEncounterStats = encounterInfo.encounterStats;
         Object.keys(patientEncounterStats).forEach(function (key) {
@@ -274,7 +274,6 @@
       }
 
       let patientMarkers = [];
-      let orgMarkers = [];
       function mapPatient(locations = []) {
         locations.forEach(function (loc, index) {
           let ll = [loc.latitude, loc.longitude];
@@ -289,8 +288,14 @@
           marker.addTo(window.leaflet_map);
         });
       }
-      function mapOrganizations(locations = []) {
-        locations.forEach(function (loc) {
+      function mapOrganizations(organizations = []) {
+        organizations.forEach(function (org) {
+          if (org.location == undefined)
+            return;
+          if (org.marker != undefined) {
+            return;
+          }
+          let loc = org.location;
           let ll = [loc.latitude, loc.longitude];
 //          let marker = L.marker(ll);
           let marker = L.circle(ll, {
@@ -299,8 +304,7 @@
             fillOpacity: 0.5,
             radius: 500
           })
-          
-          orgMarkers.push(marker);
+          org.marker = marker;
           marker.addTo(window.leaflet_map);
         });
       }
@@ -334,6 +338,7 @@
       }
       function processPatientLocations(fhir) {
         let home_locations = getByResourceType(fhir, "Patient");
+        known_patients[known_patients.length] = {}; // placeholder
         home_lls = new Array();
         home_locations.forEach(function (person, index) {
           let addresses = person.resource.address;
@@ -358,29 +363,43 @@
         return home_lls;
       }
 
-      function processOrganizationLocations(fhir) {
-        let orgs = getByResourceType(fhir, "Organization");
+      function processOrganizations(fhir) {
+        let orgStanzas = getByResourceType(fhir, "Organization");
+
         let org_locs = [];
-        orgs.forEach(function (org) {
-          if (org.resource.extension != null) {
-            org.resource.extension.forEach(function (extension) {
+        orgStanzas.forEach(function (orgStanza) {
+          let resource = orgStanza.resource;
+          let org = {name: null};
+          if (resource.name != undefined)
+            org.name = resource.name;
+          if (resource.extension != null) {
+            resource.extension.forEach(function (extension) {
               let loc = processLocationExtension(extension);
-              if (loc != null)
+
+              if (loc != null) {
                 org_locs[org_locs.length] = loc;
+                org.location = loc;
+              }
 
             });
           }
+          if (org.name != null) {
+            if(known_organizations.filter(known_org => known_org.name == org.name) == 0)
+              known_organizations[known_organizations.length] = org;
+            else 
+              console.debug("Found a duplicate org!");
+          }
         });
-        return org_locs;
+        return known_organizations;
       }
 
       function processLocationExtension(holder) {
         let latlon = {};
         holder.extension.forEach(function (ext, idx) {
           if (ext.url == "latitude")
-            latlon.latitude = ext.valueDecimal;
+            latlon.latitude = ext.valueDecimal.toFixed(3);
           else if (ext.url == "longitude")
-            latlon.longitude = ext.valueDecimal;
+            latlon.longitude = ext.valueDecimal.toFixed(3);
         });
         if (latlon.latitude != undefined && latlon.longitude != undefined)
           return latlon;
@@ -396,6 +415,8 @@
 
     </script>
 
+    
+    <!-- become a viz module -->
     <script type="text/javascript">
 
       let visitChart;
@@ -455,7 +476,7 @@
         });
         let data = google.visualization.arrayToDataTable(values);
         visitChart.draw(data, {pieHole: 0.4});
-        $(".visitCount").text(total + " / " + orgMarkers.length);
+        $(".visitCount").text(total + " / " + known_organizations.length);
 
       }
 
