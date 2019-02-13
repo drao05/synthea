@@ -21,14 +21,12 @@ bootWar.enabled = false
 war {
     enabled = true
     archiveName = 'va-synthea.war'
-}
-
-war << {
-	exec {
+	doLast {
         workingDir 'build/libs'
         commandLine 'zip', '-d', "${archiveName}", 'WEB-INF/lib/va-synthea.jar' // Don't include the Synthea JAR since we are unpacking it into the web service WAR
     }
 }
+
 
 group = 'va-synthea-webservice'
 version = '0.0.1'
