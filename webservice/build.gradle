@@ -22,8 +22,10 @@ war {
     enabled = true
     archiveName = 'va-synthea.war'
 	doLast {
-        workingDir 'build/libs'
-        commandLine 'zip', '-d', "${archiveName}", 'WEB-INF/lib/va-synthea.jar' // Don't include the Synthea JAR since we are unpacking it into the web service WAR
+		exec {
+        	workingDir 'build/libs'
+        	commandLine 'zip', '-d', "${archiveName}", 'WEB-INF/lib/va-synthea.jar' // Don't include the Synthea JAR since we are unpacking it into the web service WAR
+    	}
     }
 }
 
