@@ -260,7 +260,6 @@ public class Generator {
     } catch (InterruptedException e) {
       System.out.println("Generator interrupted. Attempting to shut down associated thread pool.");
       threadPool.shutdownNow();
-      e.printStackTrace();
     }
 
     // have to store providers at the end to correctly capture utilization #s
