@@ -54,11 +54,15 @@ public class RequestService {
 		
 		// Initialize ZIP export directory relative to VA Synthea's base directory configuration parameter
 		String baseDir = Config.get("exporter.baseDirectory");
-		if (baseDir != null && !baseDir.endsWith(File.separator)) {
-			baseDir += File.separator;
+		if (baseDir != null) {
+			if(!baseDir.endsWith(File.separator)) {
+				baseDir += File.separator;
+			}
 		} else {
 			baseDir = "";
 		}
+		LOGGER.info("Base output directory: " + baseDir);
+
 		
 		File zipOutputDir = new File(baseDir + "zip");
     	zipOutputPath = Paths.get(zipOutputDir.toURI());
@@ -101,7 +105,7 @@ public class RequestService {
 	/**
 	 * Creates and initializes a new generation request based on the specified configuration
 	 */
-	public Request createRequest(String configurationStr) throws JSONException {
+	public Request createRequest(String configurationStr, boolean isWSClient) throws JSONException {
 		
 		LOGGER.info("Requested generator configuration: " + configurationStr);
 		
@@ -119,7 +123,7 @@ public class RequestService {
 		
 		// Create the request
 		Request request = context.getBean(Request.class);
-		request.configure(configuration);
+		request.configure(configuration, isWSClient);
 		uuidRequestMap.put(request.getUuid(), request);
 		return request;
 	}

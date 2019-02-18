@@ -53,7 +53,7 @@ public class SocketHandler extends TextWebSocketHandler {
 				case "configure":
 					try {
 						String configurationStr = json.get("configuration").toString();
-			    		Request request = requestService.createRequest(configurationStr);
+			    		Request request = requestService.createRequest(configurationStr, true);
 			    		sessions.put(request.getUuid(), session);
 			    		sendMessage(session, "{ \"status\": \"Configured\", \"uuid\": \"" + request.getUuid() +"\", \"configuration\": " + request.getConfiguration().toString() + " }");
 			    		return;
