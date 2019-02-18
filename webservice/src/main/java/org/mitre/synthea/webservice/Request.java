@@ -282,6 +282,7 @@ public class Request {
 					} catch(IOException ioex) {
 			        	LOGGER.error("Error writing JSON results file for request " + uuid, ioex);
 					} finally {
+					    generateThread.interrupt();
 						if (jsonWriter != null) {
 							try {
 								jsonWriter.close();
@@ -401,6 +402,8 @@ public class Request {
 				        	LOGGER.error("Error in result thread for request " + uuid, ex);
 			    			requestService.removeRequest(uuid);
 				        	return;
+				        } finally {
+				        	generateThread.interrupt();
 				        }
 		            }
 
