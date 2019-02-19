@@ -68,7 +68,7 @@ public class Request {
 	
 	private boolean generateCSV = false;
 	
-	public void configure(JSONObject configuration) {
+	public void configure(JSONObject configuration, boolean isWSClient) {
 		
 		// Create generator and associated thread. Set exporter.webclient to true in Config first.
 		Config.set("exporter.webclient", "true");
@@ -92,7 +92,7 @@ public class Request {
 		};
 		
 		// Initialize the result thread
-		initResultThread();
+		initResultThread(isWSClient);
 		
 		// Create configuration object if needed
 		if (configuration != null) {
@@ -182,7 +182,7 @@ public class Request {
 	/**
 	 * Initializes the results thread
 	 */
-	private void initResultThread() {
+	private void initResultThread(boolean isWSClient) {
 		if (!generateCSV) {
 			
 			// Create thread that will capture and process FHIR results
@@ -235,9 +235,11 @@ public class Request {
 				    			person = generator.getNextPerson();
 				    			++idx;		    			
 				    			
-				    			// Send person to WebSocket client
-				    			requestService.sendMessage(uuid, person);
-					    		
+				    			if (isWSClient) {
+				    				// Send person to WebSocket client
+				    				requestService.sendMessage(uuid, person);
+				    			}
+				    			
 				    			// Make person available for immediately retrieval via RESTful interface
 			    				synchronized(resultQueue) {
 			    					
@@ -280,6 +282,7 @@ public class Request {
 					} catch(IOException ioex) {
 			        	LOGGER.error("Error writing JSON results file for request " + uuid, ioex);
 					} finally {
+					    generateThread.interrupt();
 						if (jsonWriter != null) {
 							try {
 								jsonWriter.close();
@@ -294,8 +297,10 @@ public class Request {
 	
 		    		LOGGER.info("Generation done for request " + uuid);
 	
-			    	// Send completion notice to WebSocket client
-			    	requestService.sendMessage(uuid, "{ \"status\": \"Completed\" }");
+		    		if (isWSClient) {
+		    			// Send completion notice to WebSocket client
+		    			requestService.sendMessage(uuid, "{ \"status\": \"Completed\" }");
+		    		}
 		    		
 			    	// Create FHIR ZIP file for export
 			    	LOGGER.info("Creating FHIR ZIP file for request " + uuid + "...");
@@ -397,6 +402,8 @@ public class Request {
 				        	LOGGER.error("Error in result thread for request " + uuid, ex);
 			    			requestService.removeRequest(uuid);
 				        	return;
+				        } finally {
+				        	generateThread.interrupt();
 				        }
 		            }
 
