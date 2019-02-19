@@ -9,21 +9,19 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
     <style>
-      
-/*       https://medium.com/@vembarrajan/html-css-tricks-scroll-able-table-body-tbody-d23182ae0fbc, Rajan V */
-      #facilityTable tbody{
-        display:block;
-        overflow:auto;
-        height:409px;
-        width:100%;
+
+/*     borrowed from https://mdbootstrap.com/docs/jquery/tables/scroll/ */
+      .table-wrapper-scroll-y {
+        display: block;
+        max-height: 475px;
+        overflow-y: auto;
+        -ms-overflow-style: -ms-autohiding-scrollbar;
       }
-      #facilityTable thead tr{
-        display:block;
-      }
-      
+
       .width90p {
         width: 90%;
       }
+
     </style>
     <title></title>
   </head>
@@ -131,24 +129,25 @@
         <div class="col">
           <div class="card">Facility info</div>
           <div class="row">
-            <table class="table fixed_header" id="facilityTable">
+            
+            <div class="table-wrapper-scroll-y">
+            <table class="table w-auto table-striped " id="facilityTable">
               <thead>
-                <tr>
+                <tr class="">
                   <th v-for="key in columns">
                     {{ key | capitalize }}
                   </th>                  
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="entry in facilities">
+                <tr v-for="entry in facilities" class="">
                   <td v-for="key in columns"> {{entry[key]}}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-
-
-
+            
+          </div>
         </div>
       </div>
       <div class="row">
@@ -242,10 +241,11 @@ $(document).ready(function () {
       let encounterTimeBoundaries = {earliest: Number.MAX_SAFE_INTEGER, last: Number.MIN_SAFE_INTEGER};
       function processFHIR(fhir) {
 
-        let home_locs = processPatientLocations(fhir);
-        mapPatient(home_locs);
         let organizations = processOrganizations(fhir);
         mapOrganizations(organizations);
+
+        let home_locs = processPatientLocations(fhir);
+        mapPatient(home_locs);
         let encounterInfo = processPatientEncounters(fhir);
         let patientEncounterStats = encounterInfo.encounterStats;
         Object.keys(patientEncounterStats).forEach(function (key) {
@@ -384,23 +384,23 @@ $(document).ready(function () {
         orgStanzas.forEach(function (orgStanza) {
           let resource = orgStanza.resource;
           let org = {name: null};
-          if (resource.id != undefined)
+          if (resource.id !== undefined)
             org.fhir_id = resource.id;
-          if (resource.name != undefined)
+          if (resource.name !== undefined)
             org.name = resource.name;
 
           // early exit if we have the name
           // we could have it with the id if it was filled in via an encounter reference
-          if (known_organizations.filter(known_org => known_org.name == org.name) != 0)
+          if (known_organizations.filter(known_org => known_org.name === org.name).length !== 0)
             return;
 
-          if (org.visits == undefined)
+          if (org.visits === undefined)
             org.visits = 1;
 
-          if (resource.address != undefined)
+          if (resource.address !== undefined)
             org.address = resource.address;
 
-          if (resource.extension != null) {
+          if (resource.extension !== null) {
             resource.extension.forEach(function (extension) {
               let loc = processLocationExtension(extension);
 
@@ -411,7 +411,7 @@ $(document).ready(function () {
 
             });
           }
-          if (org.fhir_id != null) {
+          if (org.fhir_id !== null) {
             // see if we have a pre-reference
             const idx = known_organizations.map(org => org.fhir_id).indexOf(org.fhir_id);
             if (idx === -1)
@@ -432,7 +432,7 @@ $(document).ready(function () {
           else if (ext.url == "longitude")
             latlon.longitude = ext.valueDecimal.toFixed(3);
         });
-        if (latlon.latitude != undefined && latlon.longitude != undefined)
+        if (latlon.latitude !== undefined && latlon.longitude !== undefined)
           return latlon;
         else
           return null;

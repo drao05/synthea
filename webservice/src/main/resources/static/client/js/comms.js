@@ -15,11 +15,7 @@ var comms = (function () {
   return {
 
     setFHIRHandler: function(handler) {
-      updateMessage(callback);
-      updateMessage(handler);
       callback = handler;
-      updateMessage("set callback, allegedly, to handler")
-      updateMessage(callback);
     },
     connect: function (url = 'ws://localhost:8080/va-synthea/ws') {
       encounterStats = {};
@@ -76,18 +72,19 @@ var comms = (function () {
     },
 
     configure: function (config = {population: 50}) {
+      updateMessage("Configuring synthea...");
       let message = {operation: 'configure', configuration: config};
       ws.send(JSON.stringify(message));
     },
 
     start: function () {
-      updateMessage('Please wait...');
+      updateMessage('Starting synthea...');
       let message = {operation: 'start', uuid: uuid};
       ws.send(JSON.stringify(message));
     },
 
     stop: function () {
-      updateMessage('Please wait...');
+      updateMessage('Stopping synthea...');
       let message = {operation: 'stop', uuid: uuid};
       ws.send(JSON.stringify(message));
     },
@@ -95,7 +92,7 @@ var comms = (function () {
     updateRequest: function (uuid, config) {
       if ((uuid === undefined || uuid === null) || config === null || config === undefined)
         return;
-      updateMessage('Please wait...');
+      updateMessage('Updating synthea...');
       let message = {operation: 'update-request', uuid: uuid, configuration: config};
       ws.send(JSON.stringify(message));
     }
