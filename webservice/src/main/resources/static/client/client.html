@@ -8,6 +8,23 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
+    <style>
+      
+/*       https://medium.com/@vembarrajan/html-css-tricks-scroll-able-table-body-tbody-d23182ae0fbc, Rajan V */
+      #facilityTable tbody{
+        display:block;
+        overflow:auto;
+        height:409px;
+        width:100%;
+      }
+      #facilityTable thead tr{
+        display:block;
+      }
+      
+      .width90p {
+        width: 90%;
+      }
+    </style>
     <title></title>
   </head>
   <body>
@@ -44,8 +61,8 @@
         <div class="col">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Visits / Facilities</h5>
-              <h6 class="card-subtitle mb-2 visitCount">No Visits / Facilities</h6>
+              <h5 class="card-title">Visits</h5>
+              <h6 class="card-subtitle mb-2"><span id="visitCount">{{ total }}</span></h6>
               <div id="visitDonut"></div>
 
             </div>
@@ -112,7 +129,25 @@
 
         </div>
         <div class="col">
-          <div class="card">Facilty info</div>
+          <div class="card">Facility info</div>
+          <div class="row">
+            <table class="table fixed_header" id="facilityTable">
+              <thead>
+                <tr>
+                  <th v-for="key in columns">
+                    {{ key | capitalize }}
+                  </th>                  
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="entry in facilities">
+                  <td v-for="key in columns"> {{entry[key]}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+
 
         </div>
       </div>
@@ -132,130 +167,79 @@
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="js/comms.js"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-
+    <script src="js/vue.js"></script>
     <!-- general -->
     <script type="text/javascript">
-      // let's figure out nicer ways to make everything live, maybe when we can vue up after all at some point, it supports incremental updates allegedly
+// let's figure out nicer ways to make everything live, maybe when we can vue up after all at some point, it supports incremental updates allegedly
 
-      $(document).ready(function () {
-        window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
+$(document).ready(function () {
+  window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(leaflet_map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(leaflet_map);
 
-        google.charts.load('current', {'packages': ['corechart']});
-        google.charts.load('current', {'packages': ['line']});
-        google.charts.setOnLoadCallback(buildCharts);
+  google.charts.load('current', {'packages': ['corechart']});
+  google.charts.load('current', {'packages': ['line']});
+  google.charts.setOnLoadCallback(buildCharts);
 
-      });
+});
+    </script>
+
+
+    <!--     vue module maybe?-->
+    <script type="text/javascript">
+
+      function buildVues() {
+        let totalVisitVue = new Vue({
+          el: "#visitCount",
+          data: encounterTracker
+        });
+        let facilityTableVue = new Vue({
+          el: "#facilityTable",
+          data: {
+            columns: ["name", "visits"],
+            facilities: known_organizations
+          },
+          filters: {
+            capitalize: function (value) {
+              if (!value)
+                return ''
+              value = value.toString()
+              return value.charAt(0).toUpperCase() + value.slice(1)
+            }
+          }
+        });
+        window.totalVisitVuew = totalVisitVue;
+        window.facilityTableVue = facilityTableVue;
+
+      }
     </script>
 
     <!-- switch this to a module that handles talking to the server, maybe push the new records as events-->
     <script type="text/javascript">
-      let ws;
-      let uuid;
-      let count = 0;
-      let connected = false;
 
-      function updateMessage(message) {
-        //$('#message').html(message);
-        //console.debug(message);
-      }
-
-      function connect(url = 'ws://localhost:8080/va-synthea/ws') {
-        encounterStats = {};
-        try {
-          ws = new WebSocket(url);
-          ws.onopen = function (event) {
-            connected = true;
-          };
-
-          ws.onclose = function (event) {
-            if (connected) {
-              connected = false;
-              updateMessage('Connection closed');
-            } else {
-              updateMessage('Could not connect');
-            }
-          };
-
-          ws.onmessage = function (event) {
-            try {
-
-              let data = JSON.parse(event.data);
-              if (data['uuid']) {
-                // Got UUID for configured request
-                uuid = data['uuid'];
-                count = 0;
-              }
-              if (data['error']) {
-                // Got error message
-                updateMessage(data['error']);
-              } else if (data['status']) {
-                // Got status message
-                updateMessage(data['status']);
-                if (data['status'] === 'Completed') {
-                  // Request has completed
-                  count = 0;
-                }
-
-                if (data['configuration']) {
-                  console.log(data['configuration']);
-                }
-
-              } else {
-                processFHIR(data)
-                // Got a person
-                //$('#count').html(++count);
-              }
-            } catch (jex) {
-              console.error(jex);
-            }
-          };
-        } catch (ex) {
-          console.error(ex);
-      }
-      }
-
-      function configure(config = {population: 50}) {
-        let message = {operation: 'configure', configuration: config};
-        ws.send(JSON.stringify(message));
-      }
-
-      function start() {
-        updateMessage('Please wait...');
-        let message = {operation: 'start', uuid: uuid};
-        ws.send(JSON.stringify(message));
-      }
-
-      function stop() {
-        updateMessage('Please wait...');
-        let message = {operation: 'stop', uuid: uuid};
-        ws.send(JSON.stringify(message));
-      }
-
-      function updateRequest() {
-        updateMessage('Please wait...');
-        let message = {operation: 'update-request', uuid: uuid, configuration: {'state': 'Massachusetts', 'module.encounter.telemed_adoption_values': '1900:0,2000:0,2017:0.9'}};
-        ws.send(JSON.stringify(message));
-      }
 
     </script>
 
     <!-- become a FHIR module that parses records-->
     <script type="text/javascript">
 
-      let known_patients = [];
-      let known_organizations = [];
+      const known_patients = [];
+      const known_organizations = [];
+      const encounterTracker = {
+        total: 0,
+        countByKind: []
+      }
 
+      buildVues();
       let encounterTimeBoundaries = {earliest: Number.MAX_SAFE_INTEGER, last: Number.MIN_SAFE_INTEGER};
-      let encounterStats = {"Waiting For Data": 1};
       function processFHIR(fhir) {
 
         let home_locs = processPatientLocations(fhir);
@@ -265,10 +249,15 @@
         let encounterInfo = processPatientEncounters(fhir);
         let patientEncounterStats = encounterInfo.encounterStats;
         Object.keys(patientEncounterStats).forEach(function (key) {
-          if (encounterStats[key] == undefined)
-            encounterStats[key] = patientEncounterStats[key];
-          else
-            encounterStats[key] += patientEncounterStats[key];
+          encounterTracker.total += patientEncounterStats[key];
+          const countByKind = encounterTracker.countByKind;
+          const idx = countByKind.map(kind => kind.encounterType).indexOf(key);
+          if (idx == -1) {
+            countByKind[countByKind.length] = {encounterType: key, total: patientEncounterStats[key]};
+
+          } else {
+            countByKind[idx].total += patientEncounterStats[key];
+          }
         });
         updateEncounterViz();
       }
@@ -326,14 +315,28 @@
             encounterTimeBoundaries.last = end;
             $("#encounterLast").text(new Date(start));
           }
+          if (resource.serviceProvider !== undefined && resource.serviceProvider.reference !== undefined) {
+            let spid = resource.serviceProvider.reference;
+            // they're called providers here- I wonder if this is a mix of organizations and
+            // individuals. if so, this is wrong, it only indexes into the 
+            if (spid.startsWith("urn:uuid:"))
+              spid = spid.substring(9);
+            let org = findOrganization(spid);
+            if (org != null)
+              org.visits++;
+            else
+              known_organizations.push({
+                fhir_id: spid,
+                visits: 1
+              });
 
+
+          }
           if (encounterNumbers[code] == undefined)
             encounterNumbers[code] = 1;
           else
             encounterNumbers[code]++;
         });
-
-        window.encounters = encounters;
         return {"encounters": encounters, "encounterStats": encounterNumbers};
       }
       function processPatientLocations(fhir) {
@@ -363,6 +366,17 @@
         return home_lls;
       }
 
+      function findOrganization(id = null, name = null) {
+        let idx = -1;
+        if (id != null)
+          idx = known_organizations.map(org => org.fhir_id).indexOf(id);
+        else if (name != null)
+          idx = known_organizations.map(org => org.name).indexOf(name);
+        if (idx == -1)
+          return null;
+        return known_organizations[idx];
+
+      }
       function processOrganizations(fhir) {
         let orgStanzas = getByResourceType(fhir, "Organization");
 
@@ -370,8 +384,22 @@
         orgStanzas.forEach(function (orgStanza) {
           let resource = orgStanza.resource;
           let org = {name: null};
+          if (resource.id != undefined)
+            org.fhir_id = resource.id;
           if (resource.name != undefined)
             org.name = resource.name;
+
+          // early exit if we have the name
+          // we could have it with the id if it was filled in via an encounter reference
+          if (known_organizations.filter(known_org => known_org.name == org.name) != 0)
+            return;
+
+          if (org.visits == undefined)
+            org.visits = 1;
+
+          if (resource.address != undefined)
+            org.address = resource.address;
+
           if (resource.extension != null) {
             resource.extension.forEach(function (extension) {
               let loc = processLocationExtension(extension);
@@ -383,11 +411,14 @@
 
             });
           }
-          if (org.name != null) {
-            if(known_organizations.filter(known_org => known_org.name == org.name) == 0)
-              known_organizations[known_organizations.length] = org;
-            else 
-              console.debug("Found a duplicate org!");
+          if (org.fhir_id != null) {
+            // see if we have a pre-reference
+            const idx = known_organizations.map(org => org.fhir_id).indexOf(org.fhir_id);
+            if (idx === -1)
+              known_organizations.push(org);
+            else
+              known_organizations[idx] = org;
+
           }
         });
         return known_organizations;
@@ -415,7 +446,7 @@
 
     </script>
 
-    
+
     <!-- become a viz module -->
     <script type="text/javascript">
 
@@ -465,15 +496,13 @@
       }
 
       function updateEncounterViz() {
-        let total = 0;
-        let keys = Object.keys(encounterStats);
-        if (keys.length == 0)
-          return;
+
         let values = [["Type", "# of Visits"]];
-        keys.forEach(function (key) {
-          values[values.length] = [key, encounterStats[key]];
-          total += encounterStats[key];
+        const byKind = encounterTracker.countByKind;
+        byKind.forEach(function (holder) {
+          values.push([holder.encounterType, holder.total]);
         });
+        let total = encounterTracker.total;
         let data = google.visualization.arrayToDataTable(values);
         visitChart.draw(data, {pieHole: 0.4});
         $(".visitCount").text(total + " / " + known_organizations.length);
@@ -481,6 +510,8 @@
       }
 
 
+
     </script>
+
   </body>
 </html>
