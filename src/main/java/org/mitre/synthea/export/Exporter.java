@@ -70,6 +70,7 @@ public abstract class Exporter {
 				personQueue.put(FhirStu3.convertToFHIRJson(person, stopTime));
 	    	} catch(InterruptedException iex) {
 			} catch(Exception ex) {
+				System.out.println("Exception during call to FhirStu3.convertToFHIRJson");
 				ex.printStackTrace();
 			}
     	}
