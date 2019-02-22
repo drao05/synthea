@@ -8,6 +8,21 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
+    <style>
+
+      /*     borrowed from https://mdbootstrap.com/docs/jquery/tables/scroll/ */
+      .table-wrapper-scroll-y {
+        display: block;
+        max-height: 475px;
+        overflow-y: auto;
+        -ms-overflow-style: -ms-autohiding-scrollbar;
+      }
+
+      .width90p {
+        width: 90%;
+      }
+
+    </style>
     <title></title>
   </head>
   <body>
@@ -44,8 +59,8 @@
         <div class="col">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Visits / Facilities</h5>
-              <h6 class="card-subtitle mb-2 visitCount">No Visits / Facilities</h6>
+              <h5 class="card-title">Visits</h5>
+              <h6 class="card-subtitle mb-2"><span id="visitCount">{{ total }}</span></h6>
               <div id="visitDonut"></div>
 
             </div>
@@ -53,11 +68,8 @@
         </div>
         <div class="col">
           <div class="card">
-            <div class="card-text" id="bandwidthDiv">
-              Bandwidth / Time
-            </div>
-            <div class="card-text" id="timeSavedDiv">
-              Hours/Miles Saved
+            <div class="card-text" id="travelDiv">
+              Travel 
             </div>
           </div>
 
@@ -112,8 +124,27 @@
 
         </div>
         <div class="col">
-          <div class="card">Facilty info</div>
+          <div class="card">Facility info</div>
+          <div class="row">
 
+            <div class="table-wrapper-scroll-y">
+              <table class="table w-auto table-striped " id="facilityTable">
+                <thead>
+                  <tr class="">
+                    <th v-for="key in columns">
+                      {{ key | capitalize }}
+                    </th>                  
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="entry in facilities" class="">
+                    <td v-for="key in columns"> {{entry[key]}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
         </div>
       </div>
       <div class="row">
@@ -132,162 +163,118 @@
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="js/comms.js"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-
+    <script src="js/vue.js"></script>
+    <script src="js/distance.js"></script>
+    <script src="js/latlon-spherical.js"></script>
     <!-- general -->
     <script type="text/javascript">
-      // let's figure out nicer ways to make everything live, maybe when we can vue up after all at some point, it supports incremental updates allegedly
+// let's figure out nicer ways to make everything live, maybe when we can vue up after all at some point, it supports incremental updates allegedly
 
-      $(document).ready(function () {
-        window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(leaflet_map);
-
-        google.charts.load('current', {'packages': ['corechart']});
-        google.charts.load('current', {'packages': ['line']});
-        google.charts.setOnLoadCallback(buildCharts);
-
-      });
+$(document).ready(function () {
+  window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(leaflet_map);
+  google.charts.load('current', {'packages': ['corechart']});
+  google.charts.load('current', {'packages': ['line']});
+  google.charts.setOnLoadCallback(buildCharts);
+});
     </script>
 
-    <!-- switch this to a module that handles talking to the server, maybe push the new records as events-->
+
+    <!--     vue module maybe?-->
     <script type="text/javascript">
-      let ws;
-      let uuid;
-      let count = 0;
-      let connected = false;
 
-      function updateMessage(message) {
-        //$('#message').html(message);
-        //console.debug(message);
-      }
-
-      function connect(url = 'ws://localhost:8080/va-synthea/ws') {
-        encounterStats = {};
-        try {
-          ws = new WebSocket(url);
-          ws.onopen = function (event) {
-            connected = true;
-          };
-
-          ws.onclose = function (event) {
-            if (connected) {
-              connected = false;
-              updateMessage('Connection closed');
-            } else {
-              updateMessage('Could not connect');
+      function buildVues() {
+        let totalVisitVue = new Vue({
+          el: "#visitCount",
+          data: encounterTracker
+        });
+        let facilityTableVue = new Vue({
+          el: "#facilityTable",
+          data: {
+            columns: ["name", "visits"],
+            facilities: known_organizations
+          },
+          filters: {
+            capitalize: function (value) {
+              if (!value)
+                return ''
+              value = value.toString()
+              return value.charAt(0).toUpperCase() + value.slice(1)
             }
-          };
-
-          ws.onmessage = function (event) {
-            try {
-
-              let data = JSON.parse(event.data);
-              if (data['uuid']) {
-                // Got UUID for configured request
-                uuid = data['uuid'];
-                count = 0;
-              }
-              if (data['error']) {
-                // Got error message
-                updateMessage(data['error']);
-              } else if (data['status']) {
-                // Got status message
-                updateMessage(data['status']);
-                if (data['status'] === 'Completed') {
-                  // Request has completed
-                  count = 0;
-                }
-
-                if (data['configuration']) {
-                  console.log(data['configuration']);
-                }
-
-              } else {
-                processFHIR(data)
-                // Got a person
-                //$('#count').html(++count);
-              }
-            } catch (jex) {
-              console.error(jex);
-            }
-          };
-        } catch (ex) {
-          console.error(ex);
+          }
+        });
+        window.totalVisitVuew = totalVisitVue;
+        window.facilityTableVue = facilityTableVue;
       }
-      }
-
-      function configure(config = {population: 50}) {
-        let message = {operation: 'configure', configuration: config};
-        ws.send(JSON.stringify(message));
-      }
-
-      function start() {
-        updateMessage('Please wait...');
-        let message = {operation: 'start', uuid: uuid};
-        ws.send(JSON.stringify(message));
-      }
-
-      function stop() {
-        updateMessage('Please wait...');
-        let message = {operation: 'stop', uuid: uuid};
-        ws.send(JSON.stringify(message));
-      }
-
-      function updateRequest() {
-        updateMessage('Please wait...');
-        let message = {operation: 'update-request', uuid: uuid, configuration: {'state': 'Massachusetts', 'module.encounter.telemed_adoption_values': '1900:0,2000:0,2017:0.9'}};
-        ws.send(JSON.stringify(message));
-      }
-
     </script>
+
 
     <!-- become a FHIR module that parses records-->
     <script type="text/javascript">
 
-      let known_patients = [];
-      let known_organizations = [];
+      const known_patients = [];
+      const known_organizations = [];
+      const encounterTracker = {
+        total: 0,
+        countByKind: [],
+        travel: {
+          saved: 0,
+          savedCount: 0,
+          distance: 0,
+          travelCount: 0
+        }
+      }
 
+      buildVues();
       let encounterTimeBoundaries = {earliest: Number.MAX_SAFE_INTEGER, last: Number.MIN_SAFE_INTEGER};
-      let encounterStats = {"Waiting For Data": 1};
       function processFHIR(fhir) {
 
-        let home_locs = processPatientLocations(fhir);
-        mapPatient(home_locs);
         let organizations = processOrganizations(fhir);
         mapOrganizations(organizations);
+        let patients = processPatients(fhir);
+        mapPatients(patients);
         let encounterInfo = processPatientEncounters(fhir);
         let patientEncounterStats = encounterInfo.encounterStats;
         Object.keys(patientEncounterStats).forEach(function (key) {
-          if (encounterStats[key] == undefined)
-            encounterStats[key] = patientEncounterStats[key];
-          else
-            encounterStats[key] += patientEncounterStats[key];
+          encounterTracker.total += patientEncounterStats[key];
+          const countByKind = encounterTracker.countByKind;
+          const idx = countByKind.map(kind => kind.encounterType).indexOf(key);
+          if (idx === -1) {
+            countByKind[countByKind.length] = {encounterType: key, total: patientEncounterStats[key]};
+          } else {
+            countByKind[idx].total += patientEncounterStats[key];
+          }
         });
         updateEncounterViz();
       }
 
-      let patientMarkers = [];
-      function mapPatient(locations = []) {
-        locations.forEach(function (loc, index) {
-          let ll = [loc.latitude, loc.longitude];
+      function mapPatients(patients = []) {
+        patients.forEach(function (patient) {
+          if (patient.marker !== undefined)
+            return; // fast exit, already mapped
+          if (patient.location === undefined)
+            return; // can't map
+          const loc = patient.location;
+          const ll = [loc.latitude, loc.longitude];
 //          let marker = L.marker(ll);
-          let marker = L.circle(ll, {
+          const marker = L.circle(ll, {
             color: 'blue',
             fillColor: 'lightblue',
             fillOpacity: 0.5,
             radius: 500
           })
-          patientMarkers.push(marker);
           marker.addTo(window.leaflet_map);
-        });
+        })
       }
+
       function mapOrganizations(organizations = []) {
         organizations.forEach(function (org) {
           if (org.location == undefined)
@@ -309,11 +296,48 @@
         });
       }
 
+      function isKnownPatient(id = "") {
+        return  (known_patients.filter(patient => patient.fhir_id === id).length !== 0)
+      }
+      function processPatients(fhir) {
+        const patients = [];
+        let patientStanzas = getByResourceType(fhir, "Patient");
+        patientStanzas.forEach(function (entry) {
+          let patient = {travel: {total: 0, saved: 0, trips: []}};
+          const resource = entry.resource;
+          if (resource.id !== undefined)
+            patient.fhir_id = resource.id;
+          if (isKnownPatient(patient.fhir_id))
+            return;
+          else
+            known_patients[known_patients.length] = patient;
+          if (resource.address !== undefined) {
+            const addresses = resource.address;
+            addresses.forEach(function (address) {
+              address.extension.forEach(function (extension) {
+                let latlon = {};
+                latlon = processLocationExtension(extension);
+                if (latlon === null || (latlon.latitude !== undefined && latlon.longitude !== undefined))
+                  patient.location = latlon;
+              });
+            });
+          }
+          patients[patients.length] = patient;
+        });
+        return patients;
+      }
+
+      function urnToId(urn) {
+        if (urn.startsWith("urn:uuid:"))
+          urn = urn.substring(9);
+        return urn;
+      }
 
       function processPatientEncounters(fhir) {
         let encounters = getByResourceType(fhir, "Encounter");
         let encounterNumbers = {};
         encounters.forEach(function (encounter, index) {
+          let org = null;
           let resource = encounter.resource;
           let code = resource.class.code.toLowerCase();
           let start = Date.parse(resource.period.start);
@@ -327,55 +351,112 @@
             $("#encounterLast").text(new Date(start));
           }
 
-          if (encounterNumbers[code] == undefined)
+          if (resource.serviceProvider !== undefined && resource.serviceProvider.reference !== undefined) {
+            // they're called providers here- I wonder if this is a mix of organizations and
+            // individuals. if so, this is wrong, it only indexes into the 
+            let spid = resource.serviceProvider.reference;
+            spid = urnToId(spid);
+            org = findOrganization(spid);
+            if (org !== null)
+              org.visits++;
+            else {
+              console.debug("found an unreferenced organization. this was unexpected given processing order");
+              known_organizations.push({
+                fhir_id: spid,
+                visits: 1
+              });
+            }
+          }
+          if (resource.subject !== undefined && resource.subject.reference !== undefined) {
+            let pid = urnToId(resource.subject.reference);
+            let patient = findPatient(pid);
+            if (patient !== null && org !== null)
+              if (patient.location !== undefined && org.location !== undefined) {
+
+                const trip = processTrip(patient.location, org.location, code == "virtual");
+                if (trip.virtual) {
+                  patient.travel.saved += trip.distance;
+                  encounterTracker.travel.saved += trip.distance;
+                  encounterTracker.travel.savedCount++;
+                } else {
+                  patient.travel.total += trip.distance;
+                  encounterTracker.travel.distance += trip.distance;
+                  encounterTracker.travel.travelCount++;
+                }
+                patient.travel.trips[patient.travel.trips.length] = trip;
+              }
+          }
+
+          if (encounterNumbers[code] === undefined)
             encounterNumbers[code] = 1;
           else
             encounterNumbers[code]++;
         });
-
-        window.encounters = encounters;
         return {"encounters": encounters, "encounterStats": encounterNumbers};
       }
-      function processPatientLocations(fhir) {
-        let home_locations = getByResourceType(fhir, "Patient");
-        known_patients[known_patients.length] = {}; // placeholder
-        home_lls = new Array();
-        home_locations.forEach(function (person, index) {
-          let addresses = person.resource.address;
-          addresses.forEach(function (address, index) {
-            address.extension.forEach(function (extension, index) {
 
-              let latlon = {};
-
-              latlon = processLocationExtension(extension);
-//              extension.extension.forEach(function (ext, idx) {
-//                if (ext.url == "latitude")
-//                  latlon.latitude = ext.valueDecimal;
-//                else if (ext.url == "longitude")
-//                  latlon.longitude = ext.valueDecimal;
-//              });
-              if (latlon == null || (latlon.latitude != undefined && latlon.longitude != undefined))
-                home_lls.push(latlon);
-            });
-          });
-
-        });
-        return home_lls;
+      function processTrip(start, end, virtual = false) {
+        let trip = {distance: 0, start: start, end: end, path: [], virtual: virtual};
+        let path = getWaypoints(start, end);
+        trip.path = path;
+        if (path.length > 1) {
+          let idx = 0;
+          let limit = path.length - 1;
+          while (idx < limit) {
+            let step1 = new LatLon(path[idx].latitude, path[idx].longitude);
+            let step2 = new LatLon(path[idx + 1].latitude, path[idx + 1].longitude);
+            let stepDistance = convertMetersToMiles(step1.distanceTo(step2));
+            trip.distance += stepDistance;
+            idx++;
+          }
+        }
+        return trip;
       }
+
+      function getWaypoints(start, end) {
+        return [start, end];
+      }
+      function findOrganization(id = null, name = null) {
+        let idx = -1;
+        if (id !== null)
+          idx = known_organizations.map(org => org.fhir_id).indexOf(id);
+        else if (name !== null)
+          idx = known_organizations.map(org => org.name).indexOf(name);
+        if (idx === -1)
+          return null;
+        return known_organizations[idx];
+      }
+      function findPatient(id = null) {
+        let idx = -1;
+        if (id !== null)
+          idx = known_patients.map(person => person.fhir_id).indexOf(id);
+        if (idx === -1)
+          return null;
+        return known_patients[idx];
+      }
+
 
       function processOrganizations(fhir) {
         let orgStanzas = getByResourceType(fhir, "Organization");
-
         let org_locs = [];
         orgStanzas.forEach(function (orgStanza) {
           let resource = orgStanza.resource;
           let org = {name: null};
-          if (resource.name != undefined)
+          if (resource.id !== undefined)
+            org.fhir_id = resource.id;
+          if (resource.name !== undefined)
             org.name = resource.name;
-          if (resource.extension != null) {
+          // early exit if we have the name
+          // we could have it with the id if it was filled in via an encounter reference
+          if (known_organizations.filter(known_org => known_org.name === org.name).length !== 0)
+            return;
+          if (org.visits === undefined)
+            org.visits = 1;
+          if (resource.address !== undefined)
+            org.address = resource.address;
+          if (resource.extension !== null) {
             resource.extension.forEach(function (extension) {
               let loc = processLocationExtension(extension);
-
               if (loc != null) {
                 org_locs[org_locs.length] = loc;
                 org.location = loc;
@@ -383,11 +464,13 @@
 
             });
           }
-          if (org.name != null) {
-            if(known_organizations.filter(known_org => known_org.name == org.name) == 0)
-              known_organizations[known_organizations.length] = org;
-            else 
-              console.debug("Found a duplicate org!");
+          if (org.fhir_id !== null) {
+            // see if we have a pre-reference
+            const idx = known_organizations.map(org => org.fhir_id).indexOf(org.fhir_id);
+            if (idx === -1)
+              known_organizations.push(org);
+            else
+              known_organizations[idx] = org;
           }
         });
         return known_organizations;
@@ -397,11 +480,11 @@
         let latlon = {};
         holder.extension.forEach(function (ext, idx) {
           if (ext.url == "latitude")
-            latlon.latitude = ext.valueDecimal.toFixed(3);
+            latlon.latitude = Number(ext.valueDecimal.toFixed(3));
           else if (ext.url == "longitude")
-            latlon.longitude = ext.valueDecimal.toFixed(3);
+            latlon.longitude = Number(ext.valueDecimal.toFixed(3));
         });
-        if (latlon.latitude != undefined && latlon.longitude != undefined)
+        if (latlon.latitude !== undefined && latlon.longitude !== undefined)
           return latlon;
         else
           return null;
@@ -415,22 +498,26 @@
 
     </script>
 
-    
+
     <!-- become a viz module -->
     <script type="text/javascript">
 
       let visitChart;
-      let savingsChart;
+      let travelChart;
       function buildCharts() {
-        var options = {
+        let visitOptions = {
           title: 'Visits',
           pieHole: 0.4,
         };
-
         visitChart = new google.visualization.PieChart(document.getElementById('visitDonut'));
-
-
-        mockupSavingChart();
+        travelChart = new google.visualization.ColumnChart(document.getElementById('travelDiv'));
+        let travelData = google.visualization.arrayToDataTable([
+          ['Type', 'Miles', {role: 'style'}],
+          ['Traveled', 0, 'red'],
+          ['Saved', 0, 'green']
+        ]);
+        travelChart.draw(travelData);
+        // mockupSavingChart();
 
       }
 
@@ -446,8 +533,6 @@
           [new Date(2010, 1, 1), 1300, 750, 1999],
           [new Date(2015, 1, 1), 2380, 1900, 2432]
         ]);
-
-
         var options = {
           chart: {
             title: 'Time and Mileage Saved',
@@ -458,29 +543,48 @@
             scaleType: 'continuous'
           }
         };
-
         savingsChart = new google.charts.Line(document.getElementById('timeSavedDiv'));
-
         savingsChart.draw(data, google.charts.Line.convertOptions(options));
       }
 
       function updateEncounterViz() {
-        let total = 0;
-        let keys = Object.keys(encounterStats);
-        if (keys.length == 0)
-          return;
+
         let values = [["Type", "# of Visits"]];
-        keys.forEach(function (key) {
-          values[values.length] = [key, encounterStats[key]];
-          total += encounterStats[key];
+        const byKind = encounterTracker.countByKind;
+        byKind.forEach(function (holder) {
+          values.push([holder.encounterType, holder.total]);
         });
+        let total = encounterTracker.total;
         let data = google.visualization.arrayToDataTable(values);
         visitChart.draw(data, {pieHole: 0.4});
         $(".visitCount").text(total + " / " + known_organizations.length);
+        let travelData = google.visualization.arrayToDataTable([
+          ['Type', 'Miles', {role: 'style'}],
+          ['Traveled', encounterTracker.travel.distance, 'red'],
+          ['Saved', encounterTracker.travel.saved, 'green']
+        ]);
+        travelChart.draw(travelData, {
+          chart: {
+            title: 'Travel',
+          },
+          height: 297 // I should stop being a monster
 
+        });
       }
 
 
+
+    </script>
+
+    <!--    utilities-->
+    <script type="text/javascript">
+
+      function convertMetersToMiles(i) {
+        return i * 0.000621371192;
+      }
+      function convertMilesToMeters(i) {
+        return i * 1609.344;
+      }
     </script>
   </body>
 </html>
