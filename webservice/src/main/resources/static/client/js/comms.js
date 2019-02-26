@@ -1,6 +1,5 @@
 var comms = (function () {
 
-// Keep this variable private inside this closure scope
   let ws;
   let uuid;
   let connected = false;
@@ -9,8 +8,6 @@ var comms = (function () {
     //$('#message').html(message);
     console.debug(message);
   }
-// Expose these functions via an interface while hiding
-// the implementation of the module within the function() block
 
   return {
 
