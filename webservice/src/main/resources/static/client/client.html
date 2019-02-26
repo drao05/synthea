@@ -21,6 +21,10 @@
       .width90p {
         width: 90%;
       }
+      
+      #syntheaState::first-letter {
+        
+      }
 
     </style>
     <title></title>
@@ -46,13 +50,40 @@
     </nav>
     <div class="container" id="mainContainer">
       <div class="row">
-        <div class="col">
-          <div class="card">control and config here</div>
+        <div class="col-auto">
+          <label for="state">State:</label>
+          <select id="state" class="form-control">
+            <option value="Massachusetts">Massachusetts</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <label for="population">Population:</label>
+          <select id="population" class="form-control">
+            <option>100</option>
+            <option>1000</option>
+            <option>10000</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <label for="yearsOfHistory">Years Of History:</label>
+          <select id="yearsOfHistory" class="form-control">
+            <option>1</option>
+            <option>5</option>
+            <option>10</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <button class="form-control" disabled=disabled id="runButton">Start</button>
+        </div>
+        <div class="col-auto" id="status">
+          <label>State:</label> <span id="syntheaState">{{state}}</span>
         </div>
       </div>
       <div class="row">
-        <div class="col">
-          <div class="card">goal row </div>
+        <div class="col" id="thGoalHolder">
+          <label for="telehealthGoal">Telehealth Adoption Goal (<span id="telehealthGoalTarget">{{ thTarget }}</span>%)</label>
+            <input type="range" min="1" max="100" value="1.6" class="form-control"
+                   id="telehealthGoal"  v-model="thTarget" />
         </div>
       </div>
       <div class="row">
@@ -190,7 +221,9 @@ $(document).ready(function () {
 
     <!--     vue module maybe?-->
     <script type="text/javascript">
-
+      const stateHelper = {
+        state: "Disconnected"
+      }
       function buildVues() {
         let totalVisitVue = new Vue({
           el: "#visitCount",
@@ -199,7 +232,7 @@ $(document).ready(function () {
         let facilityTableVue = new Vue({
           el: "#facilityTable",
           data: {
-            columns: ["name", "visits"],
+            columns: ["name", "visits", "virtual"],
             facilities: known_organizations
           },
           filters: {
@@ -211,17 +244,87 @@ $(document).ready(function () {
             }
           }
         });
+        let thGoalVue = new Vue( {
+          el: "#thGoalHolder",
+          data: { thTarget: 1.6}
+        });
         window.totalVisitVuew = totalVisitVue;
         window.facilityTableVue = facilityTableVue;
+        window.thGoalVue = thGoalVue;
+        //window.stateVue = stateVue;
       }
     </script>
 
 
+
+    <!-- become a viz module -->
+    <script type="text/javascript">
+
+      let visitChart;
+      let travelChart;
+      function buildCharts() {
+        let visitOptions = {
+          title: 'Visits',
+          pieHole: 0.4,
+        };
+        visitChart = new google.visualization.PieChart(document.getElementById('visitDonut'));
+        travelChart = new google.visualization.ColumnChart(document.getElementById('travelDiv'));
+        let travelData = google.visualization.arrayToDataTable([
+          ['Type', 'Miles', {role: 'style'}],
+          ['Traveled', 0, 'red'],
+          ['Saved', 0, 'green']
+        ]);
+        travelChart.draw(travelData);
+        updateEncounterViz();
+      }
+
+      function updateEncounterViz() {
+
+        let values = [["Type", "# of Visits"]];
+        const byKind = encounterTracker.countByKind;
+        byKind.forEach(function (holder) {
+          values.push([holder.encounterType, holder.total]);
+        });
+        let total = encounterTracker.total;
+        let data = google.visualization.arrayToDataTable(values);
+        visitChart.draw(data, {pieHole: 0.4});
+        $(".visitCount").text(total + " / " + known_organizations.length);
+        let travelData = google.visualization.arrayToDataTable([
+          ['Type', 'Miles', {role: 'style'}],
+          ['Traveled', encounterTracker.travel.distance, 'red'],
+          ['Saved', encounterTracker.travel.saved, 'green']
+        ]);
+        travelChart.draw(travelData, {
+          chart: {
+            title: 'Travel',
+          },
+          height: 297 // I should stop being a monster
+
+        });
+      }
+
+
+
+    </script>
+
+    <!--    utilities-->
+    <script type="text/javascript">
+
+      function convertMetersToMiles(i) {
+        return i * 0.000621371192;
+      }
+      function convertMilesToMeters(i) {
+        return i * 1609.344;
+      }
+    </script>    
+    
     <!-- become a FHIR module that parses records-->
     <script type="text/javascript">
 
       const known_patients = [];
-      const known_organizations = [];
+      const known_organizations = [ 
+        {name: "Waiting", visits: 0, virtual: 0}
+      ];
       const encounterTracker = {
         total: 0,
         countByKind: [],
@@ -233,7 +336,22 @@ $(document).ready(function () {
         }
       }
 
-      buildVues();
+      initHelper();
+      function initHelper() {
+        buildVues();
+        comms.setFHIRHandler(processFHIR); comms.connect();
+        
+      }
+      
+      function goGoGo() {
+        comms.start();
+        known_organizations = [];
+      }
+      
+      function noNoNo() {
+        comms.stop();
+      }
+      
       let encounterTimeBoundaries = {earliest: Number.MAX_SAFE_INTEGER, last: Number.MIN_SAFE_INTEGER};
       function processFHIR(fhir) {
 
@@ -357,13 +475,15 @@ $(document).ready(function () {
             let spid = resource.serviceProvider.reference;
             spid = urnToId(spid);
             org = findOrganization(spid);
-            if (org !== null)
+            if (org !== null) {
+             
               org.visits++;
-            else {
+            } else {
               console.debug("found an unreferenced organization. this was unexpected given processing order");
               known_organizations.push({
                 fhir_id: spid,
-                visits: 1
+                visits: 1,
+                virtual: 0
               });
             }
           }
@@ -373,8 +493,10 @@ $(document).ready(function () {
             if (patient !== null && org !== null)
               if (patient.location !== undefined && org.location !== undefined) {
 
-                const trip = processTrip(patient.location, org.location, code == "virtual");
+                const trip = processTrip(patient.location, org.location, code === "virtual");
                 if (trip.virtual) {
+                  if(org.virtual === undefined) org.virtual = 0;
+                  org.virtual++;
                   patient.travel.saved += trip.distance;
                   encounterTracker.travel.saved += trip.distance;
                   encounterTracker.travel.savedCount++;
@@ -438,7 +560,6 @@ $(document).ready(function () {
 
       function processOrganizations(fhir) {
         let orgStanzas = getByResourceType(fhir, "Organization");
-        let org_locs = [];
         orgStanzas.forEach(function (orgStanza) {
           let resource = orgStanza.resource;
           let org = {name: null};
@@ -450,20 +571,24 @@ $(document).ready(function () {
           // we could have it with the id if it was filled in via an encounter reference
           if (known_organizations.filter(known_org => known_org.name === org.name).length !== 0)
             return;
-          if (org.visits === undefined)
+          if (org.visits === undefined) {
             org.visits = 1;
+            org.virtual= 0;
+          }
           if (resource.address !== undefined)
-            org.address = resource.address;
-          if (resource.extension !== null) {
-            resource.extension.forEach(function (extension) {
-              let loc = processLocationExtension(extension);
-              if (loc != null) {
-                org_locs[org_locs.length] = loc;
-                org.location = loc;
+            resource.address.forEach(function (address) {
+              if (address.extension !== null) {
+                address.extension.forEach(function (extension) {
+                  let loc = processLocationExtension(extension);
+                  if (loc !== null) {
+                    org.location = loc;
+                  }
+
+                });
+                org.address = address;
               }
 
             });
-          }
           if (org.fhir_id !== null) {
             // see if we have a pre-reference
             const idx = known_organizations.map(org => org.fhir_id).indexOf(org.fhir_id);
@@ -499,92 +624,5 @@ $(document).ready(function () {
     </script>
 
 
-    <!-- become a viz module -->
-    <script type="text/javascript">
-
-      let visitChart;
-      let travelChart;
-      function buildCharts() {
-        let visitOptions = {
-          title: 'Visits',
-          pieHole: 0.4,
-        };
-        visitChart = new google.visualization.PieChart(document.getElementById('visitDonut'));
-        travelChart = new google.visualization.ColumnChart(document.getElementById('travelDiv'));
-        let travelData = google.visualization.arrayToDataTable([
-          ['Type', 'Miles', {role: 'style'}],
-          ['Traveled', 0, 'red'],
-          ['Saved', 0, 'green']
-        ]);
-        travelChart.draw(travelData);
-        // mockupSavingChart();
-
-      }
-
-      function mockupSavingChart() {
-        let data = new google.visualization.DataTable();
-        data.addColumn('date', 'Date');
-        data.addColumn('number', 'Time Saved');
-        data.addColumn('number', 'Travel Saved');
-        data.addColumn('number', 'Bandwith Used')
-        data.addRows([
-          [new Date(2000, 1, 1), 100, 100, 50],
-          [new Date(2005, 1, 1), 500, 500, 96],
-          [new Date(2010, 1, 1), 1300, 750, 1999],
-          [new Date(2015, 1, 1), 2380, 1900, 2432]
-        ]);
-        var options = {
-          chart: {
-            title: 'Time and Mileage Saved',
-            subtitle: '(hours / hundreds of miles)'
-          },
-          height: 300 - 39, // I should stop being a monster
-          hAxis: {
-            scaleType: 'continuous'
-          }
-        };
-        savingsChart = new google.charts.Line(document.getElementById('timeSavedDiv'));
-        savingsChart.draw(data, google.charts.Line.convertOptions(options));
-      }
-
-      function updateEncounterViz() {
-
-        let values = [["Type", "# of Visits"]];
-        const byKind = encounterTracker.countByKind;
-        byKind.forEach(function (holder) {
-          values.push([holder.encounterType, holder.total]);
-        });
-        let total = encounterTracker.total;
-        let data = google.visualization.arrayToDataTable(values);
-        visitChart.draw(data, {pieHole: 0.4});
-        $(".visitCount").text(total + " / " + known_organizations.length);
-        let travelData = google.visualization.arrayToDataTable([
-          ['Type', 'Miles', {role: 'style'}],
-          ['Traveled', encounterTracker.travel.distance, 'red'],
-          ['Saved', encounterTracker.travel.saved, 'green']
-        ]);
-        travelChart.draw(travelData, {
-          chart: {
-            title: 'Travel',
-          },
-          height: 297 // I should stop being a monster
-
-        });
-      }
-
-
-
-    </script>
-
-    <!--    utilities-->
-    <script type="text/javascript">
-
-      function convertMetersToMiles(i) {
-        return i * 0.000621371192;
-      }
-      function convertMilesToMeters(i) {
-        return i * 1609.344;
-      }
-    </script>
   </body>
 </html>
