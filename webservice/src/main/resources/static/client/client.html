@@ -8,6 +8,8 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
+    <link rel="stylesheet" href="css/MarkerCluster.css" />
+    <link rel="stylesheet" href="css/MarkerCluster.Default.css" />
     <style>
 
       /*     borrowed from https://mdbootstrap.com/docs/jquery/tables/scroll/ */
@@ -21,10 +23,35 @@
       .width90p {
         width: 90%;
       }
-      
+
       #syntheaState::first-letter {
-        
+
       }
+
+    </style>
+    <style>
+      /* map styles */
+      .people-marker-cluster-small {
+        background-color: rgba(0, 0, 255, 0.6);
+      }
+      .people-marker-cluster-small div {
+        background-color: rgba(204, 204, 255, 0.6);
+      }
+
+      .people-marker-cluster-medium {
+        background-color: rgba(0, 0, 255, 0.6);
+      }
+      .people-marker-cluster-medium div {
+        background-color: rgba(127, 127, 255, 0.6);
+      }
+
+      .people-marker-cluster-large {
+        background-color: rgba(0, 0, 255, 0.6);
+      }
+      .people-marker-cluster-large div {
+        background-color: rgba(241, 128, 23, 0.6);
+      }
+
 
     </style>
     <title></title>
@@ -59,9 +86,9 @@
         <div class="col-auto">
           <label for="population">Population:</label>
           <select id="population" class="form-control">
-            <option>100</option>
-            <option>1000</option>
-            <option>10000</option>
+            <option value="100">100</option>
+            <option value="1000">1000</option>
+            <option value="10000">10000</option>
           </select>
         </div>
         <div class="col-auto">
@@ -72,18 +99,17 @@
             <option>10</option>
           </select>
         </div>
-        <div class="col-auto">
-          <button class="form-control" disabled=disabled id="runButton">Start</button>
-        </div>
-        <div class="col-auto" id="status">
-          <label>State:</label> <span id="syntheaState">{{state}}</span>
+        <div class="col-auto" style="padding-top: 4px;">
+          <button class="btn btn-outline-primary btn-block" disabled type="button" id="confButton">Configure</button>
+          <button class="btn btn-outline-primary btn-block" disabled type="button" id="runButton">Start</button>
+
         </div>
       </div>
       <div class="row">
         <div class="col" id="thGoalHolder">
           <label for="telehealthGoal">Telehealth Adoption Goal (<span id="telehealthGoalTarget">{{ thTarget }}</span>%)</label>
-            <input type="range" min="1" max="100" value="1.6" class="form-control"
-                   id="telehealthGoal"  v-model="thTarget" />
+          <input type="range" min="1" max="100" value="1.6" class="form-control"
+                 id="telehealthGoal"  v-model="thTarget" />
         </div>
       </div>
       <div class="row">
@@ -178,17 +204,6 @@
           </div>
         </div>
       </div>
-      <div class="row">
-        <div class="card">
-          <h5 class="card-title">Dev Info, Temporary</h5>
-          <p class="card-body">Earliest Encounter: <span id="encounterFirst"></span></p>
-          <p class="card-body">Last Encounter: <span id="encounterLast"></span></p>
-
-
-        </div>
-      </div>
-
-
     </div>
 
 
@@ -199,6 +214,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
+    <script src="js/leaflet.markercluster-src.js"></script> <!-- drop the -src for minified -->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script src="js/vue.js"></script>
     <script src="js/distance.js"></script>
@@ -207,11 +223,24 @@
     <script type="text/javascript">
 // let's figure out nicer ways to make everything live, maybe when we can vue up after all at some point, it supports incremental updates allegedly
 
+
 $(document).ready(function () {
+
   window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
+
+
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(leaflet_map);
+
+  window.leaflet_layers = {
+    patientLayer: L.markerClusterGroup(),
+    facilityLayer:  L.layerGroup()
+  }
+  window.leaflet_map.addLayer(window.leaflet_layers.patientLayer);
+  window.leaflet_map.addLayer(window.leaflet_layers.facilityLayer);
+
   google.charts.load('current', {'packages': ['corechart']});
   google.charts.load('current', {'packages': ['line']});
   google.charts.setOnLoadCallback(buildCharts);
@@ -221,9 +250,6 @@ $(document).ready(function () {
 
     <!--     vue module maybe?-->
     <script type="text/javascript">
-      const stateHelper = {
-        state: "Disconnected"
-      }
       function buildVues() {
         let totalVisitVue = new Vue({
           el: "#visitCount",
@@ -244,9 +270,9 @@ $(document).ready(function () {
             }
           }
         });
-        let thGoalVue = new Vue( {
+        let thGoalVue = new Vue({
           el: "#thGoalHolder",
-          data: { thTarget: 1.6}
+          data: {thTarget: 1.6}
         });
         window.totalVisitVuew = totalVisitVue;
         window.facilityTableVue = facilityTableVue;
@@ -317,12 +343,12 @@ $(document).ready(function () {
         return i * 1609.344;
       }
     </script>    
-    
+
     <!-- become a FHIR module that parses records-->
     <script type="text/javascript">
 
       const known_patients = [];
-      const known_organizations = [ 
+      const known_organizations = [
         {name: "Waiting", visits: 0, virtual: 0}
       ];
       const encounterTracker = {
@@ -334,26 +360,80 @@ $(document).ready(function () {
           distance: 0,
           travelCount: 0
         }
-      }
+      };
 
       initHelper();
       function initHelper() {
         buildVues();
-        comms.setFHIRHandler(processFHIR); comms.connect();
-        
+        comms.setFHIRHandler(processFHIR);
+        comms.connect();
+        // do something smart later
+
+        $("#confButton").click(function () {
+          config();
+        });
+        $("#runButton").click(function () {
+          let rb = $("#runButton");
+          if ("Start" == rb.text()) {
+            rb.text("Stop");
+            goGoGo();
+          } else {
+            noNoNo();
+            rb.prop("disabled", true);
+            rb.text("Start");
+          }
+
+        })
+        setTimeout(function () {
+          $("#confButton").prop('disabled', false);
+        });
       }
-      
+
+
+      function config() {
+        comms.stop();
+        known_patients.length = 0;
+        known_organizations.length = 0;
+        known_organizations[known_organizations.length] = {name: "Waiting", visits: 0, virtual: 0};
+        encounterTracker.total = 0;
+        encounterTracker.countByKind = [];
+        encounterTracker.travel.saved = 0;
+        encounterTracker.travel.savedCount = 0;
+        encounterTracker.travel.distance = 0;
+        encounterTracker.travel.travelCount = 0;
+        updateEncounterViz();
+        $("#runButton").prop("disabled", true);
+        $("#population option:selected").text($("#population option:selected").val());
+        $("#population")
+        let config = {
+          yearsOfHistory: Number($("#yearsOfHistory").val()),
+          population: Number($("#population").val()),
+          state: $("#state").val()
+        };
+        comms.configure(config);
+        setTimeout(function () {
+          $("#runButton").prop("disabled", false);
+        }, 1000);
+      }
       function goGoGo() {
         comms.start();
-        known_organizations = [];
+        known_organizations.length = 0;
       }
-      
+
       function noNoNo() {
         comms.stop();
       }
-      
-      let encounterTimeBoundaries = {earliest: Number.MAX_SAFE_INTEGER, last: Number.MIN_SAFE_INTEGER};
+
       function processFHIR(fhir) {
+
+        if (fhir === null) { // special case, switch me to a different call back or to event broadcasts
+          $("#runButton").text("Start");
+          $("#runButton").prop("disabled", true);
+          $("#population option:selected").text($("#population option:selected").val());
+
+          comms.stop(); // I should never be needed
+          return;
+        }
 
         let organizations = processOrganizations(fhir);
         mapOrganizations(organizations);
@@ -387,9 +467,11 @@ $(document).ready(function () {
             color: 'blue',
             fillColor: 'lightblue',
             fillOpacity: 0.5,
-            radius: 500
+            radius: 50
           })
-          marker.addTo(window.leaflet_map);
+          window.leaflet_layers.patientLayer.addLayer(marker);
+
+//          marker.addTo(window.leaflet_map);
         })
       }
 
@@ -407,14 +489,16 @@ $(document).ready(function () {
             color: 'red',
             fillColor: 'pink',
             fillOpacity: 0.5,
-            radius: 500
+            radius: 75
           })
           org.marker = marker;
-          marker.addTo(window.leaflet_map);
+          window.leaflet_layers.facilityLayer.addLayer(marker);
+
+          //marker.addTo(window.leaflet_map);
         });
       }
 
-      function isKnownPatient(id = "") {
+     function isKnownPatient(id = "") {
         return  (known_patients.filter(patient => patient.fhir_id === id).length !== 0)
       }
       function processPatients(fhir) {
@@ -442,6 +526,8 @@ $(document).ready(function () {
           }
           patients[patients.length] = patient;
         });
+        $("#population option:selected").text(known_patients.length + "/" + $("#population option:selected").val());
+
         return patients;
       }
 
@@ -454,20 +540,24 @@ $(document).ready(function () {
       function processPatientEncounters(fhir) {
         let encounters = getByResourceType(fhir, "Encounter");
         let encounterNumbers = {};
-        encounters.forEach(function (encounter, index) {
+        let discarded = 0;
+        const cutoff = new Date().getYear() - Number($("#yearsOfHistory").val());
+
+        encounters.forEach(function (encounter) {
+
           let org = null;
           let resource = encounter.resource;
           let code = resource.class.code.toLowerCase();
-          let start = Date.parse(resource.period.start);
-          let end = Date.parse(resource.period.end);
-          if (start < encounterTimeBoundaries.earliest) {
-            encounterTimeBoundaries.earliest = start;
-            $("#encounterFirst").text(new Date(start));
+          let start = new Date(resource.period.start);
+          let end = new Date(resource.period.end);
+          let year = new String(end.getYear());
+          if (year < cutoff) {
+            discarded++;
+            return;
           }
-          if (end > encounterTimeBoundaries.last) {
-            encounterTimeBoundaries.last = end;
-            $("#encounterLast").text(new Date(start));
-          }
+
+
+
 
           if (resource.serviceProvider !== undefined && resource.serviceProvider.reference !== undefined) {
             // they're called providers here- I wonder if this is a mix of organizations and
@@ -476,26 +566,28 @@ $(document).ready(function () {
             spid = urnToId(spid);
             org = findOrganization(spid);
             if (org !== null) {
-             
+
               org.visits++;
             } else {
               console.debug("found an unreferenced organization. this was unexpected given processing order");
-              known_organizations.push({
+              org = {
                 fhir_id: spid,
                 visits: 1,
-                virtual: 0
-              });
+                virtual: "virtual" === code ? 1 : 0
+              };
+              known_organizations.push(org);
             }
           }
           if (resource.subject !== undefined && resource.subject.reference !== undefined) {
             let pid = urnToId(resource.subject.reference);
-            let patient = findPatient(pid);
+            let patient = findPatient(pid, true);
             if (patient !== null && org !== null)
               if (patient.location !== undefined && org.location !== undefined) {
 
                 const trip = processTrip(patient.location, org.location, code === "virtual");
                 if (trip.virtual) {
-                  if(org.virtual === undefined) org.virtual = 0;
+                  if (org.virtual === undefined)
+                    org.virtual = 0;
                   org.virtual++;
                   patient.travel.saved += trip.distance;
                   encounterTracker.travel.saved += trip.distance;
@@ -532,6 +624,7 @@ $(document).ready(function () {
             idx++;
           }
         }
+        trip.distance *= 2.0; // I suppose not all trips are both ways, buuuuut. 
         return trip;
       }
 
@@ -573,7 +666,7 @@ $(document).ready(function () {
             return;
           if (org.visits === undefined) {
             org.visits = 1;
-            org.virtual= 0;
+            org.virtual = 0;
           }
           if (resource.address !== undefined)
             resource.address.forEach(function (address) {
