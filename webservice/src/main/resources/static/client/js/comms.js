@@ -14,6 +14,7 @@ var comms = (function () {
     setFHIRHandler: function(handler) {
       callback = handler;
     },
+    isConnected: function() { return connected; }, 
     connect: function (url = 'ws://localhost:8080/va-synthea/ws') {
       encounterStats = {};
       try {
@@ -46,6 +47,7 @@ var comms = (function () {
               updateMessage(data['status']);
               if (data['status'] === 'Completed') {
                 // Request has completed
+                callback(null);
                 count = 0;
               }
 
