@@ -29,31 +29,6 @@
       }
 
     </style>
-    <style>
-      /* map styles */
-      .people-marker-cluster-small {
-        background-color: rgba(0, 0, 255, 0.6);
-      }
-      .people-marker-cluster-small div {
-        background-color: rgba(204, 204, 255, 0.6);
-      }
-
-      .people-marker-cluster-medium {
-        background-color: rgba(0, 0, 255, 0.6);
-      }
-      .people-marker-cluster-medium div {
-        background-color: rgba(127, 127, 255, 0.6);
-      }
-
-      .people-marker-cluster-large {
-        background-color: rgba(0, 0, 255, 0.6);
-      }
-      .people-marker-cluster-large div {
-        background-color: rgba(241, 128, 23, 0.6);
-      }
-
-
-    </style>
     <title></title>
   </head>
   <body>
@@ -219,6 +194,8 @@
     <script src="js/vue.js"></script>
     <script src="js/distance.js"></script>
     <script src="js/latlon-spherical.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
+
     <!-- general -->
     <script type="text/javascript">
 // let's figure out nicer ways to make everything live, maybe when we can vue up after all at some point, it supports incremental updates allegedly
@@ -236,7 +213,8 @@ $(document).ready(function () {
 
   window.leaflet_layers = {
     patientLayer: L.markerClusterGroup(),
-    facilityLayer:  L.layerGroup()
+    facilityLayer: L.layerGroup(),
+    travelHeat: null
   }
   window.leaflet_map.addLayer(window.leaflet_layers.patientLayer);
   window.leaflet_map.addLayer(window.leaflet_layers.facilityLayer);
@@ -277,7 +255,6 @@ $(document).ready(function () {
         window.totalVisitVuew = totalVisitVue;
         window.facilityTableVue = facilityTableVue;
         window.thGoalVue = thGoalVue;
-        //window.stateVue = stateVue;
       }
     </script>
 
@@ -359,6 +336,24 @@ $(document).ready(function () {
           savedCount: 0,
           distance: 0,
           travelCount: 0
+        },
+        breadCrumbs: {
+          crumbs: [],
+          crumbIndex: {},
+          addCrumb: function (lat, lon, count = 1) {
+            let id = "ll" + lat + "x" + lon;
+            let idx = this.crumbIndex[id];
+            if (idx === undefined) {
+              idx = this.crumbs.length;
+              this.crumbs[idx] = {lat: lat, lon: lon, count: count}
+              this.crumbIndex[id] = idx;
+            } else {
+              this.crumbs[idx].count += count;
+            }
+            if (idx === undefined)
+              return null; // wooooah
+            return this.crumbs[idx];
+          }
         }
       };
 
@@ -401,6 +396,11 @@ $(document).ready(function () {
         encounterTracker.travel.savedCount = 0;
         encounterTracker.travel.distance = 0;
         encounterTracker.travel.travelCount = 0;
+        encounterTracker.breadCrumbs.crumbIndex = {};
+        encounterTracker.breadCrumbs.crumbs = [];
+        if (window.leaflet_layers.travelHeat !== null) {
+          window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
+        }
         updateEncounterViz();
         $("#runButton").prop("disabled", true);
         $("#population option:selected").text($("#population option:selected").val());
@@ -430,8 +430,7 @@ $(document).ready(function () {
           $("#runButton").text("Start");
           $("#runButton").prop("disabled", true);
           $("#population option:selected").text($("#population option:selected").val());
-
-          comms.stop(); // I should never be needed
+          mapTravel();
           return;
         }
 
@@ -454,6 +453,47 @@ $(document).ready(function () {
         updateEncounterViz();
       }
 
+      function mapTravel() {
+        
+        let data = massageCrumbs(encounterTracker.breadCrumbs.crumbs);
+          window.leaflet_layers.travelHeat = L.heatLayer(data, {radius: 10});
+        window.leaflet_layers.travelHeat.addTo(window.leaflet_map);
+
+      }
+
+      function massageCrumbs(crumbs) {
+        var values = [];
+        crumbs.forEach(function(crumb) {
+          values[values.length] = [crumb.lat, crumb.lon];
+        });
+        
+        /*
+        values.sort(function (a, b) {
+          return a.count - b.count;
+        });
+        var q1 = values[Math.floor((values.length / 4))].count;
+        
+        // Likewise for q3. 
+        var q3 = values[Math.ceil((values.length * (3 / 4)))].count;
+        var iqr = q3 - q1;
+
+        // Then find min and max values
+        var maxNorm = q3 + iqr * 1.5;
+        
+        values.forEach(function (point) {
+          if(point.count > maxNorm) point.count = maxNorm;
+          let val = normalize(point.count, 0, maxNorm);
+          console.debug(point.count, "became", val);
+          point.count = val;
+        });
+        */
+        return values;
+      }
+
+
+      function normalize(val, min = 0.0, max = 1.0) {
+        return (val - min) / (max - min);
+      }
       function mapPatients(patients = []) {
         patients.forEach(function (patient) {
           if (patient.marker !== undefined)
@@ -498,7 +538,7 @@ $(document).ready(function () {
         });
       }
 
-     function isKnownPatient(id = "") {
+      function isKnownPatient(id = "") {
         return  (known_patients.filter(patient => patient.fhir_id === id).length !== 0)
       }
       function processPatients(fhir) {
@@ -556,9 +596,6 @@ $(document).ready(function () {
             return;
           }
 
-
-
-
           if (resource.serviceProvider !== undefined && resource.serviceProvider.reference !== undefined) {
             // they're called providers here- I wonder if this is a mix of organizations and
             // individuals. if so, this is wrong, it only indexes into the 
@@ -597,6 +634,18 @@ $(document).ready(function () {
                   encounterTracker.travel.distance += trip.distance;
                   encounterTracker.travel.travelCount++;
                 }
+
+                let heatmapCrumbs = [];
+                trip.breadCrumbs.forEach(function (crumb) {
+                  heatmapCrumbs[heatmapCrumbs.length] = {lat: crumb.lat, lon: crumb.lon, count: 2};
+                });
+                trip.breadCrumbs = heatmapCrumbs;
+                heatmapCrumbs = [];
+                trip.breadCrumbs.forEach(function (crumb) {
+                  encounterTracker.breadCrumbs.addCrumb(crumb.lat, crumb.lon, crumb.count);
+                });
+
+
                 patient.travel.trips[patient.travel.trips.length] = trip;
               }
           }
@@ -609,21 +658,38 @@ $(document).ready(function () {
         return {"encounters": encounters, "encounterStats": encounterNumbers};
       }
 
-      function processTrip(start, end, virtual = false) {
-        let trip = {distance: 0, start: start, end: end, path: [], virtual: virtual};
+      function processTrip(start, end, virtual = false, crumbDistance = 100) {
+        let trip = {distance: 0, start: start, end: end, path: [], virtual: virtual, breadCrumbs: []};
         let path = getWaypoints(start, end);
         trip.path = path;
+
         if (path.length > 1) {
           let idx = 0;
           let limit = path.length - 1;
           while (idx < limit) {
             let step1 = new LatLon(path[idx].latitude, path[idx].longitude);
             let step2 = new LatLon(path[idx + 1].latitude, path[idx + 1].longitude);
-            let stepDistance = convertMetersToMiles(step1.distanceTo(step2));
+
+            let stepDistanceMeters = step1.distanceTo(step2);
+            let stepDistance = convertMetersToMiles(stepDistanceMeters);
             trip.distance += stepDistance;
+
+            let bearing = step1.bearingTo(step2);
+            let crumbCount = Math.floor(stepDistanceMeters / crumbDistance);
+            let here = step1;
+            let there = step2;
+            trip.breadCrumbs[trip.breadCrumbs.length] = here;
+            for (let  i = 0; i < crumbCount; i++) {
+              let next = here.destinationPoint(crumbDistance + (Math.random(1,100) * ( Math.random() >= 0.5 ? 0 : 1)) , bearing);
+              trip.breadCrumbs[trip.breadCrumbs.length] = next;
+              here = next;
+            }
+            trip.breadCrumbs[trip.breadCrumbs.length] = there;
+
             idx++;
           }
         }
+
         trip.distance *= 2.0; // I suppose not all trips are both ways, buuuuut. 
         return trip;
       }
