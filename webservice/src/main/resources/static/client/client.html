@@ -214,8 +214,15 @@ $(document).ready(function () {
   window.leaflet_layers = {
     patientLayer: L.markerClusterGroup(),
     facilityLayer: L.layerGroup(),
-    travelHeat: null
+    travelHeat: null,
   }
+  
+  let layersControl = L.control.layers(null, {
+    "Patients": window.leaflet_layers.patientLayer,
+    "Facilities": window.leaflet_layers.facilityLayer
+  });
+  layersControl.addTo(window.leaflet_map);
+  window.leaflet_map.layersControl = layersControl;
   window.leaflet_map.addLayer(window.leaflet_layers.patientLayer);
   window.leaflet_map.addLayer(window.leaflet_layers.facilityLayer);
 
@@ -399,7 +406,10 @@ $(document).ready(function () {
         encounterTracker.breadCrumbs.crumbIndex = {};
         encounterTracker.breadCrumbs.crumbs = [];
         if (window.leaflet_layers.travelHeat !== null) {
+          window.leaflet_map.layersControl.removeLayer(window.leaflet_layers.travelHeat);
           window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
+          window.leaflet_layers.facilityLayer.clearLayers();
+          window.leaflet_layers.patientLayer.clearLayers();
         }
         updateEncounterViz();
         $("#runButton").prop("disabled", true);
@@ -457,6 +467,7 @@ $(document).ready(function () {
         
         let data = massageCrumbs(encounterTracker.breadCrumbs.crumbs);
           window.leaflet_layers.travelHeat = L.heatLayer(data, {radius: 10});
+          window.leaflet_map.layersControl.addOverlay(window.leaflet_layers.travelHeat, "Travel Frequency");
         window.leaflet_layers.travelHeat.addTo(window.leaflet_map);
 
       }
