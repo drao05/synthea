@@ -15,9 +15,10 @@ var comms = (function () {
       callback = handler;
     },
     isConnected: function() { return connected; }, 
-    connect: function (url = 'ws://localhost:8080/va-synthea/ws') {
+    connect: function (url = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/va-synthea/ws"  ) {
       encounterStats = {};
       try {
+        console.debug("ws url is: ", url);
         ws = new WebSocket(url);
         ws.onopen = function (event) {
           connected = true;
