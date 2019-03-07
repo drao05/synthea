@@ -283,7 +283,7 @@ public class RequestService {
 						Config.set(name, configuration.getString(name));
 					}
 				} else {
-					LOGGER.info("Unsupported configuration parameter: " + name);
+					LOGGER.info("Unsupported Synthea configuration parameter: " + name);
 				}
 				
 				break;
