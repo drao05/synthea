@@ -271,6 +271,8 @@ public class RequestService {
 			case "state":
 			case "city":
 			case "generateCSV":
+			case "telemedAdoptionValues":
+			case "yearsOfHistory":
 				// Ignore generator configuration values
 				break;
 			default:
