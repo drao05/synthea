@@ -56,6 +56,7 @@
           <label for="state">State:</label>
           <select id="state" class="form-control">
             <option value="Massachusetts">Massachusetts</option>
+            <option value="South Carolina">South Carolina</option>
           </select>
         </div>
         <div class="col-auto">
@@ -104,6 +105,7 @@
               Travel 
             </div>
           </div>
+
 
         </div>
       </div>
@@ -179,6 +181,13 @@
           </div>
         </div>
       </div>
+      <div class="row">
+        <div class="card">
+          <div class="card-text" id="travelTimeDiv">
+            Travel Time
+          </div>
+        </div>
+      </div>
     </div>
 
 
@@ -192,7 +201,6 @@
     <script src="js/leaflet.markercluster-src.js"></script> <!-- drop the -src for minified -->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script src="js/vue.js"></script>
-    <script src="js/distance.js"></script>
     <script src="js/latlon-spherical.js"></script>
     <script src="http://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
 
@@ -216,7 +224,7 @@ $(document).ready(function () {
     facilityLayer: L.layerGroup(),
     travelHeat: null,
   }
-  
+
   let layersControl = L.control.layers(null, {
     "Patients": window.leaflet_layers.patientLayer,
     "Facilities": window.leaflet_layers.facilityLayer
@@ -280,25 +288,25 @@ $(document).ready(function () {
         visitChart = new google.visualization.PieChart(document.getElementById('visitDonut'));
         travelChart = new google.visualization.ColumnChart(document.getElementById('travelDiv'));
         let travelData = google.visualization.arrayToDataTable([
-          ['Type', 'Miles', {role: 'style'}],
-          ['Traveled', 0, 'red'],
+          ['Travel', 'Miles', {role: 'style'}],
+          ['Spent', 0, 'red'],
           ['Saved', 0, 'green']
         ]);
         travelChart.draw(travelData);
+
+        travelTimeChart = new google.visualization.ColumnChart(document.getElementById('travelTimeDiv'));
+        let travelTimeData = google.visualization.arrayToDataTable([
+          ['Time', 'Hours', {role: 'style'}],
+          ['Spent', 0, 'red'],
+          ['Saved', 0, 'green']
+        ]);
+        travelTimeChart.draw(travelTimeData);
+
         updateEncounterViz();
       }
 
-      function updateEncounterViz() {
 
-        let values = [["Type", "# of Visits"]];
-        const byKind = encounterTracker.countByKind;
-        byKind.forEach(function (holder) {
-          values.push([holder.encounterType, holder.total]);
-        });
-        let total = encounterTracker.total;
-        let data = google.visualization.arrayToDataTable(values);
-        visitChart.draw(data, {pieHole: 0.4});
-        $(".visitCount").text(total + " / " + known_organizations.length);
+      function updateTravelViz() {
         let travelData = google.visualization.arrayToDataTable([
           ['Type', 'Miles', {role: 'style'}],
           ['Traveled', encounterTracker.travel.distance, 'red'],
@@ -311,6 +319,35 @@ $(document).ready(function () {
           height: 297 // I should stop being a monster
 
         });
+        let tt = encounterTracker.travel.travelTime;
+        if (tt < 60 && tt > 0)
+          tt = 1;
+        else if (tt > 59)
+          tt = Math.floor(tt / 60);
+        let st = encounterTracker.travel.savedTime;
+        if (st < 60 && st > 0)
+          st = 1;
+        else if (st > 59)
+          st = Math.floor(tt / 60);
+        let travelTimeData = google.visualization.arrayToDataTable([
+          ['Time', 'Hours', {role: 'style'}],
+          ['Spent', tt, 'red'],
+          ['Saved', st, 'green']
+        ]);
+        travelTimeChart.draw(travelTimeData)
+      }
+      function updateEncounterViz() {
+
+        let values = [["Type", "# of Visits"]];
+        const byKind = encounterTracker.countByKind;
+        byKind.forEach(function (holder) {
+          values.push([holder.encounterType, holder.total]);
+        });
+        let total = encounterTracker.total;
+        let data = google.visualization.arrayToDataTable(values);
+        visitChart.draw(data, {pieHole: 0.4});
+        $(".visitCount").text(total + " / " + known_organizations.length);
+        updateTravelViz();
       }
 
 
@@ -342,7 +379,9 @@ $(document).ready(function () {
           saved: 0,
           savedCount: 0,
           distance: 0,
-          travelCount: 0
+          travelCount: 0,
+          travelTime: 0,
+          savedTime: 0
         },
         breadCrumbs: {
           crumbs: [],
@@ -408,9 +447,9 @@ $(document).ready(function () {
         if (window.leaflet_layers.travelHeat !== null) {
           window.leaflet_map.layersControl.removeLayer(window.leaflet_layers.travelHeat);
           window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
-          window.leaflet_layers.facilityLayer.clearLayers();
-          window.leaflet_layers.patientLayer.clearLayers();
         }
+        window.leaflet_layers.facilityLayer.clearLayers();
+        window.leaflet_layers.patientLayer.clearLayers();
         updateEncounterViz();
         $("#runButton").prop("disabled", true);
         $("#population option:selected").text($("#population option:selected").val());
@@ -464,40 +503,23 @@ $(document).ready(function () {
       }
 
       function mapTravel() {
-        
+
+        if (window.leaflet_layers.travelHeat !== null) {
+          window.leaflet_map.layersControl.removeLayer(window.leaflet_layers.travelHeat);
+          window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
+        }
         let data = massageCrumbs(encounterTracker.breadCrumbs.crumbs);
-          window.leaflet_layers.travelHeat = L.heatLayer(data, {radius: 10});
-          window.leaflet_map.layersControl.addOverlay(window.leaflet_layers.travelHeat, "Travel Frequency");
+        window.leaflet_layers.travelHeat = L.heatLayer(data, {radius: 10});
+        window.leaflet_map.layersControl.addOverlay(window.leaflet_layers.travelHeat, "Travel Frequency");
         window.leaflet_layers.travelHeat.addTo(window.leaflet_map);
 
       }
 
       function massageCrumbs(crumbs) {
         var values = [];
-        crumbs.forEach(function(crumb) {
+        crumbs.forEach(function (crumb) {
           values[values.length] = [crumb.lat, crumb.lon];
         });
-        
-        /*
-        values.sort(function (a, b) {
-          return a.count - b.count;
-        });
-        var q1 = values[Math.floor((values.length / 4))].count;
-        
-        // Likewise for q3. 
-        var q3 = values[Math.ceil((values.length * (3 / 4)))].count;
-        var iqr = q3 - q1;
-
-        // Then find min and max values
-        var maxNorm = q3 + iqr * 1.5;
-        
-        values.forEach(function (point) {
-          if(point.count > maxNorm) point.count = maxNorm;
-          let val = normalize(point.count, 0, maxNorm);
-          console.debug(point.count, "became", val);
-          point.count = val;
-        });
-        */
         return values;
       }
 
@@ -599,7 +621,6 @@ $(document).ready(function () {
           let org = null;
           let resource = encounter.resource;
           let code = resource.class.code.toLowerCase();
-          let start = new Date(resource.period.start);
           let end = new Date(resource.period.end);
           let year = new String(end.getYear());
           if (year < cutoff) {
@@ -631,33 +652,13 @@ $(document).ready(function () {
             let patient = findPatient(pid, true);
             if (patient !== null && org !== null)
               if (patient.location !== undefined && org.location !== undefined) {
-
-                const trip = processTrip(patient.location, org.location, code === "virtual");
-                if (trip.virtual) {
+                let virtual = code === "virtual";
+                if (virtual) {
                   if (org.virtual === undefined)
                     org.virtual = 0;
                   org.virtual++;
-                  patient.travel.saved += trip.distance;
-                  encounterTracker.travel.saved += trip.distance;
-                  encounterTracker.travel.savedCount++;
-                } else {
-                  patient.travel.total += trip.distance;
-                  encounterTracker.travel.distance += trip.distance;
-                  encounterTracker.travel.travelCount++;
                 }
-
-                let heatmapCrumbs = [];
-                trip.breadCrumbs.forEach(function (crumb) {
-                  heatmapCrumbs[heatmapCrumbs.length] = {lat: crumb.lat, lon: crumb.lon, count: 2};
-                });
-                trip.breadCrumbs = heatmapCrumbs;
-                heatmapCrumbs = [];
-                trip.breadCrumbs.forEach(function (crumb) {
-                  encounterTracker.breadCrumbs.addCrumb(crumb.lat, crumb.lon, crumb.count);
-                });
-
-
-                patient.travel.trips[patient.travel.trips.length] = trip;
+                processTrip(patient, org, virtual);
               }
           }
 
@@ -669,45 +670,87 @@ $(document).ready(function () {
         return {"encounters": encounters, "encounterStats": encounterNumbers};
       }
 
-      function processTrip(start, end, virtual = false, crumbDistance = 100) {
-        let trip = {distance: 0, start: start, end: end, path: [], virtual: virtual, breadCrumbs: []};
-        let path = getWaypoints(start, end);
-        trip.path = path;
 
-        if (path.length > 1) {
-          let idx = 0;
-          let limit = path.length - 1;
-          while (idx < limit) {
-            let step1 = new LatLon(path[idx].latitude, path[idx].longitude);
-            let step2 = new LatLon(path[idx + 1].latitude, path[idx + 1].longitude);
+      const osrm = {start: "http://osrm.mitre.org:5000/route/v1/driving/", args: "?overview=false&steps=true"};
 
-            let stepDistanceMeters = step1.distanceTo(step2);
-            let stepDistance = convertMetersToMiles(stepDistanceMeters);
-            trip.distance += stepDistance;
+      const waypointCheat = {};
+      function processTrip(patient, org, virtual = false, crumbDistance = 100) {
+        let start = patient.location;
+        let end = org.location;
 
-            let bearing = step1.bearingTo(step2);
-            let crumbCount = Math.floor(stepDistanceMeters / crumbDistance);
-            let here = step1;
-            let there = step2;
-            trip.breadCrumbs[trip.breadCrumbs.length] = here;
-            for (let  i = 0; i < crumbCount; i++) {
-              let next = here.destinationPoint(crumbDistance + (Math.random(1,100) * ( Math.random() >= 0.5 ? 0 : 1)) , bearing);
-              trip.breadCrumbs[trip.breadCrumbs.length] = next;
-              here = next;
-            }
-            trip.breadCrumbs[trip.breadCrumbs.length] = there;
+        let waypoints = [];
+        let duration = 0;
+        let distance = 0;
 
-            idx++;
-          }
+        let id = pairIdHelper(start, end);
+        if (waypointCheat[id] !== undefined) {
+          finishTrip(waypointCheat[id], virtual);
+
         }
+        // soooo, this is probably a BAD place to put this, buuuuttt....
+        let url = osrm.start + start.longitude + "," + start.latitude + ";"
+                + end.longitude + "," + end.latitude + osrm.args;
 
-        trip.distance *= 2.0; // I suppose not all trips are both ways, buuuuut. 
-        return trip;
+        fetch(url).then(function (response) {
+          return response.json();
+        }).then(function (json) {
+          if (json.code === "Ok" && json.routes !== undefined) {
+            route = json.routes[0];
+            distance = route.distance;
+            duration = route.duration;
+            if (route.legs)
+              route.legs.forEach(function (leg) {
+                leg.steps.forEach(function (step) {
+                  waypoints.push({longitude: step.maneuver.location[0], latitude: step.maneuver.location[1], duration: step.duration});
+                });
+              })
+
+          }
+          finishTrip({id: id, path: waypoints, distance: distance, duration: duration}, virtual, crumbDistance);
+
+        });
+      }
+      function finishTrip(helper, virtual, crumbDistance = 100) {
+        let travel = encounterTracker.travel;
+        if (virtual) {
+          travel.saved += convertMetersToMiles(helper.distance * 2);
+          travel.savedCount++;
+          travel.savedTime += (helper.duration * 2);
+        } else {
+          travel.distance += convertMetersToMiles(helper.distance * 2);
+          travel.travelCount++;
+          travel.travelTime += (helper.duration * 2);
+          let path = helper.path;
+
+          if (path.length > 1) {
+            let idx = 0;
+            let limit = path.length - 1;
+            while (idx < limit) {
+              let step1 = new LatLon(path[idx].latitude, path[idx].longitude);
+              let step2 = new LatLon(path[idx + 1].latitude, path[idx + 1].longitude);
+              let bearing = step1.bearingTo(step2);
+              let stepDistanceMeters = step1.distanceTo(step2);
+              let crumbCount = Math.floor(stepDistanceMeters / crumbDistance);
+              let here = step1;
+              let there = step2;
+              encounterTracker.breadCrumbs.addCrumb(here.lat, here.lon, 2);
+              for (let  i = 0; i < crumbCount; i++) {
+                let next = here.destinationPoint(crumbDistance + (Math.random(1, 100) * (Math.random() >= 0.5 ? 0 : 1)), bearing);
+                here = next;
+                encounterTracker.breadCrumbs.addCrumb(here.lat, here.lon, 2);
+              }
+              idx++;
+            }
+          }
+      }
       }
 
-      function getWaypoints(start, end) {
-        return [start, end];
+
+      function pairIdHelper(start, end) {
+        return "p" + start.latitude + "x" + start.longitude
+                + "/" + end.latitude + "x" + end.longitude;
       }
+
       function findOrganization(id = null, name = null) {
         let idx = -1;
         if (id !== null)
@@ -775,9 +818,9 @@ $(document).ready(function () {
         let latlon = {};
         holder.extension.forEach(function (ext, idx) {
           if (ext.url == "latitude")
-            latlon.latitude = Number(ext.valueDecimal.toFixed(3));
+            latlon.latitude = Number(ext.valueDecimal.toFixed(4));
           else if (ext.url == "longitude")
-            latlon.longitude = Number(ext.valueDecimal.toFixed(3));
+            latlon.longitude = Number(ext.valueDecimal.toFixed(4));
         });
         if (latlon.latitude !== undefined && latlon.longitude !== undefined)
           return latlon;
