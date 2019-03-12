@@ -16,7 +16,6 @@ var comms = (function () {
     },
     isConnected: function() { return connected; }, 
     connect: function (url = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/va-synthea/ws"  ) {
-      encounterStats = {};
       try {
         console.debug("ws url is: ", url);
         ws = new WebSocket(url);
