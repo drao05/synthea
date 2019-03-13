@@ -396,6 +396,7 @@ google.charts.setOnLoadCallback(buildCharts);
   <!-- become a FHIR module that parses records-->
   <script type="text/javascript">
 
+    const RANDOMIZE_DISTANCE = 8000;
     const known_patients = [];
     const known_organizations = [
       {name: "Waiting For Facility Information", visits: 0, virtual: 0}
@@ -635,6 +636,14 @@ google.charts.setOnLoadCallback(buildCharts);
               let latlon = {};
               latlon = processLocationExtension(extension);
               if (latlon === null || (latlon.latitude !== undefined && latlon.longitude !== undefined))
+                if(RANDOMIZE_DISTANCE > 0) {
+                  let ll = new LatLon(latlon.latitude, latlon.longitude);
+                  let bearing = randomRange(0,60);
+                  let distance = randomRange(0, RANDOMIZE_DISTANCE);
+                  ll = ll.destinationPoint(distance, bearing);
+                  latlon.latitude = ll.lat; 
+                  latlon.longitude = ll.lon;
+                }
                 patient.location = latlon;
             });
           });
@@ -646,6 +655,10 @@ google.charts.setOnLoadCallback(buildCharts);
       return patients;
     }
 
+function randomRange(min,max) // min and max included
+{
+    return Math.floor(Math.random()*(max-min+1)+min);
+}
     function urnToId(urn) {
       if (urn.startsWith("urn:uuid:"))
         urn = urn.substring(9);
