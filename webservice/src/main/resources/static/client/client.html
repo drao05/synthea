@@ -50,7 +50,7 @@
 
       </div>
     </nav>
-    <div class="container" id="mainContainer">
+    <div class="container-fluid" id="mainContainer">
       <div class="row">
         <div class="col-auto">
           <label for="state">State:</label>
@@ -81,766 +81,803 @@
 
         </div>
       </div>
-      <div class="row">
+      <div class="row" >
         <div class="col" id="thGoalHolder">
           <label for="telehealthGoal">Telehealth Adoption Goal (<span id="telehealthGoalTarget">{{ thTarget }}</span>%)</label>
           <input type="range" min="1" max="100" value="1.6" class="form-control"
                  id="telehealthGoal"  v-model="thTarget" />
         </div>
       </div>
-      <div class="row">
-        <div class="col">
+      <div class="row" style="margin-bottom: 1em;">
+        <div class="col-6">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Visits</h5>
-              <h6 class="card-subtitle mb-2"><span id="visitCount">{{ total }}</span></h6>
+              <div class="card-text">
+                Visits: <span id="visitCount">{{ total }}</span>
+              </div>
               <div id="visitDonut"></div>
-
             </div>
           </div>
         </div>
-        <div class="col">
+        <div class="col-3">
           <div class="card">
-            <div class="card-text" id="travelDiv">
+            <div class="card-text">
               Travel 
             </div>
-          </div>
-
-
-        </div>
-      </div>
-      <div class="row">
-        <div class="card">
-          <div class="card">Virtual Care Trained Providers</div>
-          <div class="row">
-            <div class="col text-center">
-              <img src="images/VA_Telehealth_Dashboard_Icons_VC_DOC_114.svg" />
+            <div class="card-body" id="travelDiv">
             </div>
-            <div class="col align-self-center font-weight-bold">109</div>
-          </div>
-
-        </div>
-        <div class="col">
-          <div class="card">Virtual Care Trained Nurses</div>
-          <div class="row">
-            <div class="col text-center">
-              <img src="images/VA_Telehealth_Dashboard_Icons_VC_NURSE_114.svg" />
-            </div>
-            <div class="col align-self-center font-weight-bold">109</div>
           </div>
         </div>
-        <div class="col">
-          <div class="card">Virtual Care Technicians</div>
-          <div class="row">
-            <div class="col text-center">
-              <img src="images/VA_Telehealth_Dashboard_Icons_VC_TECH_114.svg" />
-            </div>
-            <div class="col align-self-center font-weight-bold">109</div>
-          </div>
-
-        </div>
-        <div class="col">
-          <div class="card">Virtual Care Rooms</div>
-          <div class="row">
-            <div class="col text-center">
-              <img src="images/VA_Telehealth_Dashboard_Icons_VC_ROOMS_114.svg" />
-            </div>
-            <div class="col align-self-center font-weight-bold">109</div>
-          </div>
-
-        </div>
-      </div>
-      <div class="row">
-        <div class="col" style="padding-left: 0px;">
+        <div class="col-3">
           <div class="card">
-            <div style="height:500px;" id="map">MAP</div>
-          </div>
-
-        </div>
-        <div class="col">
-          <div class="card">Facility info</div>
-          <div class="row">
-
-            <div class="table-wrapper-scroll-y">
-              <table class="table w-auto table-striped " id="facilityTable">
-                <thead>
-                  <tr class="">
-                    <th v-for="key in columns">
-                      {{ key | capitalize }}
-                    </th>                  
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="entry in facilities" class="">
-                    <td v-for="key in columns"> {{entry[key]}}</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="card-text">
+              Travel Time
             </div>
-
+            <div class="card-body" id="travelTimeDiv">
+            </div> 
           </div>
         </div>
       </div>
-      <div class="row">
-        <div class="card">
-          <div class="card-text" id="travelTimeDiv">
-            Travel Time
+      <div class="row" style="margin-bottom: 1em;">
+        <div class="col">
+          <div class="card">
+            <div class="card-text">Virtual Care Trained Providers</div>
+            <div class="card-body row">
+              <div class="col text-center">
+                <img src="images/VA_Telehealth_Dashboard_Icons_VC_DOC_114.svg"  style="height:100px" />
+              </div>
+              <div class="col align-self-center font-weight-bold" id="vctp">109</div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <div class="card-text">Virtual Care Trained Nurses</div>
+            <div class="card-body row">
+              <div class="col text-center">
+                <img src="images/VA_Telehealth_Dashboard_Icons_VC_NURSE_114.svg"  style="height:100px" />
+              </div>
+              <div class="col align-self-center font-weight-bold" id="vctn">109</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card">
+            <div class="card-text">Virtual Care Trained Technicians</div>
+            <div class="card-body row">
+              <div class="col text-center">
+                <img src="images/VA_Telehealth_Dashboard_Icons_VC_TECH_114.svg" style="height:100px" />
+              </div>
+              <div class="col align-self-center font-weight-bold" id="vctt">109</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card">
+            <div class="card-text">Virtual Care Rooms</div>
+            <div class="card-body row">
+              <div class="col text-center">
+                <img src="images/VA_Telehealth_Dashboard_Icons_VC_ROOMS_114.svg" style="height:100px" />
+              </div>
+              <div class="col align-self-center font-weight-bold" id="vcr">109</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
+    <div class="row">
+      <div class="col" style="padding-left: 0px;">
+        <div class="card">
+          <div style="height:500px;" id="map">MAP</div>
+        </div>
+
+      </div>
+      <div class="col">
+        <div class="card">Facility info</div>
+        <div class="row">
+
+          <div class="table-wrapper-scroll-y">
+            <table class="table w-auto table-striped " id="facilityTable">
+              <thead>
+                <tr class="">
+                  <th v-for="key in columns">
+                    {{ key | capitalize }}
+                  </th>                  
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="entry in facilities" class="">
+                  <td v-for="key in columns"> {{entry[key]}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
 
 
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script src="http://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
-    <script src="js/comms.js"></script>
-    <script src="js/vue.js"></script>
-    <script src="js/latlon-spherical.js"></script>
-    <script src="js/leaflet.markercluster-src.js"></script> <!-- drop the -src for minified -->
-    <script src="js/states.js"></script>
-    <script type="text/javascript">
-      $(document).ready(function () {
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script src="http://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
+  <script src="js/comms.js"></script>
+  <script src="js/vue.js"></script>
+  <script src="js/latlon-spherical.js"></script>
+  <script src="js/leaflet.markercluster-src.js"></script> <!-- drop the -src for minified -->
+  <script src="js/states.js"></script>
+  <script type="text/javascript">
+$(document).ready(function () {
 
-        window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
+window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(leaflet_map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(leaflet_map);
 
-        window.leaflet_layers = {
-          patientLayer: L.markerClusterGroup(),
-          facilityLayer: L.layerGroup(),
-          travelHeat: null,
-        }
+window.leaflet_layers = {
+  patientLayer: L.markerClusterGroup(),
+  facilityLayer: L.layerGroup(),
+  travelHeat: null,
+}
 
-        let layersControl = L.control.layers(null, {
-          "Patients": window.leaflet_layers.patientLayer,
-          "Facilities": window.leaflet_layers.facilityLayer
-        });
-        layersControl.addTo(window.leaflet_map);
-        window.leaflet_map.layersControl = layersControl;
-        window.leaflet_map.addLayer(window.leaflet_layers.patientLayer);
-        window.leaflet_map.addLayer(window.leaflet_layers.facilityLayer);
+let layersControl = L.control.layers(null, {
+  "Patients": window.leaflet_layers.patientLayer,
+  "Facilities": window.leaflet_layers.facilityLayer
+});
+layersControl.addTo(window.leaflet_map);
+window.leaflet_map.layersControl = layersControl;
+window.leaflet_map.addLayer(window.leaflet_layers.patientLayer);
+window.leaflet_map.addLayer(window.leaflet_layers.facilityLayer);
 
-        google.charts.load('current', {'packages': ['corechart']});
-        google.charts.load('current', {'packages': ['line']});
-        google.charts.setOnLoadCallback(buildCharts);
+google.charts.load('current', {'packages': ['corechart']});
+google.charts.load('current', {'packages': ['line']});
+google.charts.setOnLoadCallback(buildCharts);
+});
+  </script>
+
+
+  <!--     vue module maybe?-->
+  <script type="text/javascript">
+    function buildVues() {
+      let totalVisitVue = new Vue({
+        el: "#visitCount",
+        data: encounterTracker
       });
-    </script>
-
-
-    <!--     vue module maybe?-->
-    <script type="text/javascript">
-      function buildVues() {
-        let totalVisitVue = new Vue({
-          el: "#visitCount",
-          data: encounterTracker
-        });
-        let facilityTableVue = new Vue({
-          el: "#facilityTable",
-          data: {
-            columns: ["name", "visits", "virtual"],
-            facilities: known_organizations
-          },
-          filters: {
-            capitalize: function (value) {
-              if (!value)
-                return ''
-              value = value.toString()
-              return value.charAt(0).toUpperCase() + value.slice(1)
-            }
-          }
-        });
-        let thGoalVue = new Vue({
-          el: "#thGoalHolder",
-          data: {thTarget: 1.6}
-        });
-        window.totalVisitVuew = totalVisitVue;
-        window.facilityTableVue = facilityTableVue;
-        window.thGoalVue = thGoalVue;
-      }
-    </script>
-
-
-
-    <!-- become a viz module -->
-    <script type="text/javascript">
-
-      let visitChart;
-      let travelChart;
-      function buildCharts() {
-        let visitOptions = {
-          title: 'Visits',
-          pieHole: 0.4,
-        };
-        visitChart = new google.visualization.PieChart(document.getElementById('visitDonut'));
-        travelChart = new google.visualization.ColumnChart(document.getElementById('travelDiv'));
-        let travelData = google.visualization.arrayToDataTable([
-          ['Travel', 'Miles', {role: 'style'}],
-          ['Spent', 0, 'red'],
-          ['Saved', 0, 'green']
-        ]);
-        travelChart.draw(travelData);
-
-        travelTimeChart = new google.visualization.ColumnChart(document.getElementById('travelTimeDiv'));
-        let travelTimeData = google.visualization.arrayToDataTable([
-          ['Time', 'Hours', {role: 'style'}],
-          ['Spent', 0, 'red'],
-          ['Saved', 0, 'green']
-        ]);
-        travelTimeChart.draw(travelTimeData);
-
-        updateEncounterViz();
-      }
-
-
-      function updateTravelViz() {
-        let travelData = google.visualization.arrayToDataTable([
-          ['Type', 'Miles', {role: 'style'}],
-          ['Traveled', encounterTracker.travel.distance, 'red'],
-          ['Saved', encounterTracker.travel.saved, 'green']
-        ]);
-        travelChart.draw(travelData, {
-          chart: {
-            title: 'Travel',
-          },
-          height: 297 // I should stop being a monster
-
-        });
-        let tt = encounterTracker.travel.travelTime;
-        if (tt < 60 && tt > 0)
-          tt = 1;
-        else if (tt > 59)
-          tt = Math.floor(tt / 60);
-        let st = encounterTracker.travel.savedTime;
-        if (st < 60 && st > 0)
-          st = 1;
-        else if (st > 59)
-          st = Math.floor(tt / 60);
-        let travelTimeData = google.visualization.arrayToDataTable([
-          ['Time', 'Hours', {role: 'style'}],
-          ['Spent', tt, 'red'],
-          ['Saved', st, 'green']
-        ]);
-        travelTimeChart.draw(travelTimeData)
-      }
-      function updateEncounterViz() {
-
-        let values = [["Type", "# of Visits"]];
-        const byKind = encounterTracker.countByKind;
-        byKind.forEach(function (holder) {
-          values.push([holder.encounterType, holder.total]);
-        });
-        let total = encounterTracker.total;
-        let data = google.visualization.arrayToDataTable(values);
-        visitChart.draw(data, {pieHole: 0.4});
-        $(".visitCount").text(total + " / " + known_organizations.length);
-        updateTravelViz();
-      }
-
-
-
-    </script>
-
-    <!--    utilities-->
-    <script type="text/javascript">
-
-      function convertMetersToMiles(i) {
-        return i * 0.000621371192;
-      }
-      function convertMilesToMeters(i) {
-        return i * 1609.344;
-      }
-    </script>    
-
-    <!-- become a FHIR module that parses records-->
-    <script type="text/javascript">
-
-      const known_patients = [];
-      const known_organizations = [
-        {name: "Waiting", visits: 0, virtual: 0}
-      ];
-      const encounterTracker = {
-        total: 0,
-        countByKind: [],
-        travel: {
-          saved: 0,
-          savedCount: 0,
-          distance: 0,
-          travelCount: 0,
-          travelTime: 0,
-          savedTime: 0
+      let facilityTableVue = new Vue({
+        el: "#facilityTable",
+        data: {
+          columns: ["name", "visits", "virtual"],
+          facilities: known_organizations
         },
-        breadCrumbs: {
-          crumbs: [],
-          crumbIndex: {},
-          addCrumb: function (lat, lon, count = 1) {
-            let id = "ll" + lat + "x" + lon;
-            let idx = this.crumbIndex[id];
-            if (idx === undefined) {
-              idx = this.crumbs.length;
-              this.crumbs[idx] = {lat: lat, lon: lon, count: count}
-              this.crumbIndex[id] = idx;
-            } else {
-              this.crumbs[idx].count += count;
-            }
-            if (idx === undefined)
-              return null; // wooooah
-            return this.crumbs[idx];
+        filters: {
+          capitalize: function (value) {
+            if (!value)
+              return ''
+            value = value.toString()
+            return value.charAt(0).toUpperCase() + value.slice(1)
           }
         }
+      });
+      let thGoalVue = new Vue({
+        el: "#thGoalHolder",
+        data: {thTarget: 1.6}
+      });
+      window.totalVisitVuew = totalVisitVue;
+      window.facilityTableVue = facilityTableVue;
+      window.thGoalVue = thGoalVue;
+    }
+  </script>
+
+
+
+  <!-- become a viz module -->
+  <script type="text/javascript">
+
+    let visitChart;
+    let travelChart;
+    function buildCharts() {
+      let visitOptions = {
+        title: 'Visits',
+        pieHole: 0.4,
       };
+      visitChart = new google.visualization.PieChart(document.getElementById('visitDonut'));
+      travelChart = new google.visualization.ColumnChart(document.getElementById('travelDiv'));
+      let travelData = google.visualization.arrayToDataTable([
+        ['Travel', 'Miles', {role: 'style'}],
+        ['Spent', 0.0, 'red'],
+        ['Saved', 0.0, 'green']
+      ]);
+      travelChart.draw(travelData, {
+        chart: {
+          title: 'Travel Distance',
+        },
+        height: 250 // I should stop being a monster
 
-      initHelper();
-      function initHelper() {
-        $("#state").change(function() {
-          let name = $("#state").val();
-          let state = stateHelper.getStateByName(name);
-          if(state == undefined) alert("Sorry, I couldn't find information for that location!");
-          else {
-            let ll1 = L.latLng(state.latMin, state.lonMin);
-            let ll2 = L.latLng(state.latMax,state.lonMax);
-            
-            let bounds = L.latLngBounds(ll1, ll2);
-            leaflet_map.fitBounds(bounds);
-          }
-          
-        })
-        buildVues();
-        comms.setFHIRHandler(processFHIR);
-        comms.connect();
-        // do something smart later
+      });
+      travelTimeChart = new google.visualization.ColumnChart(document.getElementById('travelTimeDiv'));
+      let travelTimeData = google.visualization.arrayToDataTable([
+        ['Time', 'Hours', {role: 'style'}],
+        ['Spent', 0.0, 'red'],
+        ['Saved', 0.0, 'green']
+      ]);
+      travelTimeChart.draw(travelTimeData, {
+        chart: {
+          title: 'Travel Time',
+        },
+        height: 250 // I should stop being a monster
 
-        $("#confButton").click(function () {
-          config();
-        });
-        $("#runButton").click(function () {
-          let rb = $("#runButton");
-          if ("Start" == rb.text()) {
-            rb.text("Stop");
-            goGoGo();
+      });
+
+      updateEncounterViz();
+    }
+
+
+    function updateTravelViz() {
+      let travelData = google.visualization.arrayToDataTable([
+        ['Type', 'Miles', {role: 'style'}],
+        ['Traveled', Math.floor(encounterTracker.travel.distance), 'red'],
+        ['Saved', Math.floor(encounterTracker.travel.saved), 'green']
+      ]);
+      travelChart.draw(travelData, {
+        chart: {
+          title: 'Travel Distance',
+        },
+        height: 250 // I should stop being a monster
+
+      });
+      let hour = 60*60;
+      let tt = encounterTracker.travel.travelTime/hour;
+      if (tt < 1 && tt > 0)
+        tt = 1;
+      else 
+        tt = Math.floor(tt);
+      
+      let st = encounterTracker.travel.savedTime/hour;
+      if (st < 1 && st > 0)
+        st = 1;
+      else 
+        st = Math.floor(st);
+      let travelTimeData = google.visualization.arrayToDataTable([
+        ['Time', 'Hours', {role: 'style'}],
+        ['Spent', tt, 'red'],
+        ['Saved', st, 'green']
+      ]);
+      travelTimeChart.draw(travelTimeData, {
+        chart: {
+          title: 'Travel Time',
+        },
+        height: 250 // I should stop being a monster
+
+      });
+    }
+    function updateEncounterViz() {
+
+      let values = [["Type", "# of Visits"]];
+      const byKind = encounterTracker.countByKind;
+      byKind.forEach(function (holder) {
+        values.push([holder.encounterType, holder.total]);
+      });
+      let total = encounterTracker.total;
+      let data = google.visualization.arrayToDataTable(values);
+      visitChart.draw(data, {
+        pieHole: 0.4,
+        chart: {
+          title: 'Travel Time',
+        },
+        height: 250 // I should stop being a monster
+
+      });
+      $(".visitCount").text(total + " / " + known_organizations.length);
+      updateTravelViz();
+    }
+
+
+
+  </script>
+
+  <!--    utilities-->
+  <script type="text/javascript">
+
+    function convertMetersToMiles(i) {
+      return i * 0.000621371192;
+    }
+    function convertMilesToMeters(i) {
+      return i * 1609.344;
+    }
+  </script>    
+
+  <!-- become a FHIR module that parses records-->
+  <script type="text/javascript">
+
+    const known_patients = [];
+    const known_organizations = [
+      {name: "Waiting For Facility Information", visits: 0, virtual: 0}
+    ];
+    const encounterTracker = {
+      total: 0,
+      countByKind: [],
+      travel: {
+        saved: 0,
+        savedCount: 0,
+        distance: 0,
+        travelCount: 0,
+        travelTime: 0,
+        savedTime: 0
+      },
+      breadCrumbs: {
+        crumbs: [],
+        crumbIndex: {},
+        addCrumb: function (lat, lon, count = 1) {
+          let id = "ll" + lat + "x" + lon;
+          let idx = this.crumbIndex[id];
+          if (idx === undefined) {
+            idx = this.crumbs.length;
+            this.crumbs[idx] = {lat: lat, lon: lon, count: count}
+            this.crumbIndex[id] = idx;
           } else {
-            noNoNo();
-            rb.prop("disabled", true);
-            rb.text("Start");
+            this.crumbs[idx].count += count;
           }
-
-        })
-        setTimeout(function () {
-          $("#confButton").prop('disabled', false);
-        });
-      }
-
-
-      function config() {
-        comms.stop();
-        known_patients.length = 0;
-        known_organizations.length = 0;
-        known_organizations[known_organizations.length] = {name: "Waiting", visits: 0, virtual: 0};
-        encounterTracker.total = 0;
-        encounterTracker.countByKind = [];
-        encounterTracker.travel.saved = 0;
-        encounterTracker.travel.savedCount = 0;
-        encounterTracker.travel.distance = 0;
-        encounterTracker.travel.travelCount = 0;
-        encounterTracker.breadCrumbs.crumbIndex = {};
-        encounterTracker.breadCrumbs.crumbs = [];
-        if (window.leaflet_layers.travelHeat !== null) {
-          window.leaflet_map.layersControl.removeLayer(window.leaflet_layers.travelHeat);
-          window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
+          if (idx === undefined)
+            return null; // wooooah
+          return this.crumbs[idx];
         }
-        window.leaflet_layers.facilityLayer.clearLayers();
-        window.leaflet_layers.patientLayer.clearLayers();
-        updateEncounterViz();
+      }
+    };
+
+    initHelper();
+    function initHelper() {
+      $("#state").change(function () {
+        let name = $("#state").val();
+        let state = stateHelper.getStateByName(name);
+        if (state == undefined)
+          alert("Sorry, I couldn't find information for that location!");
+        else {
+          let ll1 = L.latLng(state.latMin, state.lonMin);
+          let ll2 = L.latLng(state.latMax, state.lonMax);
+
+          let bounds = L.latLngBounds(ll1, ll2);
+          leaflet_map.fitBounds(bounds);
+        }
+
+      })
+      buildVues();
+      comms.setFHIRHandler(processFHIR);
+      comms.connect();
+      // do something smart later
+
+      $("#confButton").click(function () {
+        config();
+      });
+      $("#runButton").click(function () {
+        let rb = $("#runButton");
+        if ("Start" == rb.text()) {
+          rb.text("Stop");
+          goGoGo();
+        } else {
+          noNoNo();
+          rb.prop("disabled", true);
+          rb.text("Start");
+        }
+
+      })
+      setTimeout(function () {
+        $("#confButton").prop('disabled', false);
+      });
+    }
+
+
+    function config() {
+      comms.stop();
+      known_patients.length = 0;
+      known_organizations.length = 0;
+      known_organizations[known_organizations.length] = {name: "Waiting", visits: 0, virtual: 0};
+      encounterTracker.total = 0;
+      encounterTracker.countByKind = [];
+      encounterTracker.travel.saved = 0;
+      encounterTracker.travel.savedCount = 0;
+      encounterTracker.travel.distance = 0;
+      encounterTracker.travel.travelCount = 0;
+      encounterTracker.breadCrumbs.crumbIndex = {};
+      encounterTracker.breadCrumbs.crumbs = [];
+      if (window.leaflet_layers.travelHeat !== null) {
+        window.leaflet_map.layersControl.removeLayer(window.leaflet_layers.travelHeat);
+        window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
+      }
+      window.leaflet_layers.facilityLayer.clearLayers();
+      window.leaflet_layers.patientLayer.clearLayers();
+      updateEncounterViz();
+      $("#runButton").prop("disabled", true);
+      $("#population option:selected").text($("#population option:selected").val());
+      $("#population")
+      let config = {
+        yearsOfHistory: Number($("#yearsOfHistory").val()),
+        population: Number($("#population").val()),
+        state: $("#state").val()
+      };
+      comms.configure(config);
+      setTimeout(function () {
+        $("#runButton").prop("disabled", false);
+      }, 1000);
+    }
+    function goGoGo() {
+      comms.start();
+      known_organizations.length = 0;
+    }
+
+    function noNoNo() {
+      comms.stop();
+    }
+
+    function processFHIR(fhir) {
+
+      if (fhir === null) { // special case, switch me to a different call back or to event broadcasts
+        $("#runButton").text("Start");
         $("#runButton").prop("disabled", true);
         $("#population option:selected").text($("#population option:selected").val());
-        $("#population")
-        let config = {
-          yearsOfHistory: Number($("#yearsOfHistory").val()),
-          population: Number($("#population").val()),
-          state: $("#state").val()
-        };
-        comms.configure(config);
-        setTimeout(function () {
-          $("#runButton").prop("disabled", false);
-        }, 1000);
-      }
-      function goGoGo() {
-        comms.start();
-        known_organizations.length = 0;
+        mapTravel();
+        return;
       }
 
-      function noNoNo() {
-        comms.stop();
+      let organizations = processOrganizations(fhir);
+      mapOrganizations(organizations);
+      let patients = processPatients(fhir);
+      mapPatients(patients);
+      let encounterInfo = processPatientEncounters(fhir);
+      let patientEncounterStats = encounterInfo.encounterStats;
+      Object.keys(patientEncounterStats).forEach(function (key) {
+        encounterTracker.total += patientEncounterStats[key];
+        const countByKind = encounterTracker.countByKind;
+        const idx = countByKind.map(kind => kind.encounterType).indexOf(key);
+        if (idx === -1) {
+          countByKind[countByKind.length] = {encounterType: key, total: patientEncounterStats[key]};
+        } else {
+          countByKind[idx].total += patientEncounterStats[key];
+        }
+      });
+      updateEncounterViz();
+    }
+
+    function mapTravel() {
+
+      if (window.leaflet_layers.travelHeat !== null) {
+        window.leaflet_map.layersControl.removeLayer(window.leaflet_layers.travelHeat);
+        window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
       }
+      let data = massageCrumbs(encounterTracker.breadCrumbs.crumbs);
+      window.leaflet_layers.travelHeat = L.heatLayer(data, {radius: 10});
+      window.leaflet_map.layersControl.addOverlay(window.leaflet_layers.travelHeat, "Travel Frequency");
+      window.leaflet_layers.travelHeat.addTo(window.leaflet_map);
 
-      function processFHIR(fhir) {
+    }
 
-        if (fhir === null) { // special case, switch me to a different call back or to event broadcasts
-          $("#runButton").text("Start");
-          $("#runButton").prop("disabled", true);
-          $("#population option:selected").text($("#population option:selected").val());
-          mapTravel();
+    function massageCrumbs(crumbs) {
+      var values = [];
+      crumbs.forEach(function (crumb) {
+        values[values.length] = [crumb.lat, crumb.lon];
+      });
+      return values;
+    }
+
+
+    function normalize(val, min = 0.0, max = 1.0) {
+      return (val - min) / (max - min);
+    }
+    function mapPatients(patients = []) {
+      patients.forEach(function (patient) {
+        if (patient.marker !== undefined)
+          return; // fast exit, already mapped
+        if (patient.location === undefined)
+          return; // can't map
+        const loc = patient.location;
+        const ll = [loc.latitude, loc.longitude];
+//          let marker = L.marker(ll);
+        const marker = L.circle(ll, {
+          color: 'blue',
+          fillColor: 'lightblue',
+          fillOpacity: 0.5,
+          radius: 50
+        })
+        window.leaflet_layers.patientLayer.addLayer(marker);
+
+//          marker.addTo(window.leaflet_map);
+      })
+    }
+
+    function mapOrganizations(organizations = []) {
+      organizations.forEach(function (org) {
+        if (org.location == undefined)
+          return;
+        if (org.marker != undefined) {
+          return;
+        }
+        let loc = org.location;
+        let ll = [loc.latitude, loc.longitude];
+//          let marker = L.marker(ll);
+        let marker = L.circle(ll, {
+          color: 'red',
+          fillColor: 'pink',
+          fillOpacity: 0.5,
+          radius: 75
+        })
+        org.marker = marker;
+        window.leaflet_layers.facilityLayer.addLayer(marker);
+
+        //marker.addTo(window.leaflet_map);
+      });
+    }
+
+    function isKnownPatient(id = "") {
+      return  (known_patients.filter(patient => patient.fhir_id === id).length !== 0)
+    }
+    function processPatients(fhir) {
+      const patients = [];
+      let patientStanzas = getByResourceType(fhir, "Patient");
+      patientStanzas.forEach(function (entry) {
+        let patient = {travel: {total: 0, saved: 0, trips: []}};
+        const resource = entry.resource;
+        if (resource.id !== undefined)
+          patient.fhir_id = resource.id;
+        if (isKnownPatient(patient.fhir_id))
+          return;
+        else
+          known_patients[known_patients.length] = patient;
+        if (resource.address !== undefined) {
+          const addresses = resource.address;
+          addresses.forEach(function (address) {
+            address.extension.forEach(function (extension) {
+              let latlon = {};
+              latlon = processLocationExtension(extension);
+              if (latlon === null || (latlon.latitude !== undefined && latlon.longitude !== undefined))
+                patient.location = latlon;
+            });
+          });
+        }
+        patients[patients.length] = patient;
+      });
+      $("#population option:selected").text(known_patients.length + "/" + $("#population option:selected").val());
+
+      return patients;
+    }
+
+    function urnToId(urn) {
+      if (urn.startsWith("urn:uuid:"))
+        urn = urn.substring(9);
+      return urn;
+    }
+
+    function processPatientEncounters(fhir) {
+      let encounters = getByResourceType(fhir, "Encounter");
+      let encounterNumbers = {};
+      let discarded = 0;
+      const cutoff = new Date().getYear() - Number($("#yearsOfHistory").val());
+
+      encounters.forEach(function (encounter) {
+
+        let org = null;
+        let resource = encounter.resource;
+        let code = resource.class.code.toLowerCase();
+        let end = new Date(resource.period.end);
+        let year = new String(end.getYear());
+        if (year < cutoff) {
+          discarded++;
           return;
         }
 
-        let organizations = processOrganizations(fhir);
-        mapOrganizations(organizations);
-        let patients = processPatients(fhir);
-        mapPatients(patients);
-        let encounterInfo = processPatientEncounters(fhir);
-        let patientEncounterStats = encounterInfo.encounterStats;
-        Object.keys(patientEncounterStats).forEach(function (key) {
-          encounterTracker.total += patientEncounterStats[key];
-          const countByKind = encounterTracker.countByKind;
-          const idx = countByKind.map(kind => kind.encounterType).indexOf(key);
-          if (idx === -1) {
-            countByKind[countByKind.length] = {encounterType: key, total: patientEncounterStats[key]};
+        if (resource.serviceProvider !== undefined && resource.serviceProvider.reference !== undefined) {
+          // they're called providers here- I wonder if this is a mix of organizations and
+          // individuals. if so, this is wrong, it only indexes into the 
+          let spid = resource.serviceProvider.reference;
+          spid = urnToId(spid);
+          org = findOrganization(spid);
+          if (org !== null) {
+
+            org.visits++;
           } else {
-            countByKind[idx].total += patientEncounterStats[key];
+            console.debug("found an unreferenced organization. this was unexpected given processing order");
+            org = {
+              fhir_id: spid,
+              visits: 1,
+              virtual: "virtual" === code ? 1 : 0
+            };
+            known_organizations.push(org);
           }
-        });
-        updateEncounterViz();
-      }
-
-      function mapTravel() {
-
-        if (window.leaflet_layers.travelHeat !== null) {
-          window.leaflet_map.layersControl.removeLayer(window.leaflet_layers.travelHeat);
-          window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
         }
-        let data = massageCrumbs(encounterTracker.breadCrumbs.crumbs);
-        window.leaflet_layers.travelHeat = L.heatLayer(data, {radius: 10});
-        window.leaflet_map.layersControl.addOverlay(window.leaflet_layers.travelHeat, "Travel Frequency");
-        window.leaflet_layers.travelHeat.addTo(window.leaflet_map);
-
-      }
-
-      function massageCrumbs(crumbs) {
-        var values = [];
-        crumbs.forEach(function (crumb) {
-          values[values.length] = [crumb.lat, crumb.lon];
-        });
-        return values;
-      }
-
-
-      function normalize(val, min = 0.0, max = 1.0) {
-        return (val - min) / (max - min);
-      }
-      function mapPatients(patients = []) {
-        patients.forEach(function (patient) {
-          if (patient.marker !== undefined)
-            return; // fast exit, already mapped
-          if (patient.location === undefined)
-            return; // can't map
-          const loc = patient.location;
-          const ll = [loc.latitude, loc.longitude];
-//          let marker = L.marker(ll);
-          const marker = L.circle(ll, {
-            color: 'blue',
-            fillColor: 'lightblue',
-            fillOpacity: 0.5,
-            radius: 50
-          })
-          window.leaflet_layers.patientLayer.addLayer(marker);
-
-//          marker.addTo(window.leaflet_map);
-        })
-      }
-
-      function mapOrganizations(organizations = []) {
-        organizations.forEach(function (org) {
-          if (org.location == undefined)
-            return;
-          if (org.marker != undefined) {
-            return;
-          }
-          let loc = org.location;
-          let ll = [loc.latitude, loc.longitude];
-//          let marker = L.marker(ll);
-          let marker = L.circle(ll, {
-            color: 'red',
-            fillColor: 'pink',
-            fillOpacity: 0.5,
-            radius: 75
-          })
-          org.marker = marker;
-          window.leaflet_layers.facilityLayer.addLayer(marker);
-
-          //marker.addTo(window.leaflet_map);
-        });
-      }
-
-      function isKnownPatient(id = "") {
-        return  (known_patients.filter(patient => patient.fhir_id === id).length !== 0)
-      }
-      function processPatients(fhir) {
-        const patients = [];
-        let patientStanzas = getByResourceType(fhir, "Patient");
-        patientStanzas.forEach(function (entry) {
-          let patient = {travel: {total: 0, saved: 0, trips: []}};
-          const resource = entry.resource;
-          if (resource.id !== undefined)
-            patient.fhir_id = resource.id;
-          if (isKnownPatient(patient.fhir_id))
-            return;
-          else
-            known_patients[known_patients.length] = patient;
-          if (resource.address !== undefined) {
-            const addresses = resource.address;
-            addresses.forEach(function (address) {
-              address.extension.forEach(function (extension) {
-                let latlon = {};
-                latlon = processLocationExtension(extension);
-                if (latlon === null || (latlon.latitude !== undefined && latlon.longitude !== undefined))
-                  patient.location = latlon;
-              });
-            });
-          }
-          patients[patients.length] = patient;
-        });
-        $("#population option:selected").text(known_patients.length + "/" + $("#population option:selected").val());
-
-        return patients;
-      }
-
-      function urnToId(urn) {
-        if (urn.startsWith("urn:uuid:"))
-          urn = urn.substring(9);
-        return urn;
-      }
-
-      function processPatientEncounters(fhir) {
-        let encounters = getByResourceType(fhir, "Encounter");
-        let encounterNumbers = {};
-        let discarded = 0;
-        const cutoff = new Date().getYear() - Number($("#yearsOfHistory").val());
-
-        encounters.forEach(function (encounter) {
-
-          let org = null;
-          let resource = encounter.resource;
-          let code = resource.class.code.toLowerCase();
-          let end = new Date(resource.period.end);
-          let year = new String(end.getYear());
-          if (year < cutoff) {
-            discarded++;
-            return;
-          }
-
-          if (resource.serviceProvider !== undefined && resource.serviceProvider.reference !== undefined) {
-            // they're called providers here- I wonder if this is a mix of organizations and
-            // individuals. if so, this is wrong, it only indexes into the 
-            let spid = resource.serviceProvider.reference;
-            spid = urnToId(spid);
-            org = findOrganization(spid);
-            if (org !== null) {
-
-              org.visits++;
-            } else {
-              console.debug("found an unreferenced organization. this was unexpected given processing order");
-              org = {
-                fhir_id: spid,
-                visits: 1,
-                virtual: "virtual" === code ? 1 : 0
-              };
-              known_organizations.push(org);
-            }
-          }
-          if (resource.subject !== undefined && resource.subject.reference !== undefined) {
-            let pid = urnToId(resource.subject.reference);
-            let patient = findPatient(pid, true);
-            if (patient !== null && org !== null)
-              if (patient.location !== undefined && org.location !== undefined) {
-                let virtual = code === "virtual";
-                if (virtual) {
-                  if (org.virtual === undefined)
-                    org.virtual = 0;
-                  org.virtual++;
-                }
-                processTrip(patient, org, virtual);
+        if (resource.subject !== undefined && resource.subject.reference !== undefined) {
+          let pid = urnToId(resource.subject.reference);
+          let patient = findPatient(pid, true);
+          if (patient !== null && org !== null)
+            if (patient.location !== undefined && org.location !== undefined) {
+              let virtual = code === "virtual";
+              if (virtual) {
+                if (org.virtual === undefined)
+                  org.virtual = 0;
+                org.virtual++;
               }
-          }
-
-          if (encounterNumbers[code] === undefined)
-            encounterNumbers[code] = 1;
-          else
-            encounterNumbers[code]++;
-        });
-        return {"encounters": encounters, "encounterStats": encounterNumbers};
-      }
-
-
-      const osrm = {start: "http://osrm.mitre.org:5000/route/v1/driving/", args: "?overview=false&steps=true"};
-
-      const waypointCheat = {};
-      function processTrip(patient, org, virtual = false, crumbDistance = 100) {
-        let start = patient.location;
-        let end = org.location;
-
-        let waypoints = [];
-        let duration = 0;
-        let distance = 0;
-
-        let id = pairIdHelper(start, end);
-        if (waypointCheat[id] !== undefined) {
-          finishTrip(waypointCheat[id], virtual);
-
+              processTrip(patient, org, virtual);
+            }
         }
-        // soooo, this is probably a BAD place to put this, buuuuttt....
-        let url = osrm.start + start.longitude + "," + start.latitude + ";"
-                + end.longitude + "," + end.latitude + osrm.args;
 
-        fetch(url).then(function (response) {
-          return response.json();
-        }).then(function (json) {
-          if (json.code === "Ok" && json.routes !== undefined) {
-            route = json.routes[0];
-            distance = route.distance;
-            duration = route.duration;
-            if (route.legs)
-              route.legs.forEach(function (leg) {
-                leg.steps.forEach(function (step) {
-                  waypoints.push({longitude: step.maneuver.location[0], latitude: step.maneuver.location[1], duration: step.duration});
-                });
-              })
-
-          }
-          finishTrip({id: id, path: waypoints, distance: distance, duration: duration}, virtual, crumbDistance);
-
-        });
-      }
-      function finishTrip(helper, virtual, crumbDistance = 100) {
-        let travel = encounterTracker.travel;
-        if (virtual) {
-          travel.saved += convertMetersToMiles(helper.distance * 2);
-          travel.savedCount++;
-          travel.savedTime += (helper.duration * 2);
-        } else {
-          travel.distance += convertMetersToMiles(helper.distance * 2);
-          travel.travelCount++;
-          travel.travelTime += (helper.duration * 2);
-          let path = helper.path;
-
-          if (path.length > 1) {
-            let idx = 0;
-            let limit = path.length - 1;
-            while (idx < limit) {
-              let step1 = new LatLon(path[idx].latitude, path[idx].longitude);
-              let step2 = new LatLon(path[idx + 1].latitude, path[idx + 1].longitude);
-              let bearing = step1.bearingTo(step2);
-              let stepDistanceMeters = step1.distanceTo(step2);
-              let crumbCount = Math.floor(stepDistanceMeters / crumbDistance);
-              let here = step1;
-              let there = step2;
-              encounterTracker.breadCrumbs.addCrumb(here.lat, here.lon, 2);
-              for (let  i = 0; i < crumbCount; i++) {
-                let next = here.destinationPoint(crumbDistance + (Math.random(1, 100) * (Math.random() >= 0.5 ? 0 : 1)), bearing);
-                here = next;
-                encounterTracker.breadCrumbs.addCrumb(here.lat, here.lon, 2);
-              }
-              idx++;
-            }
-          }
-      }
-      }
-
-
-      function pairIdHelper(start, end) {
-        return "p" + start.latitude + "x" + start.longitude
-                + "/" + end.latitude + "x" + end.longitude;
-      }
-
-      function findOrganization(id = null, name = null) {
-        let idx = -1;
-        if (id !== null)
-          idx = known_organizations.map(org => org.fhir_id).indexOf(id);
-        else if (name !== null)
-          idx = known_organizations.map(org => org.name).indexOf(name);
-        if (idx === -1)
-          return null;
-        return known_organizations[idx];
-      }
-      function findPatient(id = null) {
-        let idx = -1;
-        if (id !== null)
-          idx = known_patients.map(person => person.fhir_id).indexOf(id);
-        if (idx === -1)
-          return null;
-        return known_patients[idx];
-      }
-
-
-      function processOrganizations(fhir) {
-        let orgStanzas = getByResourceType(fhir, "Organization");
-        orgStanzas.forEach(function (orgStanza) {
-          let resource = orgStanza.resource;
-          let org = {name: null};
-          if (resource.id !== undefined)
-            org.fhir_id = resource.id;
-          if (resource.name !== undefined)
-            org.name = resource.name;
-          // early exit if we have the name
-          // we could have it with the id if it was filled in via an encounter reference
-          if (known_organizations.filter(known_org => known_org.name === org.name).length !== 0)
-            return;
-          if (org.visits === undefined) {
-            org.visits = 1;
-            org.virtual = 0;
-          }
-          if (resource.address !== undefined)
-            resource.address.forEach(function (address) {
-              if (address.extension !== null) {
-                address.extension.forEach(function (extension) {
-                  let loc = processLocationExtension(extension);
-                  if (loc !== null) {
-                    org.location = loc;
-                  }
-
-                });
-                org.address = address;
-              }
-
-            });
-          if (org.fhir_id !== null) {
-            // see if we have a pre-reference
-            const idx = known_organizations.map(org => org.fhir_id).indexOf(org.fhir_id);
-            if (idx === -1)
-              known_organizations.push(org);
-            else
-              known_organizations[idx] = org;
-          }
-        });
-        return known_organizations;
-      }
-
-      function processLocationExtension(holder) {
-        let latlon = {};
-        holder.extension.forEach(function (ext, idx) {
-          if (ext.url == "latitude")
-            latlon.latitude = Number(ext.valueDecimal.toFixed(4));
-          else if (ext.url == "longitude")
-            latlon.longitude = Number(ext.valueDecimal.toFixed(4));
-        });
-        if (latlon.latitude !== undefined && latlon.longitude !== undefined)
-          return latlon;
+        if (encounterNumbers[code] === undefined)
+          encounterNumbers[code] = 1;
         else
-          return null;
+          encounterNumbers[code]++;
+      });
+      return {"encounters": encounters, "encounterStats": encounterNumbers};
+    }
+
+
+    const osrm = {start: "http://osrm.mitre.org:5000/route/v1/driving/", args: "?overview=false&steps=true"};
+
+    const waypointCheat = {};
+    function processTrip(patient, org, virtual = false, crumbDistance = 100) {
+      let start = patient.location;
+      let end = org.location;
+
+      let waypoints = [];
+      let duration = 0;
+      let distance = 0;
+
+      let id = pairIdHelper(start, end);
+      if (waypointCheat[id] !== undefined) {
+        finishTrip(waypointCheat[id], virtual);
+
       }
+      // soooo, this is probably a BAD place to put this, buuuuttt....
+      let url = osrm.start + start.longitude + "," + start.latitude + ";"
+              + end.longitude + "," + end.latitude + osrm.args;
 
-      function getByResourceType(fhir, resourceType) {
-        return fhir.entry.filter(obj => {
-          return obj.resource.resourceType === resourceType;
-        });
-      }
+      fetch(url).then(function (response) {
+        return response.json();
+      }).then(function (json) {
+        if (json.code === "Ok" && json.routes !== undefined) {
+          route = json.routes[0];
+          distance = route.distance;
+          duration = route.duration;
+          if (route.legs)
+            route.legs.forEach(function (leg) {
+              leg.steps.forEach(function (step) {
+                waypoints.push({longitude: step.maneuver.location[0], latitude: step.maneuver.location[1], duration: step.duration});
+              });
+            })
 
-    </script>
+        }
+        finishTrip({id: id, path: waypoints, distance: distance, duration: duration}, virtual, crumbDistance);
+
+      });
+    }
+    function finishTrip(helper, virtual, crumbDistance = 100) {
+      let travel = encounterTracker.travel;
+      if (virtual) {
+        travel.saved += convertMetersToMiles(helper.distance * 2);
+        travel.savedCount++;
+        travel.savedTime += (helper.duration * 2);
+      } else {
+        travel.distance += convertMetersToMiles(helper.distance * 2);
+        travel.travelCount++;
+        travel.travelTime += (helper.duration * 2);
+        let path = helper.path;
+
+        if (path.length > 1) {
+          let idx = 0;
+          let limit = path.length - 1;
+          while (idx < limit) {
+            let step1 = new LatLon(path[idx].latitude, path[idx].longitude);
+            let step2 = new LatLon(path[idx + 1].latitude, path[idx + 1].longitude);
+            let bearing = step1.bearingTo(step2);
+            let stepDistanceMeters = step1.distanceTo(step2);
+            let crumbCount = Math.floor(stepDistanceMeters / crumbDistance);
+            let here = step1;
+            let there = step2;
+            encounterTracker.breadCrumbs.addCrumb(here.lat, here.lon, 2);
+            for (let  i = 0; i < crumbCount; i++) {
+              let next = here.destinationPoint(crumbDistance + (Math.random(1, 100) * (Math.random() >= 0.5 ? 0 : 1)), bearing);
+              here = next;
+              encounterTracker.breadCrumbs.addCrumb(here.lat, here.lon, 2);
+            }
+            idx++;
+          }
+        }
+    }
+    }
 
 
-  </body>
+    function pairIdHelper(start, end) {
+      return "p" + start.latitude + "x" + start.longitude
+              + "/" + end.latitude + "x" + end.longitude;
+    }
+
+    function findOrganization(id = null, name = null) {
+      let idx = -1;
+      if (id !== null)
+        idx = known_organizations.map(org => org.fhir_id).indexOf(id);
+      else if (name !== null)
+        idx = known_organizations.map(org => org.name).indexOf(name);
+      if (idx === -1)
+        return null;
+      return known_organizations[idx];
+    }
+    function findPatient(id = null) {
+      let idx = -1;
+      if (id !== null)
+        idx = known_patients.map(person => person.fhir_id).indexOf(id);
+      if (idx === -1)
+        return null;
+      return known_patients[idx];
+    }
+
+
+    function processOrganizations(fhir) {
+      let orgStanzas = getByResourceType(fhir, "Organization");
+      orgStanzas.forEach(function (orgStanza) {
+        let resource = orgStanza.resource;
+        let org = {name: null};
+        if (resource.id !== undefined)
+          org.fhir_id = resource.id;
+        if (resource.name !== undefined)
+          org.name = resource.name;
+        // early exit if we have the name
+        // we could have it with the id if it was filled in via an encounter reference
+        if (known_organizations.filter(known_org => known_org.name === org.name).length !== 0)
+          return;
+        if (org.visits === undefined) {
+          org.visits = 1;
+          org.virtual = 0;
+        }
+        if (resource.address !== undefined)
+          resource.address.forEach(function (address) {
+            if (address.extension !== null) {
+              address.extension.forEach(function (extension) {
+                let loc = processLocationExtension(extension);
+                if (loc !== null) {
+                  org.location = loc;
+                }
+
+              });
+              org.address = address;
+            }
+
+          });
+        if (org.fhir_id !== null) {
+          // see if we have a pre-reference
+          const idx = known_organizations.map(org => org.fhir_id).indexOf(org.fhir_id);
+          if (idx === -1)
+            known_organizations.push(org);
+          else
+            known_organizations[idx] = org;
+        }
+      });
+      return known_organizations;
+    }
+
+    function processLocationExtension(holder) {
+      let latlon = {};
+      holder.extension.forEach(function (ext, idx) {
+        if (ext.url == "latitude")
+          latlon.latitude = Number(ext.valueDecimal.toFixed(4));
+        else if (ext.url == "longitude")
+          latlon.longitude = Number(ext.valueDecimal.toFixed(4));
+      });
+      if (latlon.latitude !== undefined && latlon.longitude !== undefined)
+        return latlon;
+      else
+        return null;
+    }
+
+    function getByResourceType(fhir, resourceType) {
+      return fhir.entry.filter(obj => {
+        return obj.resource.resourceType === resourceType;
+      });
+    }
+
+  </script>
+
+
+</body>
 </html>
