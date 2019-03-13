@@ -191,53 +191,45 @@
     </div>
 
 
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="js/comms.js"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
-    <script src="js/leaflet.markercluster-src.js"></script> <!-- drop the -src for minified -->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
+    <script src="js/comms.js"></script>
     <script src="js/vue.js"></script>
     <script src="js/latlon-spherical.js"></script>
-    <script src="http://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
-
-    <!-- general -->
+    <script src="js/leaflet.markercluster-src.js"></script> <!-- drop the -src for minified -->
+    <script src="js/states.js"></script>
     <script type="text/javascript">
-// let's figure out nicer ways to make everything live, maybe when we can vue up after all at some point, it supports incremental updates allegedly
+      $(document).ready(function () {
 
+        window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
 
-$(document).ready(function () {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(leaflet_map);
 
-  window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
+        window.leaflet_layers = {
+          patientLayer: L.markerClusterGroup(),
+          facilityLayer: L.layerGroup(),
+          travelHeat: null,
+        }
 
+        let layersControl = L.control.layers(null, {
+          "Patients": window.leaflet_layers.patientLayer,
+          "Facilities": window.leaflet_layers.facilityLayer
+        });
+        layersControl.addTo(window.leaflet_map);
+        window.leaflet_map.layersControl = layersControl;
+        window.leaflet_map.addLayer(window.leaflet_layers.patientLayer);
+        window.leaflet_map.addLayer(window.leaflet_layers.facilityLayer);
 
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(leaflet_map);
-
-  window.leaflet_layers = {
-    patientLayer: L.markerClusterGroup(),
-    facilityLayer: L.layerGroup(),
-    travelHeat: null,
-  }
-
-  let layersControl = L.control.layers(null, {
-    "Patients": window.leaflet_layers.patientLayer,
-    "Facilities": window.leaflet_layers.facilityLayer
-  });
-  layersControl.addTo(window.leaflet_map);
-  window.leaflet_map.layersControl = layersControl;
-  window.leaflet_map.addLayer(window.leaflet_layers.patientLayer);
-  window.leaflet_map.addLayer(window.leaflet_layers.facilityLayer);
-
-  google.charts.load('current', {'packages': ['corechart']});
-  google.charts.load('current', {'packages': ['line']});
-  google.charts.setOnLoadCallback(buildCharts);
-});
+        google.charts.load('current', {'packages': ['corechart']});
+        google.charts.load('current', {'packages': ['line']});
+        google.charts.setOnLoadCallback(buildCharts);
+      });
     </script>
 
 
@@ -405,6 +397,19 @@ $(document).ready(function () {
 
       initHelper();
       function initHelper() {
+        $("#state").change(function() {
+          let name = $("#state").val();
+          let state = stateHelper.getStateByName(name);
+          if(state == undefined) alert("Sorry, I couldn't find information for that location!");
+          else {
+            let ll1 = L.latLng(state.latMin, state.lonMin);
+            let ll2 = L.latLng(state.latMax,state.lonMax);
+            
+            let bounds = L.latLngBounds(ll1, ll2);
+            leaflet_map.fitBounds(bounds);
+          }
+          
+        })
         buildVues();
         comms.setFHIRHandler(processFHIR);
         comms.connect();
