@@ -215,30 +215,30 @@
   <script type="text/javascript">
 $(document).ready(function () {
 
-window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
+  window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(leaflet_map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(leaflet_map);
 
-window.leaflet_layers = {
-  patientLayer: L.markerClusterGroup(),
-  facilityLayer: L.layerGroup(),
-  travelHeat: null,
-}
+  window.leaflet_layers = {
+    patientLayer: L.markerClusterGroup(),
+    facilityLayer: L.layerGroup(),
+    travelHeat: null,
+  }
 
-let layersControl = L.control.layers(null, {
-  "Patients": window.leaflet_layers.patientLayer,
-  "Facilities": window.leaflet_layers.facilityLayer
-});
-layersControl.addTo(window.leaflet_map);
-window.leaflet_map.layersControl = layersControl;
-window.leaflet_map.addLayer(window.leaflet_layers.patientLayer);
-window.leaflet_map.addLayer(window.leaflet_layers.facilityLayer);
+  let layersControl = L.control.layers(null, {
+    "Patients": window.leaflet_layers.patientLayer,
+    "Facilities": window.leaflet_layers.facilityLayer
+  });
+  layersControl.addTo(window.leaflet_map);
+  window.leaflet_map.layersControl = layersControl;
+  window.leaflet_map.addLayer(window.leaflet_layers.patientLayer);
+  window.leaflet_map.addLayer(window.leaflet_layers.facilityLayer);
 
-google.charts.load('current', {'packages': ['corechart']});
-google.charts.load('current', {'packages': ['line']});
-google.charts.setOnLoadCallback(buildCharts);
+  google.charts.load('current', {'packages': ['corechart']});
+  google.charts.load('current', {'packages': ['line']});
+  google.charts.setOnLoadCallback(buildCharts);
 });
   </script>
 
@@ -301,6 +301,8 @@ google.charts.setOnLoadCallback(buildCharts);
         height: 250 // I should stop being a monster
 
       });
+      // I wasn't kidding about the monster thing
+      $("#travelDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
       travelTimeChart = new google.visualization.ColumnChart(document.getElementById('travelTimeDiv'));
       let travelTimeData = google.visualization.arrayToDataTable([
         ['Time', 'Hours', {role: 'style'}],
@@ -315,6 +317,7 @@ google.charts.setOnLoadCallback(buildCharts);
 
       });
 
+      $("#travelTimeDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
       updateEncounterViz();
     }
 
@@ -332,17 +335,19 @@ google.charts.setOnLoadCallback(buildCharts);
         height: 250 // I should stop being a monster
 
       });
-      let hour = 60*60;
-      let tt = encounterTracker.travel.travelTime/hour;
+      $("#travelDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
+
+      let hour = 60 * 60;
+      let tt = encounterTracker.travel.travelTime / hour;
       if (tt < 1 && tt > 0)
         tt = 1;
-      else 
+      else
         tt = Math.floor(tt);
-      
-      let st = encounterTracker.travel.savedTime/hour;
+
+      let st = encounterTracker.travel.savedTime / hour;
       if (st < 1 && st > 0)
         st = 1;
-      else 
+      else
         st = Math.floor(st);
       let travelTimeData = google.visualization.arrayToDataTable([
         ['Time', 'Hours', {role: 'style'}],
@@ -356,6 +361,8 @@ google.charts.setOnLoadCallback(buildCharts);
         height: 250 // I should stop being a monster
 
       });
+      $("#travelTimeDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
+
     }
     function updateEncounterViz() {
 
@@ -636,15 +643,15 @@ google.charts.setOnLoadCallback(buildCharts);
               let latlon = {};
               latlon = processLocationExtension(extension);
               if (latlon === null || (latlon.latitude !== undefined && latlon.longitude !== undefined))
-                if(RANDOMIZE_DISTANCE > 0) {
+                if (RANDOMIZE_DISTANCE > 0) {
                   let ll = new LatLon(latlon.latitude, latlon.longitude);
-                  let bearing = randomRange(0,60);
+                  let bearing = randomRange(0, 60);
                   let distance = randomRange(0, RANDOMIZE_DISTANCE);
                   ll = ll.destinationPoint(distance, bearing);
-                  latlon.latitude = ll.lat; 
+                  latlon.latitude = ll.lat;
                   latlon.longitude = ll.lon;
                 }
-                patient.location = latlon;
+              patient.location = latlon;
             });
           });
         }
@@ -655,10 +662,10 @@ google.charts.setOnLoadCallback(buildCharts);
       return patients;
     }
 
-function randomRange(min,max) // min and max included
-{
-    return Math.floor(Math.random()*(max-min+1)+min);
-}
+    function randomRange(min, max) // min and max included
+    {
+      return Math.floor(Math.random() * (max - min + 1) + min);
+    }
     function urnToId(urn) {
       if (urn.startsWith("urn:uuid:"))
         urn = urn.substring(9);
@@ -761,20 +768,35 @@ function randomRange(min,max) // min and max included
             })
 
         }
-        finishTrip({id: id, path: waypoints, distance: distance, duration: duration}, virtual, crumbDistance);
+        finishTrip({id: id, path: waypoints, distance: distance, duration: duration, patient: patient}, virtual, crumbDistance);
 
       });
     }
     function finishTrip(helper, virtual, crumbDistance = 100) {
+      let miles = convertMetersToMiles(helper.distance * 2);
       let travel = encounterTracker.travel;
+      let patient = helper.patient;
+      let patient_travel = patient.travel;
+      patient_travel.trips.push({distance: miles, virtual: virtual});
       if (virtual) {
-        travel.saved += convertMetersToMiles(helper.distance * 2);
+        travel.saved += miles;
         travel.savedCount++;
         travel.savedTime += (helper.duration * 2);
+
+        patient_travel.saved += miles;
+        patient_travel.savedCount++;
+        patient_travel.savedTime += (helper.duration * 2);
+
       } else {
-        travel.distance += convertMetersToMiles(helper.distance * 2);
+        travel.distance += miles;
         travel.travelCount++;
         travel.travelTime += (helper.duration * 2);
+
+        patient_travel.distance += miles;
+        patient_travel.travelCount++;
+        patient_travel.travelTime += (helper.duration * 2);
+        // add event type 
+
         let path = helper.path;
 
         if (path.length > 1) {
@@ -787,7 +809,6 @@ function randomRange(min,max) // min and max included
             let stepDistanceMeters = step1.distanceTo(step2);
             let crumbCount = Math.floor(stepDistanceMeters / crumbDistance);
             let here = step1;
-            let there = step2;
             encounterTracker.breadCrumbs.addCrumb(here.lat, here.lon, 2);
             for (let  i = 0; i < crumbCount; i++) {
               let next = here.destinationPoint(crumbDistance + (Math.random(1, 100) * (Math.random() >= 0.5 ? 0 : 1)), bearing);
