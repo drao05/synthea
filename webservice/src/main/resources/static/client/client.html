@@ -180,14 +180,13 @@
 
       </div>
       <div class="col">
-        <div class="card">Facility info</div>
         <div class="row">
 
           <div class="table-wrapper-scroll-y">
             <table class="table w-auto table-striped " id="facilityTable">
               <thead>
                 <tr class="">
-                  <th v-for="key in columns">
+                  <th v-for="key in columnLabels">
                     {{ key | capitalize }}
                   </th>                  
                 </tr>
@@ -265,6 +264,7 @@ $(document).ready(function () {
           el: "#facilityTable",
           data: {
             columns: ["name", "visits", "virtual"],
+            columnLabels: ["Name", "In Person", "Telehealth"],
             facilities: known_organizations
           },
           filters: {
@@ -302,6 +302,7 @@ $(document).ready(function () {
     <!-- I don't know what this should be. maybe a simulation module. or maybe it just lives here? -->
     <script type="text/javascript">
       function recalculateEncounterInfo() {
+        
         let tracker = encounterTracker;
         tracker.total = 0;
         tracker.countByKind = [];
@@ -311,18 +312,25 @@ $(document).ready(function () {
         ttravel.distance = 0;
         ttravel.travelCount = 0;
         ttravel.travelTime = 0;
+        tracker.breadCrumbs.clearCrumbs(true);
+        
         known_patients.forEach(function (patient) {
           if (patient.travel && patient.travel.trips) {
             patient.travel.trips.forEach(function (encounter) {
+              let org = findOrganization(encounter.org_id);
+              debugger;
               tracker.total++;
               if (encounter.virtual) {
+                if(org != null) org.virtual++;
                 ttravel.savedCount++;
                 ttravel.saved += encounter.distance;
                 ttravel.savedTime += encounter.duration;
               } else {
+                if(org != null) org.visits++;
                 ttravel.travelCount++;
                 ttravel.distance += encounter.distance;
                 ttravel.travelTime += encounter.duration;
+                tracker.breadCrumbs.addCrumbs(encounter.breadCrumbs);
               }
               const idx = tracker.countByKind.map(kind => kind.encounterType).indexOf(encounter.code);
               if (idx === -1) {
@@ -333,10 +341,10 @@ $(document).ready(function () {
             });
           }
         });
-        
+
       }
       function forceTelehealthMin(val) {
-        
+
         // reset everything
         if (val === undefined)
           val = telehealthPercentages.simulation;
@@ -352,6 +360,10 @@ $(document).ready(function () {
         ttravel.travelCount = 0;
         ttravel.travelTime = 0;
         ttravel.savedTime = 0;
+        known_organizations.forEach(function(org) {
+          org.visits = 0;
+          org.virtual = 0;
+        });
         
         let total = 0;
         known_patients.forEach(function (patient) {
@@ -359,16 +371,16 @@ $(document).ready(function () {
             patient.travel.trips.forEach(function (encounter) {
               encounter.code = encounter.actualCode;
               encounter.virtual = encounter.actualVirtual;
+              // HERE
               total++;
             });
           }
         });
 
         if (!reset) {
-          
+
           let delta = val - telehealthPercentages.simulation;
           let changecount = Math.ceil(total * (delta / 100));
-          console.debug("changecount", changecount);
           let round = 0;
           let pidx = 0;
           let roundhit = false;
@@ -377,31 +389,35 @@ $(document).ready(function () {
             $("#calcStatus").text("Pending updates " + changecount);
             let p = known_patients[pidx];
             if (p.travel && p.travel.trips.length > round) {
-              let pt = p.travel.trips[round]; 
+              let pt = p.travel.trips[round];
               if (pt && pt.virtualEligible && pt.code !== "virtual") {
                 roundhit = true;
                 pt.code = "virtual";
                 pt.virtual = true;
                 changecount--;
-              } else { 
+              } else {
                 skipped.push(pidx);
               }
-            } else { skipped.push(pidx); }
+            } else {
+              skipped.push(pidx);
+            }
             pidx++;
-            if(pidx == known_patients.length) {
-              console.log("round, skipped.length, skipped", round, skipped.length, skipped);
+            if (pidx == known_patients.length) {
               skipped = [];
-              if(!roundhit) { changecount = 0; console.log("out of options, round " + round) }
-              pidx = 0; 
+              if (!roundhit) {
+                changecount = 0;
+              }
+              pidx = 0;
               round++;
               roundhit = false;
             }
           }
         }
-          
+
         $("#calcStatus").text("");
         recalculateEncounterInfo();
         updateEncounterViz(true);
+        mapTravel();
 
       }
 
@@ -589,6 +605,11 @@ $(document).ready(function () {
             if (idx === undefined)
               return null; // wooooah
             return this.crumbs[idx];
+          },
+          addCrumbs: function (crumbs) {
+            crumbs.forEach(function(crumb) {
+              encounterTracker.breadCrumbs.addCrumb(crumb.latitude, crumb.longitude, crumb.count);
+            });
           },
           clearCrumbs: function (really) {
             if (!really)
@@ -886,7 +907,7 @@ $(document).ready(function () {
               console.debug("found an unreferenced organization. this was unexpected given processing order");
               org = {
                 fhir_id: spid,
-                visits: 1,
+                visits: "virtual" === code ? 0 : 1,
                 virtual: "virtual" === code ? 1 : 0,
               };
               known_organizations.push(org);
@@ -977,7 +998,8 @@ $(document).ready(function () {
           virtual: virtual,
           virtualEligible: virtualEligibleEncounters.indexOf(code) !== -1,
           duration: helper.duration,
-          breadCrumbs: []
+          breadCrumbs: [],
+          org_id: helper.org_id
         };
         patient_travel.trips.push(trip_details);
         if (virtual) {
