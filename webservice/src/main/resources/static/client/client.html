@@ -83,9 +83,14 @@
       </div>
       <div class="row" >
         <div class="col" id="thGoalHolder">
-          <label for="telehealthGoal">Telehealth Adoption Goal (<span id="telehealthGoalTarget">{{ thTarget }}</span>%)</label>
-          <input type="range" min="1" max="100" value="1.6" class="form-control"
-                 id="telehealthGoal"  v-model="thTarget" />
+          <label for="telehealthGoal">Telehealth Adoption (<span id="telehealthGoalTarget">{{ actual }}{{ symbol }}</span>)</label>
+          <span id="resetTelehealth">
+            <button id="resetTHButton">Reset to {{simulation}}{{ symbol }}</button>
+            <span id="calcStatus"></span>
+            <span id="resetStatus"></span>
+          </span>
+          <input type="range" min="0" max="100" value="0" class="form-control"
+                 id="telehealthGoal"  v-model="target" disabled />
         </div>
       </div>
       <div class="row" style="margin-bottom: 1em;">
@@ -198,21 +203,20 @@
         </div>
       </div>
     </div>
-  </div>
 
 
-  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
-  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-  <script src="http://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
-  <script src="js/comms.js"></script>
-  <script src="js/vue.js"></script>
-  <script src="js/latlon-spherical.js"></script>
-  <script src="js/leaflet.markercluster-src.js"></script> <!-- drop the -src for minified -->
-  <script src="js/states.js"></script>
-  <script type="text/javascript">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
+    <script src="js/comms.js"></script>
+    <script src="js/vue.js"></script>
+    <script src="js/latlon-spherical.js"></script>
+    <script src="js/leaflet.markercluster-src.js"></script> <!-- drop the -src for minified -->
+    <script src="js/states.js"></script>
+    <script type="text/javascript">
 $(document).ready(function () {
 
   window.leaflet_map = L.map('map').setView([42.3695, -71.9481], 8);
@@ -240,678 +244,906 @@ $(document).ready(function () {
   google.charts.load('current', {'packages': ['line']});
   google.charts.setOnLoadCallback(buildCharts);
 });
-  </script>
+    </script>
 
 
-  <!--     vue module maybe?-->
-  <script type="text/javascript">
-    function buildVues() {
-      let totalVisitVue = new Vue({
-        el: "#visitCount",
-        data: encounterTracker
-      });
-      let facilityTableVue = new Vue({
-        el: "#facilityTable",
-        data: {
-          columns: ["name", "visits", "virtual"],
-          facilities: known_organizations
-        },
-        filters: {
-          capitalize: function (value) {
-            if (!value)
-              return ''
-            value = value.toString()
-            return value.charAt(0).toUpperCase() + value.slice(1)
-          }
-        }
-      });
-      let thGoalVue = new Vue({
-        el: "#thGoalHolder",
-        data: {thTarget: 1.6}
-      });
-      window.totalVisitVuew = totalVisitVue;
-      window.facilityTableVue = facilityTableVue;
-      window.thGoalVue = thGoalVue;
-    }
-  </script>
-
-
-
-  <!-- become a viz module -->
-  <script type="text/javascript">
-
-    let visitChart;
-    let travelChart;
-    function buildCharts() {
-      let visitOptions = {
-        title: 'Visits',
-        pieHole: 0.4,
+    <!--     vue module maybe?-->
+    <script type="text/javascript">
+      const telehealthPercentages = {
+        target: 0,
+        simulation: 0,
+        actual: 0,
+        symbol: "%"
       };
-      visitChart = new google.visualization.PieChart(document.getElementById('visitDonut'));
-      travelChart = new google.visualization.ColumnChart(document.getElementById('travelDiv'));
-      let travelData = google.visualization.arrayToDataTable([
-        ['Travel', 'Miles', {role: 'style'}],
-        ['Spent', 0.0, 'red'],
-        ['Saved', 0.0, 'green']
-      ]);
-      travelChart.draw(travelData, {
-        chart: {
-          title: 'Travel Distance',
-        },
-        height: 250 // I should stop being a monster
 
-      });
-      // I wasn't kidding about the monster thing
-      $("#travelDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
-      travelTimeChart = new google.visualization.ColumnChart(document.getElementById('travelTimeDiv'));
-      let travelTimeData = google.visualization.arrayToDataTable([
-        ['Time', 'Hours', {role: 'style'}],
-        ['Spent', 0.0, 'red'],
-        ['Saved', 0.0, 'green']
-      ]);
-      travelTimeChart.draw(travelTimeData, {
-        chart: {
-          title: 'Travel Time',
-        },
-        height: 250 // I should stop being a monster
-
-      });
-
-      $("#travelTimeDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
-      updateEncounterViz();
-    }
-
-
-    function updateTravelViz() {
-      let travelData = google.visualization.arrayToDataTable([
-        ['Type', 'Miles', {role: 'style'}],
-        ['Traveled', Math.floor(encounterTracker.travel.distance), 'red'],
-        ['Saved', Math.floor(encounterTracker.travel.saved), 'green']
-      ]);
-      travelChart.draw(travelData, {
-        chart: {
-          title: 'Travel Distance',
-        },
-        height: 250 // I should stop being a monster
-
-      });
-      $("#travelDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
-
-      let hour = 60 * 60;
-      let tt = encounterTracker.travel.travelTime / hour;
-      if (tt < 1 && tt > 0)
-        tt = 1;
-      else
-        tt = Math.floor(tt);
-
-      let st = encounterTracker.travel.savedTime / hour;
-      if (st < 1 && st > 0)
-        st = 1;
-      else
-        st = Math.floor(st);
-      let travelTimeData = google.visualization.arrayToDataTable([
-        ['Time', 'Hours', {role: 'style'}],
-        ['Spent', tt, 'red'],
-        ['Saved', st, 'green']
-      ]);
-      travelTimeChart.draw(travelTimeData, {
-        chart: {
-          title: 'Travel Time',
-        },
-        height: 250 // I should stop being a monster
-
-      });
-      $("#travelTimeDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
-
-    }
-    function updateEncounterViz() {
-
-      let values = [["Type", "# of Visits"]];
-      const byKind = encounterTracker.countByKind;
-      byKind.forEach(function (holder) {
-        values.push([holder.encounterType, holder.total]);
-      });
-      let total = encounterTracker.total;
-      let data = google.visualization.arrayToDataTable(values);
-      visitChart.draw(data, {
-        pieHole: 0.4,
-        chart: {
-          title: 'Travel Time',
-        },
-        height: 250 // I should stop being a monster
-
-      });
-      $(".visitCount").text(total + " / " + known_organizations.length);
-      updateTravelViz();
-    }
-
-
-
-  </script>
-
-  <!--    utilities-->
-  <script type="text/javascript">
-
-    function convertMetersToMiles(i) {
-      return i * 0.000621371192;
-    }
-    function convertMilesToMeters(i) {
-      return i * 1609.344;
-    }
-  </script>    
-
-  <!-- become a FHIR module that parses records-->
-  <script type="text/javascript">
-
-    const RANDOMIZE_DISTANCE = 8000;
-    const known_patients = [];
-    const known_organizations = [
-      {name: "Waiting For Facility Information", visits: 0, virtual: 0}
-    ];
-    const encounterTracker = {
-      total: 0,
-      countByKind: [],
-      travel: {
-        saved: 0,
-        savedCount: 0,
-        distance: 0,
-        travelCount: 0,
-        travelTime: 0,
-        savedTime: 0
-      },
-      breadCrumbs: {
-        crumbs: [],
-        crumbIndex: {},
-        addCrumb: function (lat, lon, count = 1) {
-          let id = "ll" + lat + "x" + lon;
-          let idx = this.crumbIndex[id];
-          if (idx === undefined) {
-            idx = this.crumbs.length;
-            this.crumbs[idx] = {lat: lat, lon: lon, count: count}
-            this.crumbIndex[id] = idx;
-          } else {
-            this.crumbs[idx].count += count;
+      function buildVues() {
+        let totalVisitVue = new Vue({
+          el: "#visitCount",
+          data: encounterTracker
+        });
+        let facilityTableVue = new Vue({
+          el: "#facilityTable",
+          data: {
+            columns: ["name", "visits", "virtual"],
+            facilities: known_organizations
+          },
+          filters: {
+            capitalize: function (value) {
+              if (!value)
+                return ''
+              value = value.toString()
+              return value.charAt(0).toUpperCase() + value.slice(1)
+            }
           }
-          if (idx === undefined)
-            return null; // wooooah
-          return this.crumbs[idx];
-        }
+        });
+        let thGoalVue = new Vue({
+          el: "#thGoalHolder",
+          data: telehealthPercentages
+        });
+        window.totalVisitVuew = totalVisitVue;
+        window.facilityTableVue = facilityTableVue;
+        window.thGoalVue = thGoalVue;
+        $("#resetTHButton").on("click", function () {
+          telehealthPercentages.target = telehealthPercentages.simulation;
+          forceTelehealthMin(telehealthPercentages.simulation);
+        });
+        $("#telehealthGoal").on("change", function () {
+          $("resetTelehealth").show();
+          let requested = $("#telehealthGoal").val();
+          if (requested < telehealthPercentages.simulation)
+            requested = telehealthPercentages.simulation;
+          telehealthPercentages.target = requested;
+          forceTelehealthMin(requested);
+        });
       }
-    };
+    </script>
 
-    initHelper();
-    function initHelper() {
-      $("#state").change(function () {
-        let name = $("#state").val();
-        let state = stateHelper.getStateByName(name);
-        if (state == undefined)
-          alert("Sorry, I couldn't find information for that location!");
-        else {
-          let ll1 = L.latLng(state.latMin, state.lonMin);
-          let ll2 = L.latLng(state.latMax, state.lonMax);
 
-          let bounds = L.latLngBounds(ll1, ll2);
-          leaflet_map.fitBounds(bounds);
+    <!-- I don't know what this should be. maybe a simulation module. or maybe it just lives here? -->
+    <script type="text/javascript">
+      function recalculateEncounterInfo() {
+        let tracker = encounterTracker;
+        tracker.total = 0;
+        tracker.countByKind = [];
+        let ttravel = tracker.travel;
+        ttravel.saved = 0;
+        ttravel.savedCount = 0;
+        ttravel.distance = 0;
+        ttravel.travelCount = 0;
+        ttravel.travelTime = 0;
+        known_patients.forEach(function (patient) {
+          if (patient.travel && patient.travel.trips) {
+            patient.travel.trips.forEach(function (encounter) {
+              tracker.total++;
+              if (encounter.virtual) {
+                ttravel.savedCount++;
+                ttravel.saved += encounter.distance;
+                ttravel.savedTime += encounter.duration;
+              } else {
+                ttravel.travelCount++;
+                ttravel.distance += encounter.distance;
+                ttravel.travelTime += encounter.duration;
+              }
+              const idx = tracker.countByKind.map(kind => kind.encounterType).indexOf(encounter.code);
+              if (idx === -1) {
+                tracker.countByKind[tracker.countByKind.length] = {encounterType: encounter.code, total: 1};
+              } else {
+                tracker.countByKind[idx].total++;
+              }
+            });
+          }
+        });
+        
+      }
+      function forceTelehealthMin(val) {
+        
+        // reset everything
+        if (val === undefined)
+          val = telehealthPercentages.simulation;
+        val = Number(val);
+        let reset = telehealthPercentages.simulation === val;
+        let tracker = encounterTracker;
+        tracker.total = 0;
+        tracker.countByKind = [];
+        let ttravel = tracker.travel;
+        ttravel.saved = 0;
+        ttravel.savedCount = 0;
+        ttravel.distance = 0;
+        ttravel.travelCount = 0;
+        ttravel.travelTime = 0;
+        ttravel.savedTime = 0;
+        
+        let total = 0;
+        known_patients.forEach(function (patient) {
+          if (patient.travel && patient.travel.trips) {
+            patient.travel.trips.forEach(function (encounter) {
+              encounter.code = encounter.actualCode;
+              encounter.virtual = encounter.actualVirtual;
+              total++;
+            });
+          }
+        });
+
+        if (!reset) {
+          
+          let delta = val - telehealthPercentages.simulation;
+          let changecount = Math.ceil(total * (delta / 100));
+          console.debug("changecount", changecount);
+          let round = 0;
+          let pidx = 0;
+          let roundhit = false;
+          let skipped = [];
+          while (changecount > 0) {
+            $("#calcStatus").text("Pending updates " + changecount);
+            let p = known_patients[pidx];
+            if (p.travel && p.travel.trips.length > round) {
+              let pt = p.travel.trips[round]; 
+              if (pt && pt.virtualEligible && pt.code !== "virtual") {
+                roundhit = true;
+                pt.code = "virtual";
+                pt.virtual = true;
+                changecount--;
+              } else { 
+                skipped.push(pidx);
+              }
+            } else { skipped.push(pidx); }
+            pidx++;
+            if(pidx == known_patients.length) {
+              console.log("round, skipped.length, skipped", round, skipped.length, skipped);
+              skipped = [];
+              if(!roundhit) { changecount = 0; console.log("out of options, round " + round) }
+              pidx = 0; 
+              round++;
+              roundhit = false;
+            }
+          }
         }
+          
+        $("#calcStatus").text("");
+        recalculateEncounterInfo();
+        updateEncounterViz(true);
 
-      })
-      buildVues();
-      comms.setFHIRHandler(processFHIR);
-      comms.connect();
-      // do something smart later
+      }
 
-      $("#confButton").click(function () {
-        config();
-      });
-      $("#runButton").click(function () {
-        let rb = $("#runButton");
-        if ("Start" == rb.text()) {
-          rb.text("Stop");
-          goGoGo();
+    </script>
+
+
+    <!-- become a viz module -->
+    <script type="text/javascript">
+
+      let visitChart;
+      let travelChart;
+      function buildCharts() {
+        let visitOptions = {
+          title: 'Visits',
+          pieHole: 0.4,
+        };
+        visitChart = new google.visualization.PieChart(document.getElementById('visitDonut'));
+        travelChart = new google.visualization.ColumnChart(document.getElementById('travelDiv'));
+        let travelData = google.visualization.arrayToDataTable([
+          ['Travel', 'Miles', {role: 'style'}],
+          ['Spent', 0.0, 'red'],
+          ['Saved', 0.0, 'green']
+        ]);
+        travelChart.draw(travelData, {
+          chart: {
+            title: 'Travel Distance',
+          },
+          height: 250 // I should stop being a monster
+
+        });
+        // I wasn't kidding about the monster thing
+        $("#travelDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
+        travelTimeChart = new google.visualization.ColumnChart(document.getElementById('travelTimeDiv'));
+        let travelTimeData = google.visualization.arrayToDataTable([
+          ['Time', 'Hours', {role: 'style'}],
+          ['Spent', 0.0, 'red'],
+          ['Saved', 0.0, 'green']
+        ]);
+        travelTimeChart.draw(travelTimeData, {
+          chart: {
+            title: 'Travel Time',
+          },
+          height: 250 // I should stop being a monster
+
+        });
+
+        $("#travelTimeDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
+        updateEncounterViz();
+      }
+
+
+      function updateTravelViz() {
+        let travelData = google.visualization.arrayToDataTable([
+          ['Type', 'Miles', {role: 'style'}],
+          ['Traveled', Math.floor(encounterTracker.travel.distance), 'red'],
+          ['Saved', Math.floor(encounterTracker.travel.saved), 'green']
+        ]);
+        travelChart.draw(travelData, {
+          chart: {
+            title: 'Travel Distance',
+          },
+          height: 250 // I should stop being a monster
+
+        });
+        $("#travelDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
+
+        let hour = 60 * 60;
+        let tt = encounterTracker.travel.travelTime / hour;
+        if (tt < 1 && tt > 0)
+          tt = 1;
+        else
+          tt = Math.floor(tt);
+
+        let st = encounterTracker.travel.savedTime / hour;
+        if (st < 1 && st > 0)
+          st = 1;
+        else
+          st = Math.floor(st);
+        let travelTimeData = google.visualization.arrayToDataTable([
+          ['Time', 'Hours', {role: 'style'}],
+          ['Spent', tt, 'red'],
+          ['Saved', st, 'green']
+        ]);
+        travelTimeChart.draw(travelTimeData, {
+          chart: {
+            title: 'Travel Time',
+          },
+          height: 250 // I should stop being a monster
+
+        });
+        $("#travelTimeDiv > div > div:first-child > :first-child :first-child")[0].children[2].style.display = "none";
+
+      }
+
+      const updateEvery = 10;
+      let updateCount = 1;
+
+
+      function updateEncounterViz(force = false) {
+        updateCount++;
+        if (force || updateCount % updateEvery == 0) {
+          updateCount = 1;
+        } else
+          return;
+        let values = [["Type", "# of Visits"]];
+        const byKind = encounterTracker.countByKind;
+
+
+        byKind.forEach(function (holder) {
+          values.push([holder.encounterType, holder.total]);
+        });
+
+
+        let data = google.visualization.arrayToDataTable(values);
+        visitChart.draw(data, {
+          pieHole: 0.4,
+          chart: {
+            title: 'Visit Types'
+          },
+          height: 250 // I should stop being a monster
+
+        });
+        updateTravelViz();
+        updateAdoptionInfo();
+      }
+
+      function updateAdoptionInfo() {
+        const countByKind = encounterTracker.countByKind;
+        const idx = countByKind.map(kind => kind.encounterType).indexOf("virtual");
+        if (idx === -1) {
+          telehealthPercentages.actual = "0";
         } else {
-          noNoNo();
-          rb.prop("disabled", true);
-          rb.text("Start");
+          let thp = Number((countByKind[idx].total / encounterTracker.total * 100).toFixed(1));
+          telehealthPercentages.actual = thp;
+        }
+      }
+    </script>
+
+    <!--    utilities-->
+    <script type="text/javascript">
+
+      function convertMetersToMiles(i) {
+        return i * 0.000621371192;
+      }
+      function convertMilesToMeters(i) {
+        return i * 1609.344;
+      }
+    </script>    
+
+    <!-- become a FHIR module that parses records-->
+    <script type="text/javascript">
+
+      const RANDOMIZE_DISTANCE = 8000;
+      const known_patients = [];
+      const practitioners_cheat = [];
+      const known_organizations = [
+        {name: "Waiting For Facility Information", visits: 0, virtual: 0}
+      ];
+
+
+      const encounterTracker = {
+        total: 0,
+        countByKind: [],
+        travel: {
+          saved: 0,
+          savedCount: 0,
+          distance: 0,
+          travelCount: 0,
+          travelTime: 0,
+          savedTime: 0
+        },
+        breadCrumbs: {
+          crumbs: [],
+          crumbIndex: {},
+          addCrumb: function (lat, lon, count = 1) {
+            let id = "ll" + lat + "x" + lon;
+            let idx = this.crumbIndex[id];
+            if (idx === undefined) {
+              idx = this.crumbs.length;
+              this.crumbs[idx] = {lat: lat, lon: lon, count: count}
+              this.crumbIndex[id] = idx;
+            } else {
+              this.crumbs[idx].count += count;
+            }
+            if (idx === undefined)
+              return null; // wooooah
+            return this.crumbs[idx];
+          },
+          clearCrumbs: function (really) {
+            if (!really)
+              return;
+            this.crumbs.length = 0;
+            this.crumbIndex = {};
+          }
         }
 
-      })
-      setTimeout(function () {
-        $("#confButton").prop('disabled', false);
-      });
-    }
-
-
-    function config() {
-      comms.stop();
-      known_patients.length = 0;
-      known_organizations.length = 0;
-      known_organizations[known_organizations.length] = {name: "Waiting", visits: 0, virtual: 0};
-      encounterTracker.total = 0;
-      encounterTracker.countByKind = [];
-      encounterTracker.travel.saved = 0;
-      encounterTracker.travel.savedCount = 0;
-      encounterTracker.travel.distance = 0;
-      encounterTracker.travel.travelCount = 0;
-      encounterTracker.breadCrumbs.crumbIndex = {};
-      encounterTracker.breadCrumbs.crumbs = [];
-      if (window.leaflet_layers.travelHeat !== null) {
-        window.leaflet_map.layersControl.removeLayer(window.leaflet_layers.travelHeat);
-        window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
-      }
-      window.leaflet_layers.facilityLayer.clearLayers();
-      window.leaflet_layers.patientLayer.clearLayers();
-      updateEncounterViz();
-      $("#runButton").prop("disabled", true);
-      $("#population option:selected").text($("#population option:selected").val());
-      $("#population")
-      let config = {
-        yearsOfHistory: Number($("#yearsOfHistory").val()),
-        population: Number($("#population").val()),
-        state: $("#state").val()
       };
-      comms.configure(config);
-      setTimeout(function () {
-        $("#runButton").prop("disabled", false);
-      }, 1000);
-    }
-    function goGoGo() {
-      comms.start();
-      known_organizations.length = 0;
-    }
 
-    function noNoNo() {
-      comms.stop();
-    }
+      initHelper();
+      function initHelper() {
+        $("#state").change(function () {
+          let name = $("#state").val();
+          let state = stateHelper.getStateByName(name);
+          if (state == undefined)
+            alert("Sorry, I couldn't find information for that location!");
+          else {
+            let ll1 = L.latLng(state.latMin, state.lonMin);
+            let ll2 = L.latLng(state.latMax, state.lonMax);
 
-    function processFHIR(fhir) {
+            let bounds = L.latLngBounds(ll1, ll2);
+            leaflet_map.fitBounds(bounds);
+          }
 
-      if (fhir === null) { // special case, switch me to a different call back or to event broadcasts
-        $("#runButton").text("Start");
+        })
+        buildVues();
+        comms.setFHIRHandler(processFHIR);
+        comms.connect();
+        // do something smart later
+
+        $("#confButton").click(function () {
+          config();
+        });
+        $("#runButton").click(function () {
+          let rb = $("#runButton");
+          if ("Start" == rb.text()) {
+            rb.text("Stop");
+            goGoGo();
+          } else {
+            noNoNo();
+            rb.prop("disabled", true);
+            rb.text("Start");
+          }
+
+        })
+        setTimeout(function () {
+          $("#confButton").prop('disabled', false);
+        });
+      }
+
+
+      function resetTravel() {
+        encounterTracker.total = 0;
+        encounterTracker.countByKind = [];
+        encounterTracker.travel.saved = 0;
+        encounterTracker.travel.savedCount = 0;
+        encounterTracker.travel.distance = 0;
+        encounterTracker.travel.travelCount = 0;
+        encounterTracker.breadCrumbs.clearCrumbs(true);
+        encounterTracker.travel.saved = 0;
+        encounterTracker.travel.savedCount = 0;
+        encounterTracker.travel.savedTime = 0;
+        encounterTracker.travel.distance = 0;
+        encounterTracker.travel.travelCount = 0;
+        encounterTracker.travel.travelTime = 0;
+        encounterTracker.breadCrumbs.clearCrumbs(true);
+        if (window.leaflet_layers.travelHeat !== null) {
+          window.leaflet_map.layersControl.removeLayer(window.leaflet_layers.travelHeat);
+          window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
+        }
+        window.leaflet_layers.facilityLayer.clearLayers();
+        window.leaflet_layers.patientLayer.clearLayers();
+      }
+      function config() {
+        comms.stop();
+        known_patients.length = 0;
+        known_organizations.length = 0;
+        known_organizations[known_organizations.length] = {name: "Waiting", visits: 0, virtual: 0};
+        telehealthPercentages.actual = 0;
+        telehealthPercentages.simulation = 0;
+        telehealthPercentages.target = 0;
+        resetTravel();
+        updateEncounterViz(true);
         $("#runButton").prop("disabled", true);
         $("#population option:selected").text($("#population option:selected").val());
-        mapTravel();
-        return;
+        $("#population")
+        let config = {
+          yearsOfHistory: Number($("#yearsOfHistory").val()),
+          population: Number($("#population").val()),
+          state: $("#state").val()
+        };
+        comms.configure(config);
+        setTimeout(function () {
+          $("#runButton").prop("disabled", false);
+        }, 1000);
+      }
+      function goGoGo() {
+        comms.start();
+        known_organizations.length = 0;
       }
 
-      let organizations = processOrganizations(fhir);
-      mapOrganizations(organizations);
-      let patients = processPatients(fhir);
-      mapPatients(patients);
-      let encounterInfo = processPatientEncounters(fhir);
-      let patientEncounterStats = encounterInfo.encounterStats;
-      Object.keys(patientEncounterStats).forEach(function (key) {
-        encounterTracker.total += patientEncounterStats[key];
-        const countByKind = encounterTracker.countByKind;
-        const idx = countByKind.map(kind => kind.encounterType).indexOf(key);
-        if (idx === -1) {
-          countByKind[countByKind.length] = {encounterType: key, total: patientEncounterStats[key]};
-        } else {
-          countByKind[idx].total += patientEncounterStats[key];
-        }
-      });
-      updateEncounterViz();
-    }
-
-    function mapTravel() {
-
-      if (window.leaflet_layers.travelHeat !== null) {
-        window.leaflet_map.layersControl.removeLayer(window.leaflet_layers.travelHeat);
-        window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
+      function noNoNo() {
+        comms.stop();
       }
-      let data = massageCrumbs(encounterTracker.breadCrumbs.crumbs);
-      window.leaflet_layers.travelHeat = L.heatLayer(data, {radius: 10});
-      window.leaflet_map.layersControl.addOverlay(window.leaflet_layers.travelHeat, "Travel Frequency");
-      window.leaflet_layers.travelHeat.addTo(window.leaflet_map);
 
-    }
+      let simulationRunning = false;
+      function processFHIR(fhir) {
 
-    function massageCrumbs(crumbs) {
-      var values = [];
-      crumbs.forEach(function (crumb) {
-        values[values.length] = [crumb.lat, crumb.lon];
-      });
-      return values;
-    }
-
-
-    function normalize(val, min = 0.0, max = 1.0) {
-      return (val - min) / (max - min);
-    }
-    function mapPatients(patients = []) {
-      patients.forEach(function (patient) {
-        if (patient.marker !== undefined)
-          return; // fast exit, already mapped
-        if (patient.location === undefined)
-          return; // can't map
-        const loc = patient.location;
-        const ll = [loc.latitude, loc.longitude];
-//          let marker = L.marker(ll);
-        const marker = L.circle(ll, {
-          color: 'blue',
-          fillColor: 'lightblue',
-          fillOpacity: 0.5,
-          radius: 50
-        })
-        window.leaflet_layers.patientLayer.addLayer(marker);
-
-//          marker.addTo(window.leaflet_map);
-      })
-    }
-
-    function mapOrganizations(organizations = []) {
-      organizations.forEach(function (org) {
-        if (org.location == undefined)
-          return;
-        if (org.marker != undefined) {
+        if (fhir === null) { // special case, switch me to a different call back or to event broadcasts
+          $("#runButton").text("Start");
+          $("#runButton").prop("disabled", true);
+          $("#population option:selected").text($("#population option:selected").val());
+          updateAdoptionInfo();
+          telehealthPercentages.simulation = telehealthPercentages.actual;
+//          forceTelehealthMin(undefined);
+          mapTravel();
+          updateEncounterViz();
+          simulationRunning = false;
+          $("#telehealthGoal").prop("disabled", false);
           return;
         }
-        let loc = org.location;
-        let ll = [loc.latitude, loc.longitude];
-//          let marker = L.marker(ll);
-        let marker = L.circle(ll, {
-          color: 'red',
-          fillColor: 'pink',
-          fillOpacity: 0.5,
-          radius: 75
-        })
-        org.marker = marker;
-        window.leaflet_layers.facilityLayer.addLayer(marker);
-
-        //marker.addTo(window.leaflet_map);
-      });
-    }
-
-    function isKnownPatient(id = "") {
-      return  (known_patients.filter(patient => patient.fhir_id === id).length !== 0)
-    }
-    function processPatients(fhir) {
-      const patients = [];
-      let patientStanzas = getByResourceType(fhir, "Patient");
-      patientStanzas.forEach(function (entry) {
-        let patient = {travel: {total: 0, saved: 0, trips: []}};
-        const resource = entry.resource;
-        if (resource.id !== undefined)
-          patient.fhir_id = resource.id;
-        if (isKnownPatient(patient.fhir_id))
-          return;
-        else
-          known_patients[known_patients.length] = patient;
-        if (resource.address !== undefined) {
-          const addresses = resource.address;
-          addresses.forEach(function (address) {
-            address.extension.forEach(function (extension) {
-              let latlon = {};
-              latlon = processLocationExtension(extension);
-              if (latlon === null || (latlon.latitude !== undefined && latlon.longitude !== undefined))
-                if (RANDOMIZE_DISTANCE > 0) {
-                  let ll = new LatLon(latlon.latitude, latlon.longitude);
-                  let bearing = randomRange(0, 60);
-                  let distance = randomRange(0, RANDOMIZE_DISTANCE);
-                  ll = ll.destinationPoint(distance, bearing);
-                  latlon.latitude = ll.lat;
-                  latlon.longitude = ll.lon;
-                }
-              patient.location = latlon;
-            });
-          });
-        }
-        patients[patients.length] = patient;
-      });
-      $("#population option:selected").text(known_patients.length + "/" + $("#population option:selected").val());
-
-      return patients;
-    }
-
-    function randomRange(min, max) // min and max included
-    {
-      return Math.floor(Math.random() * (max - min + 1) + min);
-    }
-    function urnToId(urn) {
-      if (urn.startsWith("urn:uuid:"))
-        urn = urn.substring(9);
-      return urn;
-    }
-
-    function processPatientEncounters(fhir) {
-      let encounters = getByResourceType(fhir, "Encounter");
-      let encounterNumbers = {};
-      let discarded = 0;
-      const cutoff = new Date().getYear() - Number($("#yearsOfHistory").val());
-
-      encounters.forEach(function (encounter) {
-
-        let org = null;
-        let resource = encounter.resource;
-        let code = resource.class.code.toLowerCase();
-        let end = new Date(resource.period.end);
-        let year = new String(end.getYear());
-        if (year < cutoff) {
-          discarded++;
-          return;
-        }
-
-        if (resource.serviceProvider !== undefined && resource.serviceProvider.reference !== undefined) {
-          // they're called providers here- I wonder if this is a mix of organizations and
-          // individuals. if so, this is wrong, it only indexes into the 
-          let spid = resource.serviceProvider.reference;
-          spid = urnToId(spid);
-          org = findOrganization(spid);
-          if (org !== null) {
-
-            org.visits++;
+        simulationRunning = true;
+        let organizations = processOrganizations(fhir);
+        mapOrganizations(organizations);
+        processPractitioners(fhir);
+        let patients = processPatients(fhir);
+        mapPatients(patients);
+        let encounterInfo = processPatientEncounters(fhir);
+        let patientEncounterStats = encounterInfo.encounterStats;
+        Object.keys(patientEncounterStats).forEach(function (key) {
+          encounterTracker.total += patientEncounterStats[key];
+          const countByKind = encounterTracker.countByKind;
+          const idx = countByKind.map(kind => kind.encounterType).indexOf(key);
+          if (idx === -1) {
+            countByKind[countByKind.length] = {encounterType: key, total: patientEncounterStats[key]};
           } else {
-            console.debug("found an unreferenced organization. this was unexpected given processing order");
-            org = {
-              fhir_id: spid,
-              visits: 1,
-              virtual: "virtual" === code ? 1 : 0
-            };
-            known_organizations.push(org);
+            countByKind[idx].total += patientEncounterStats[key];
           }
+        });
+        updateEncounterViz();
+      }
+
+      function mapTravel() {
+
+        if (window.leaflet_layers.travelHeat !== null) {
+          window.leaflet_map.layersControl.removeLayer(window.leaflet_layers.travelHeat);
+          window.leaflet_map.removeLayer(window.leaflet_layers.travelHeat);
         }
-        if (resource.subject !== undefined && resource.subject.reference !== undefined) {
-          let pid = urnToId(resource.subject.reference);
-          let patient = findPatient(pid, true);
-          if (patient !== null && org !== null)
-            if (patient.location !== undefined && org.location !== undefined) {
-              let virtual = code === "virtual";
-              if (virtual) {
-                if (org.virtual === undefined)
-                  org.virtual = 0;
-                org.virtual++;
-              }
-              processTrip(patient, org, virtual);
-            }
-        }
-
-        if (encounterNumbers[code] === undefined)
-          encounterNumbers[code] = 1;
-        else
-          encounterNumbers[code]++;
-      });
-      return {"encounters": encounters, "encounterStats": encounterNumbers};
-    }
-
-
-    const osrm = {start: "http://osrm.mitre.org:5000/route/v1/driving/", args: "?overview=false&steps=true"};
-
-    const waypointCheat = {};
-    function processTrip(patient, org, virtual = false, crumbDistance = 100) {
-      let start = patient.location;
-      let end = org.location;
-
-      let waypoints = [];
-      let duration = 0;
-      let distance = 0;
-
-      let id = pairIdHelper(start, end);
-      if (waypointCheat[id] !== undefined) {
-        finishTrip(waypointCheat[id], virtual);
+        let data = massageCrumbs(encounterTracker.breadCrumbs.crumbs);
+        window.leaflet_layers.travelHeat = L.heatLayer(data, {radius: 10});
+        window.leaflet_map.layersControl.addOverlay(window.leaflet_layers.travelHeat, "Travel Frequency");
+        window.leaflet_layers.travelHeat.addTo(window.leaflet_map);
 
       }
-      // soooo, this is probably a BAD place to put this, buuuuttt....
-      let url = osrm.start + start.longitude + "," + start.latitude + ";"
-              + end.longitude + "," + end.latitude + osrm.args;
 
-      fetch(url).then(function (response) {
-        return response.json();
-      }).then(function (json) {
-        if (json.code === "Ok" && json.routes !== undefined) {
-          route = json.routes[0];
-          distance = route.distance;
-          duration = route.duration;
-          if (route.legs)
-            route.legs.forEach(function (leg) {
-              leg.steps.forEach(function (step) {
-                waypoints.push({longitude: step.maneuver.location[0], latitude: step.maneuver.location[1], duration: step.duration});
-              });
-            })
+      function massageCrumbs(crumbs) {
+        var values = [];
+        crumbs.forEach(function (crumb) {
+          values[values.length] = [crumb.lat, crumb.lon];
+        });
+        return values;
+      }
 
-        }
-        finishTrip({id: id, path: waypoints, distance: distance, duration: duration, patient: patient}, virtual, crumbDistance);
 
-      });
-    }
-    function finishTrip(helper, virtual, crumbDistance = 100) {
-      let miles = convertMetersToMiles(helper.distance * 2);
-      let travel = encounterTracker.travel;
-      let patient = helper.patient;
-      let patient_travel = patient.travel;
-      patient_travel.trips.push({distance: miles, virtual: virtual});
-      if (virtual) {
-        travel.saved += miles;
-        travel.savedCount++;
-        travel.savedTime += (helper.duration * 2);
+      function normalize(val, min = 0.0, max = 1.0) {
+        return (val - min) / (max - min);
+      }
+      function mapPatients(patients = []) {
+        patients.forEach(function (patient) {
+          if (patient.marker !== undefined)
+            return; // fast exit, already mapped
+          if (patient.location === undefined)
+            return; // can't map
+          const loc = patient.location;
+          const ll = [loc.latitude, loc.longitude];
+          //          let marker = L.marker(ll);
+          const marker = L.circle(ll, {
+            color: 'blue',
+            fillColor: 'lightblue',
+            fillOpacity: 0.5,
+            radius: 50
+          })
+          window.leaflet_layers.patientLayer.addLayer(marker);
 
-        patient_travel.saved += miles;
-        patient_travel.savedCount++;
-        patient_travel.savedTime += (helper.duration * 2);
+          //          marker.addTo(window.leaflet_map);
+        })
+      }
 
-      } else {
-        travel.distance += miles;
-        travel.travelCount++;
-        travel.travelTime += (helper.duration * 2);
-
-        patient_travel.distance += miles;
-        patient_travel.travelCount++;
-        patient_travel.travelTime += (helper.duration * 2);
-        // add event type 
-
-        let path = helper.path;
-
-        if (path.length > 1) {
-          let idx = 0;
-          let limit = path.length - 1;
-          while (idx < limit) {
-            let step1 = new LatLon(path[idx].latitude, path[idx].longitude);
-            let step2 = new LatLon(path[idx + 1].latitude, path[idx + 1].longitude);
-            let bearing = step1.bearingTo(step2);
-            let stepDistanceMeters = step1.distanceTo(step2);
-            let crumbCount = Math.floor(stepDistanceMeters / crumbDistance);
-            let here = step1;
-            encounterTracker.breadCrumbs.addCrumb(here.lat, here.lon, 2);
-            for (let  i = 0; i < crumbCount; i++) {
-              let next = here.destinationPoint(crumbDistance + (Math.random(1, 100) * (Math.random() >= 0.5 ? 0 : 1)), bearing);
-              here = next;
-              encounterTracker.breadCrumbs.addCrumb(here.lat, here.lon, 2);
-            }
-            idx++;
+      function mapOrganizations(organizations = []) {
+        organizations.forEach(function (org) {
+          if (org.location == undefined)
+            return;
+          if (org.marker != undefined) {
+            return;
           }
-        }
-    }
-    }
+          let loc = org.location;
+          let ll = [loc.latitude, loc.longitude];
+          //          let marker = L.marker(ll);
+          let marker = L.circle(ll, {
+            color: 'red',
+            fillColor: 'pink',
+            fillOpacity: 0.5,
+            radius: 75
+          })
+          org.marker = marker;
+          window.leaflet_layers.facilityLayer.addLayer(marker);
+
+          //marker.addTo(window.leaflet_map);
+        });
+      }
+
+      function isKnownPatient(id = "") {
+        return  (known_patients.filter(patient => patient.fhir_id === id).length !== 0)
+      }
+      function processPatients(fhir) {
+        const patients = [];
+        let patientStanzas = getByResourceType(fhir, "Patient");
+        patientStanzas.forEach(function (entry) {
 
 
-    function pairIdHelper(start, end) {
-      return "p" + start.latitude + "x" + start.longitude
-              + "/" + end.latitude + "x" + end.longitude;
-    }
-
-    function findOrganization(id = null, name = null) {
-      let idx = -1;
-      if (id !== null)
-        idx = known_organizations.map(org => org.fhir_id).indexOf(id);
-      else if (name !== null)
-        idx = known_organizations.map(org => org.name).indexOf(name);
-      if (idx === -1)
-        return null;
-      return known_organizations[idx];
-    }
-    function findPatient(id = null) {
-      let idx = -1;
-      if (id !== null)
-        idx = known_patients.map(person => person.fhir_id).indexOf(id);
-      if (idx === -1)
-        return null;
-      return known_patients[idx];
-    }
-
-
-    function processOrganizations(fhir) {
-      let orgStanzas = getByResourceType(fhir, "Organization");
-      orgStanzas.forEach(function (orgStanza) {
-        let resource = orgStanza.resource;
-        let org = {name: null};
-        if (resource.id !== undefined)
-          org.fhir_id = resource.id;
-        if (resource.name !== undefined)
-          org.name = resource.name;
-        // early exit if we have the name
-        // we could have it with the id if it was filled in via an encounter reference
-        if (known_organizations.filter(known_org => known_org.name === org.name).length !== 0)
-          return;
-        if (org.visits === undefined) {
-          org.visits = 1;
-          org.virtual = 0;
-        }
-        if (resource.address !== undefined)
-          resource.address.forEach(function (address) {
-            if (address.extension !== null) {
-              address.extension.forEach(function (extension) {
-                let loc = processLocationExtension(extension);
-                if (loc !== null) {
-                  org.location = loc;
-                }
-
-              });
-              org.address = address;
-            }
-
-          });
-        if (org.fhir_id !== null) {
-          // see if we have a pre-reference
-          const idx = known_organizations.map(org => org.fhir_id).indexOf(org.fhir_id);
-          if (idx === -1)
-            known_organizations.push(org);
+          let patient = {travel: {total: 0, saved: 0, savedCount: 0, distance: 0, travelCount: 0, savedTime: 0, trips: []}};
+          const resource = entry.resource;
+          if (resource.id !== undefined)
+            patient.fhir_id = resource.id;
+          if (isKnownPatient(patient.fhir_id))
+            return;
           else
-            known_organizations[idx] = org;
+            known_patients[known_patients.length] = patient;
+          if (resource.address !== undefined) {
+            const addresses = resource.address;
+            addresses.forEach(function (address) {
+              address.extension.forEach(function (extension) {
+                let latlon = {};
+                latlon = processLocationExtension(extension);
+                if (latlon === null || (latlon.latitude !== undefined && latlon.longitude !== undefined))
+                  if (RANDOMIZE_DISTANCE > 0) {
+                    let ll = new LatLon(latlon.latitude, latlon.longitude);
+                    let bearing = randomRange(0, 60);
+                    let distance = randomRange(0, RANDOMIZE_DISTANCE);
+                    ll = ll.destinationPoint(distance, bearing);
+                    latlon.latitude = ll.lat;
+                    latlon.longitude = ll.lon;
+                  }
+                patient.location = latlon;
+              });
+            });
+          }
+          patients[patients.length] = patient;
+        });
+        $("#population option:selected").text(known_patients.length + "/" + $("#population option:selected").val());
+
+        return patients;
+      }
+
+      function randomRange(min, max) // min and max included
+      {
+        return Math.floor(Math.random() * (max - min + 1) + min);
+      }
+      function urnToId(urn) {
+        if (urn.startsWith("urn:uuid:"))
+          urn = urn.substring(9);
+        return urn;
+      }
+
+      function processPatientEncounters(fhir) {
+        let encounters = getByResourceType(fhir, "Encounter");
+        let encounterNumbers = {};
+        let discarded = 0;
+        const cutoff = new Date().getYear() - Number($("#yearsOfHistory").val());
+
+        encounters.forEach(function (encounter) {
+
+          let org = null;
+          let resource = encounter.resource;
+          let code = resource.class.code.toLowerCase();
+          let end = new Date(resource.period.end);
+          let year = new String(end.getYear());
+          if (year < cutoff) {
+            discarded++;
+            return;
+          }
+
+          if (resource.serviceProvider !== undefined && resource.serviceProvider.reference !== undefined) {
+            // they're called providers here- I wonder if this is a mix of organizations and
+            // individuals. if so, this is wrong, it only indexes into the 
+            let spid = resource.serviceProvider.reference;
+            spid = urnToId(spid);
+            org = findOrganization(spid);
+            if (org !== null) {
+
+              org.visits++;
+            } else {
+              console.debug("found an unreferenced organization. this was unexpected given processing order");
+              org = {
+                fhir_id: spid,
+                visits: 1,
+                virtual: "virtual" === code ? 1 : 0,
+              };
+              known_organizations.push(org);
+            }
+          }
+          if (resource.subject !== undefined && resource.subject.reference !== undefined) {
+            let pid = urnToId(resource.subject.reference);
+            let patient = findPatient(pid, true);
+            if (patient !== null && org !== null)
+              if (patient.location !== undefined && org.location !== undefined) {
+                let virtual = code === "virtual";
+                if (virtual) {
+                  if (org.virtual === undefined)
+                    org.virtual = 0;
+                  org.virtual++;
+                }
+                processTrip(patient, org, code);
+              }
+          }
+
+          if (encounterNumbers[code] === undefined)
+            encounterNumbers[code] = 1;
+          else
+            encounterNumbers[code]++;
+        });
+        return {"encounters": encounters, "encounterStats": encounterNumbers};
+      }
+
+
+      const osrm = {start: "http://osrm.mitre.org:5000/route/v1/driving/", args: "?overview=false&steps=true"};
+
+      const waypointCheat = {};
+      let pendingDistances = 0;
+      function processTrip(patient, org, code) {
+        let start = patient.location;
+        let end = org.location;
+
+        let waypoints = [];
+        let duration = 0;
+        let distance = 0;
+
+        let id = pairIdHelper(start, end);
+        if (waypointCheat[id] !== undefined) {
+          finishTrip(waypointCheat[id], code);
+          return;
+
         }
-      });
-      return known_organizations;
-    }
+        // soooo, this is probably a BAD place to put this, buuuuttt....
+        let url = osrm.start + start.longitude + "," + start.latitude + ";"
+                + end.longitude + "," + end.latitude + osrm.args;
+        pendingDistances++;
+        fetch(url).then(function (response) {
+          return response.json();
+        }).then(function (json) {
+          if (json.code === "Ok" && json.routes !== undefined) {
+            route = json.routes[0];
+            distance = route.distance;
+            duration = route.duration;
+            if (route.legs)
+              route.legs.forEach(function (leg) {
+                leg.steps.forEach(function (step) {
+                  waypoints.push({longitude: step.maneuver.location[0], latitude: step.maneuver.location[1], duration: step.duration});
+                });
+              })
 
-    function processLocationExtension(holder) {
-      let latlon = {};
-      holder.extension.forEach(function (ext, idx) {
-        if (ext.url == "latitude")
-          latlon.latitude = Number(ext.valueDecimal.toFixed(4));
-        else if (ext.url == "longitude")
-          latlon.longitude = Number(ext.valueDecimal.toFixed(4));
-      });
-      if (latlon.latitude !== undefined && latlon.longitude !== undefined)
-        return latlon;
-      else
-        return null;
-    }
+          }
+          finishTrip({id: id, path: waypoints, distance: distance * 2, duration: duration * 2, patient: patient, org_id: org.fhir_id}, code);
+          pendingDistances--;
+          $("#calcStatus").text("Pending travel: " + pendingDistances)
+          if (pendingDistances < 1) {
+            $("#calcStatus").text("");
+            updateEncounterViz(true);
+          }
+        });
+      }
+      const virtualEligibleEncounters = ["ambulatory", "outpatient", "wellness"];
+      function finishTrip(helper, code, crumbDistance = 500) {
+        let virtual = "virtual" === code;
+        let miles = convertMetersToMiles(helper.distance);
+        let travel = encounterTracker.travel;
+        let patient = helper.patient;
+        let patient_travel = patient.travel;
+        let trip_details = {
+          distance: miles,
+          actualVirtual: virtual,
+          actualCode: code,
+          code: code,
+          virtual: virtual,
+          virtualEligible: virtualEligibleEncounters.indexOf(code) !== -1,
+          duration: helper.duration,
+          breadCrumbs: []
+        };
+        patient_travel.trips.push(trip_details);
+        if (virtual) {
+          travel.saved += miles;
+          travel.savedCount++;
+          travel.savedTime += helper.duration;
 
-    function getByResourceType(fhir, resourceType) {
-      return fhir.entry.filter(obj => {
-        return obj.resource.resourceType === resourceType;
-      });
-    }
+          patient_travel.saved += miles;
+          patient_travel.savedCount++;
+          patient_travel.savedTime += helper.duration;
 
-  </script>
+        } else {
+          travel.distance += miles;
+          travel.travelCount++;
+          travel.travelTime += helper.duration;
+
+          patient_travel.total += miles;
+          patient_travel.travelCount++;
+          patient_travel.travelTime += helper.duration;
+          // add event type 
+
+          let path = helper.path;
+
+          if (path.length > 1) {
+            let idx = 0;
+            let limit = path.length - 1;
+            while (idx < limit) {
+              let step1 = new LatLon(path[idx].latitude, path[idx].longitude);
+              let step2 = new LatLon(path[idx + 1].latitude, path[idx + 1].longitude);
+              let bearing = step1.bearingTo(step2);
+              let stepDistanceMeters = step1.distanceTo(step2);
+              let crumbCount = Math.floor(stepDistanceMeters / crumbDistance);
+              let here = step1;
+              encounterTracker.breadCrumbs.addCrumb(here.lat, here.lon, 2);
+              trip_details.breadCrumbs.push({latitude: here.lat, longitude: here.lon, count: 2});
+              for (let  i = 0; i < crumbCount; i++) {
+                let next = here.destinationPoint(crumbDistance + (Math.random(1, 100) * (Math.random() >= 0.5 ? 0 : 1)), bearing);
+                here = next;
+                encounterTracker.breadCrumbs.addCrumb(here.lat, here.lon, 2);
+                trip_details.breadCrumbs.push({latitude: here.lat, longitude: here.lon, count: 2});
+              }
+              idx++;
+            }
+          }
+      }
+      }
+
+      function pairIdHelper(start, end) {
+        return "p" + start.latitude + "x" + start.longitude
+                + "/" + end.latitude + "x" + end.longitude;
+      }
+
+      function findOrganization(id = null, name = null) {
+        let idx = -1;
+        if (id !== null)
+          idx = known_organizations.map(org => org.fhir_id).indexOf(id);
+        else if (name !== null)
+          idx = known_organizations.map(org => org.name).indexOf(name);
+        if (idx === -1)
+          return null;
+        return known_organizations[idx];
+      }
+      function findPatient(id = null) {
+        let idx = -1;
+        if (id !== null)
+          idx = known_patients.map(person => person.fhir_id).indexOf(id);
+        if (idx === -1)
+          return null;
+        return known_patients[idx];
+      }
+
+      pp = 0;
+      np = 0;
+      function processPractitioners(fhir) {
+        let pStanzas = getByResourceType(fhir, "Practitioner");
+        pp += pStanzas.length;
+        if (pStanzas.length == 0)
+          np++;
+        pStanzas.forEach(function (p) {
+
+          findorCreatePractitioner(p.resource.id);
+        });
+      }
+
+      pc = 0;
+      function findorCreatePractitioner(id = null) {
+        pc++;
+        if (id === null)
+          return null;
+        let idx = -1;
+        if (id !== null)
+          idx = practitioners_cheat.map(p => p.fhir_id).indexOf(id);
+        if (idx === -1) {
+          let p = {fhir_id: id, count: 0};
+          practitioners_cheat[practitioners_cheat.length] = p;
+          return p;
+        } else {
+          return  practitioners_cheat[idx];
+      }
+      }
+
+      function processOrganizations(fhir) {
+        let orgStanzas = getByResourceType(fhir, "Organization");
+        orgStanzas.forEach(function (orgStanza) {
+          let resource = orgStanza.resource;
+          let org = {name: null};
+          if (resource.id !== undefined)
+            org.fhir_id = resource.id;
+          if (resource.name !== undefined)
+            org.name = resource.name;
+          // early exit if we have the name
+          // we could have it with the id if it was filled in via an encounter reference
+          if (known_organizations.filter(known_org => known_org.name === org.name).length !== 0)
+            return;
+          if (org.visits === undefined) {
+            org.visits = 1;
+            org.virtual = 0;
+          }
+          if (resource.address !== undefined)
+            resource.address.forEach(function (address) {
+              if (address.extension !== null) {
+                address.extension.forEach(function (extension) {
+                  let loc = processLocationExtension(extension);
+                  if (loc !== null) {
+                    org.location = loc;
+                  }
+
+                });
+                org.address = address;
+              }
+
+            });
+          if (org.fhir_id !== null) {
+            // see if we have a pre-reference
+            const idx = known_organizations.map(org => org.fhir_id).indexOf(org.fhir_id);
+            if (idx === -1)
+              known_organizations.push(org);
+            else
+              known_organizations[idx] = org;
+          }
+        });
+        return known_organizations;
+      }
+
+      function processLocationExtension(holder) {
+        let latlon = {};
+        holder.extension.forEach(function (ext, idx) {
+          if (ext.url == "latitude")
+            latlon.latitude = Number(ext.valueDecimal.toFixed(4));
+          else if (ext.url == "longitude")
+            latlon.longitude = Number(ext.valueDecimal.toFixed(4));
+        });
+        if (latlon.latitude !== undefined && latlon.longitude !== undefined)
+          return latlon;
+        else
+          return null;
+      }
+
+      function getByResourceType(fhir, resourceType) {
+        return fhir.entry.filter(obj => {
+          return obj.resource.resourceType === resourceType;
+        });
+      }
+
+    </script>
 
 
-</body>
+  </body>
 </html>
