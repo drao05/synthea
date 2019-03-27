@@ -28,6 +28,9 @@
 
       }
 
+      .virtualResourceLabel {
+        font-weight: 500;
+      }
     </style>
     <title></title>
   </head>
@@ -65,6 +68,7 @@
             <option value="100">100</option>
             <option value="1000">1000</option>
             <option value="10000">10000</option>
+            <option value="32700">32700</option>
           </select>
         </div>
         <div class="col-auto">
@@ -84,13 +88,16 @@
       <div class="row" >
         <div class="col" id="thGoalHolder">
           <label for="telehealthGoal">Telehealth Adoption (<span id="telehealthGoalTarget">{{ actual }}{{ symbol }}</span>)</label>
-          <span id="resetTelehealth">
+          <span id="resetTelehealth" style="display:none">
             <button id="resetTHButton">Reset to {{simulation}}{{ symbol }}</button>
+          </span>
             <span id="calcStatus"></span>
             <span id="resetStatus"></span>
-          </span>
+            <br >
           <input type="range" min="0" max="100" value="0" class="form-control"
-                 id="telehealthGoal"  v-model="target" disabled />
+                 id="telehealthGoal"  v-model="target" disabled
+                 style="display: inline; width: 33%; vertical-align: middle;"/>
+          <span id="dragSpan" style="display:none; margin-left: 1em;">Proposed Adoption Rate: <span id="proposedSpan"></span>%</span>
         </div>
       </div>
       <div class="row" style="margin-bottom: 1em;">
@@ -126,47 +133,54 @@
       <div class="row" style="margin-bottom: 1em;">
         <div class="col">
           <div class="card">
-            <div class="card-text">Virtual Care Trained Providers</div>
+            <div class="card-text virtualResourceLabel">Virtual Care Trained Providers</div>
             <div class="card-body row">
               <div class="col text-center">
                 <img src="images/VA_Telehealth_Dashboard_Icons_VC_DOC_114.svg"  style="height:100px" />
               </div>
-              <div class="col align-self-center font-weight-bold" id="vctp">109</div>
+              <div class="col align-self-center" id="vctp" style="text-align: center;">48<hr style="width:50%">478
+              </div>
             </div>
           </div>
         </div>
         <div class="col">
           <div class="card">
-            <div class="card-text">Virtual Care Trained Nurses</div>
+            <div class="card-text virtualResourceLabel" >Virtual Care Trained Nurses</div>
             <div class="card-body row">
               <div class="col text-center">
                 <img src="images/VA_Telehealth_Dashboard_Icons_VC_NURSE_114.svg"  style="height:100px" />
               </div>
-              <div class="col align-self-center font-weight-bold" id="vctn">109</div>
+              <div class="col align-self-center" id="vctn" style="text-align: center;">
+                13<hr style="width:50%">568
+              </div>
             </div>
           </div>
         </div>
 
         <div class="col">
           <div class="card">
-            <div class="card-text">Virtual Care Trained Technicians</div>
+            <div class="card-text virtualResourceLabel">Virtual Care Trained Technicians</div>
             <div class="card-body row">
               <div class="col text-center">
                 <img src="images/VA_Telehealth_Dashboard_Icons_VC_TECH_114.svg" style="height:100px" />
               </div>
-              <div class="col align-self-center font-weight-bold" id="vctt">109</div>
+              <div class="col align-self-center" id="vctt" style="text-align: center;">
+                3<hr style="width:50%">89
+              </div>
             </div>
           </div>
         </div>
 
         <div class="col">
           <div class="card">
-            <div class="card-text">Virtual Care Rooms</div>
+            <div class="card-text virtualResourceLabel">Virtual Care Rooms</div>
             <div class="card-body row">
               <div class="col text-center">
                 <img src="images/VA_Telehealth_Dashboard_Icons_VC_ROOMS_114.svg" style="height:100px" />
               </div>
-              <div class="col align-self-center font-weight-bold" id="vcr">109</div>
+              <div class="col align-self-center" id="vcr" style="text-align: center;">
+                20<hr style="width:50%">48
+              </div>
             </div>
           </div>
         </div>
@@ -287,8 +301,16 @@ $(document).ready(function () {
           telehealthPercentages.target = telehealthPercentages.simulation;
           forceTelehealthMin(telehealthPercentages.simulation);
         });
+        $("#telehealthGoal").on("input", function() {
+          $("#dragSpan").show();
+          $("#proposedSpan").text($("#telehealthGoal").val());
+//          <span id="dragSpan">Proposed: <span id="proposedSpan"></span></span>
+
+  });
         $("#telehealthGoal").on("change", function () {
-          $("resetTelehealth").show();
+          $("#dragSpan").hide();
+          $("#resetTelehealth").show();
+          $("#telehealthGoal").blur();
           let requested = $("#telehealthGoal").val();
           if (requested < telehealthPercentages.simulation)
             requested = telehealthPercentages.simulation;
@@ -302,7 +324,7 @@ $(document).ready(function () {
     <!-- I don't know what this should be. maybe a simulation module. or maybe it just lives here? -->
     <script type="text/javascript">
       function recalculateEncounterInfo() {
-        
+
         let tracker = encounterTracker;
         tracker.total = 0;
         tracker.countByKind = [];
@@ -313,20 +335,21 @@ $(document).ready(function () {
         ttravel.travelCount = 0;
         ttravel.travelTime = 0;
         tracker.breadCrumbs.clearCrumbs(true);
-        
+
         known_patients.forEach(function (patient) {
           if (patient.travel && patient.travel.trips) {
             patient.travel.trips.forEach(function (encounter) {
               let org = findOrganization(encounter.org_id);
-              debugger;
               tracker.total++;
               if (encounter.virtual) {
-                if(org != null) org.virtual++;
+                if (org != null)
+                  org.virtual++;
                 ttravel.savedCount++;
                 ttravel.saved += encounter.distance;
                 ttravel.savedTime += encounter.duration;
               } else {
-                if(org != null) org.visits++;
+                if (org != null)
+                  org.visits++;
                 ttravel.travelCount++;
                 ttravel.distance += encounter.distance;
                 ttravel.travelTime += encounter.duration;
@@ -360,11 +383,11 @@ $(document).ready(function () {
         ttravel.travelCount = 0;
         ttravel.travelTime = 0;
         ttravel.savedTime = 0;
-        known_organizations.forEach(function(org) {
+        known_organizations.forEach(function (org) {
           org.visits = 0;
           org.virtual = 0;
         });
-        
+
         let total = 0;
         known_patients.forEach(function (patient) {
           if (patient.travel && patient.travel.trips) {
@@ -607,7 +630,7 @@ $(document).ready(function () {
             return this.crumbs[idx];
           },
           addCrumbs: function (crumbs) {
-            crumbs.forEach(function(crumb) {
+            crumbs.forEach(function (crumb) {
               encounterTracker.breadCrumbs.addCrumb(crumb.latitude, crumb.longitude, crumb.count);
             });
           },
@@ -809,13 +832,30 @@ $(document).ready(function () {
           }
           let loc = org.location;
           let ll = [loc.latitude, loc.longitude];
-          //          let marker = L.marker(ll);
-          let marker = L.circle(ll, {
-            color: 'red',
-            fillColor: 'pink',
-            fillOpacity: 0.5,
-            radius: 75
-          })
+          
+//          VA_Telehealth_Dashboard_Icons_FACILITY_PIN_W_42.svg
+//          var pinIcon = L.icon({
+//    iconUrl: 'images/VA_Telehealth_Dashboard_Icons_FACILITY_PIN_W_42.svg',
+//    iconSize:     [38, 95], // size of the icon
+//    iconAnchor:   [22, 94], // point of the icon which will correspond to marker's location
+//    shadowAnchor: [4, 62],  // the same for the shadow
+//    popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
+//});
+          var pinIcon = L.icon({
+    iconUrl: 'images/VA_Telehealth_Dashboard_Icons_FACILITY_PIN_W_42.svg',
+    iconSize:     [28.5, 71.25], // size of the icon
+    iconAnchor:   [16.5, 70.5], // point of the icon which will correspond to marker's location
+    shadowAnchor: [3, 46.5],  // the same for the shadow
+    popupAnchor:  [-2.25, -57] // point from which the popup should open relative to the iconAnchor
+});
+          
+                    let marker = L.marker(ll, {icon: pinIcon});
+//          let marker = L.circle(ll, {
+//            color: 'red',
+//            fillColor: 'pink',
+//            fillOpacity: 0.5,
+//            radius: 75
+//          })
           org.marker = marker;
           window.leaflet_layers.facilityLayer.addLayer(marker);
 
