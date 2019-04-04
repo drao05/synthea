@@ -52,14 +52,14 @@ var comms = (function () {
               }
 
               if (data['configuration']) {
+                $("#runButton").prop("disabled", false); // BAD! NO! FIX!
+                $("#confButton").prop("disabled", false).text("Configure");
                 console.log(data['configuration']);
               }
 
             } else {
               callback(data);
-              //processFHIR(data)
-              // Got a person
-              //$('#count').html(++count);
+
             }
           } catch (jex) {
             console.error(jex);
