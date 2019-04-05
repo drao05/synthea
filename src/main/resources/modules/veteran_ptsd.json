@@ -808,12 +808,34 @@
     },
     "therapy delay": {
       "type": "Delay",
-      "direct_transition": "Therapy_Visit",
       "range": {
         "low": 5,
         "high": 14,
         "unit": "days"
-      }
+      },
+      "conditional_transition": [
+        {
+          "transition": "Therapy_Visit_Telehealth",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "ptsd_careplan",
+            "operator": "==",
+            "value": "PTSD_Careplan_Telehealth_Psych"
+          }
+        },
+        {
+          "transition": "Therapy_Visit_Telehealth",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "ptsd_careplan",
+            "operator": "==",
+            "value": "PTSD_Careplan_Telehealth_Psych_and_Rx"
+          }
+        },
+        {
+          "transition": "Therapy_Visit"
+        }
+      ]
     },
     "Therapy_Visit": {
       "type": "Encounter",
@@ -1167,6 +1189,19 @@
         }
       ],
       "direct_transition": "end_Psych_encounter"
+    },
+    "Therapy_Visit_Telehealth": {
+      "type": "Encounter",
+      "encounter_class": "ambulatory",
+      "reason": "ptsd",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": 185347001,
+          "display": "Encounter for problem (procedure)"
+        }
+      ],
+      "direct_transition": "Therapy Note"
     }
   }
 }
