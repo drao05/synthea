@@ -1590,8 +1590,11 @@ public class FhirStu3 {
         .setSystem("http://hl7.org/fhir/observation-category").setDisplay(observation.category);
 
     // set device and performer
-    observationResource.setDevice(new Reference(observation.device));
-    observationResource.addPerformer(new Reference(observation.performer));
+    Reference deviceReference = new Reference();
+    observationResource.setDevice(deviceReference.setDisplay(observation.device));
+
+    Reference performerReference = new Reference();
+    observationResource.addPerformer(performerReference.setDisplay(observation.performer));
 
     if (observation.value != null) {
       Type value = mapValueToFHIRType(observation.value, observation.unit);
