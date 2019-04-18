@@ -55,13 +55,6 @@ public final class EncounterModule extends Module {
   private Random rand;
   
   public EncounterModule() {
-<<<<<<< HEAD
-=======
-    this.name = "Encounter";
-  }
-
-  public EncounterModule(long seed) {
->>>>>>> master
     this.name = "Encounter";
   }
   

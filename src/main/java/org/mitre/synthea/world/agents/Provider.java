@@ -226,56 +226,56 @@ public class Provider implements QuadTreeData {
    * @return List of providers within the given distance.
    */
   private static List<Provider> findProvidersByLocation(Person person, double distance) {
+
     DirectPosition2D coord = person.getLatLon();
-<<<<<<< HEAD
-    List<QuadTreeData> results = providerMap.queryByPointRadius(coord, searchDistance);
-
-    Provider closest = null;
-    Provider provider = null;
-    double minDistance = Double.MAX_VALUE;
-    double distance;
-
-    if(person.attributes.containsKey("veteran")) {
-    	// If person is a veteran, first try to get a VA facility.
-    	// If that fails, we will try to get any facility later on.
-	    for (QuadTreeData item : results) {
-	      provider = (Provider) item;
-	      if (provider.accepts(person, time, true)
-	          && (provider.hasService(service) || service == null)) {
-	        distance = item.getLatLon().distance(coord);
-	        if (distance < minDistance) {
-	          closest = (Provider) item;
-	          minDistance = distance;
-	        }
-	      }
-	    }
-    }
-    
-    if (closest == null) {
-    	// Either the person is not a veteran or we could not find a VA facility for a veteran
-	    for (QuadTreeData item : results) {
-	        provider = (Provider) item;
-	        if (provider.accepts(person, time)
-	            && (provider.hasService(service) || service == null)) {
-	          distance = item.getLatLon().distance(coord);
-	          if (distance < minDistance) {
-	            closest = (Provider) item;
-	            minDistance = distance;
-	          }
-	        }
-	      }
-    }
-    
-    return closest;
-=======
     List<QuadTreeData> results = providerMap.queryByPointRadius(coord, distance);
     List<Provider> providers = new ArrayList<Provider>();
     for (QuadTreeData item : results) {
       providers.add((Provider) item);
     }
     return providers;
->>>>>>> master
   }
+
+  //   DirectPosition2D coord = person.getLatLon();
+  //   List<QuadTreeData> results = providerMap.queryByPointRadius(coord, distance);
+
+  //   Provider closest = null;
+  //   Provider provider = null;
+  //   double minDistance = Double.MAX_VALUE;
+
+  //   if(person.attributes.containsKey("veteran")) {
+  //   	// If person is a veteran, first try to get a VA facility.
+  //   	// If that fails, we will try to get any facility later on.
+	 //    for (QuadTreeData item : results) {
+	 //      provider = (Provider) item;
+	 //      if (provider.accepts(person, time, true)
+	 //          && (provider.hasService(service) || service == null)) {
+	 //        distance = item.getLatLon().distance(coord);
+	 //        if (distance < minDistance) {
+	 //          closest = (Provider) item;
+	 //          minDistance = distance;
+	 //        }
+	 //      }
+	 //    }
+  //   }
+    
+  //   if (closest == null) {
+  //   	// Either the person is not a veteran or we could not find a VA facility for a veteran
+	 //    for (QuadTreeData item : results) {
+	 //        provider = (Provider) item;
+	 //        if (provider.accepts(person, time)
+	 //            && (provider.hasService(service) || service == null)) {
+	 //          distance = item.getLatLon().distance(coord);
+	 //          if (distance < minDistance) {
+	 //            closest = (Provider) item;
+	 //            minDistance = distance;
+	 //          }
+	 //        }
+	 //      }
+  //   }
+    
+  //   return closest;
+  // }
 
   /**
    * Clear the list of loaded and cached providers.

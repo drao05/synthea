@@ -260,6 +260,7 @@ public class Generator {
     	csvExporter = new CSVExporter(subDirectoryName);
     }
   }
+}
 
   /**
    * Extracts a list of names from the supplied list of modules.

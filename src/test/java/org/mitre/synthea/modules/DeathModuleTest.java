@@ -62,7 +62,7 @@ public class DeathModuleTest {
     Code causeOfDeath = new Code("SNOMED-CT", "12345", "Some disease");
     person.recordDeath(time, causeOfDeath, DeathModuleTest.class.getName());
 
-    person.attributes.remove(Person.PREFERREDAMBULATORYPROVIDER);
+    // person.attributes.remove(Person.PREFERREDAMBULATORYPROVIDER);
     Provider.loadProviders(city);
     city.assignPoint(person, city.randomCityName(person.random));
     

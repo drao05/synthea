@@ -30,14 +30,14 @@ public class DeathModule {
       // create an encounter, diagnostic report, and observation
 
       Provider prov = person.getProvider(EncounterType.AMBULATORY, time);
-      if (provider != null) {
-    	  Clinician clinician = provider.chooseClinicianList(ClinicianSpecialty.GENERAL_PRACTICE, person.random);
+      if (prov != null) {
+    	  Clinician clinician = prov.chooseClinicianList(ClinicianSpecialty.GENERAL_PRACTICE, person.random);
     	  if (clinician != null) {
 		      Code causeOfDeath = (Code) person.attributes.get(Person.CAUSE_OF_DEATH);
 		
 		      Encounter deathCertification = person.record.encounterStart(time, EncounterType.AMBULATORY);
 		      deathCertification.codes.add(DEATH_CERTIFICATION);
-		      deathCertification.provider = provider;
+		      deathCertification.provider = prov;
 		      deathCertification.clinician = clinician;
 			    
 		      Observation codObs = person.record.observation(time, CAUSE_OF_DEATH_CODE.code, causeOfDeath);
