@@ -1,3 +1,4 @@
+import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -18,6 +19,7 @@ public class App {
     System.out.println("Options: [-s seed] [-p populationSize]");
     System.out.println("         [-g gender] [-a minAge-maxAge]");
     System.out.println("         [-o overflowPopulation]");
+    System.out.println("         [-m moduleFileWildcardList]");
     System.out.println("         [--config* value]");
     System.out.println("          * any setting from src/main/resources/synthea.properties");
     System.out.println("Examples:");
@@ -29,6 +31,8 @@ public class App {
     System.out.println("run_synthea -s 21 -p 100 Utah \"Salt Lake City\"");
     System.out.println("run_synthea -g M -a 60-65");
     System.out.println("run_synthea -p 10 --exporter.fhir.export true");
+    System.out.println("run_synthea -m moduleFilename" + File.pathSeparator + "anotherModule"
+        + File.pathSeparator + "module*");
     System.out.println("run_synthea --exporter.baseDirectory \"./output_tx/\" Texas");
   }
   
@@ -47,8 +51,11 @@ public class App {
         
         while (!argsQ.isEmpty()) {
           String currArg = argsQ.poll();
-          
-          if (currArg.equalsIgnoreCase("-s")) {
+
+          if (currArg.equalsIgnoreCase("-h")) {
+            usage();
+            System.exit(0);
+          } else if (currArg.equalsIgnoreCase("-s")) {
             String value = argsQ.poll();
             options.seed = Long.parseLong(value);
           } else if (currArg.equalsIgnoreCase("-p")) {
@@ -74,6 +81,10 @@ public class App {
             } else {
               throw new Exception("Age format: minAge-maxAge. E.g. 60-65.");
             }
+          } else if (currArg.equalsIgnoreCase("-m")) {
+            String value = argsQ.poll();
+            String[] values = value.split(File.pathSeparator);
+            options.enabledModules = Arrays.asList(values);
           } else if (currArg.startsWith("--")) {
             // Check if there is an alias for another command first
             String setting;

@@ -2,11 +2,16 @@ package org.mitre.synthea.modules;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.mitre.synthea.engine.Module;
+import org.mitre.synthea.helpers.Attributes;
+import org.mitre.synthea.helpers.Attributes.Inventory;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Person;
+import org.mitre.synthea.world.agents.Provider;
+import org.mitre.synthea.world.concepts.HealthRecord.EncounterType;
 
 public class HealthInsuranceModule extends Module {
   public static final String INSURANCE = "insurance";
@@ -49,7 +54,18 @@ public class HealthInsuranceModule extends Module {
     int age = person.ageInYears(time);
 
     if (insurance.get(age) == null) {
-      insurance.set(age, determineInsurance(person, age, time));
+      String previous = null;
+      if (age >= 1) {
+        previous = insurance.get(age - 1);
+      }
+      String current = determineInsurance(person, age, time);
+      if (current != previous && Provider.PROVIDER_SELECTION_BEHAVIOR.equals(Provider.NETWORK)) {
+        // update providers if we are considering insurance networks
+        for (EncounterType type : EncounterType.values()) {
+          person.setProvider(type, time);
+        }
+      }
+      insurance.set(age, current);
     }
 
     // java modules will never "finish"
@@ -115,5 +131,22 @@ public class HealthInsuranceModule extends Module {
       }
     }
     return result;
+  }
+
+  /**
+   * Populate the given attribute map with the list of attributes that this
+   * module reads/writes with example values when appropriate.
+   *
+   * @param attributes Attribute map to populate.
+   */
+  public static void inventoryAttributes(Map<String,Inventory> attributes) {
+    String m = HealthInsuranceModule.class.getSimpleName();
+    Attributes.inventory(attributes, m, INSURANCE, true, true, "List<String>");
+    Attributes.inventory(attributes, m, "pregnant", true, false, "Boolean");
+    Attributes.inventory(attributes, m, "blindness", true, false, "Boolean");
+    Attributes.inventory(attributes, m, "end_stage_renal_disease", true, false, "Boolean");
+    Attributes.inventory(attributes, m, Person.GENDER, true, false, "F");
+    Attributes.inventory(attributes, m, Person.OCCUPATION_LEVEL, true, false, "Low");
+    Attributes.inventory(attributes, m, Person.INCOME, true, false, "1.0");
   }
 }

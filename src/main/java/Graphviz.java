@@ -18,7 +18,6 @@ import guru.nidi.graphviz.model.Node;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -327,6 +326,11 @@ public class Graphviz {
           JsonObject e = state.get("exact").getAsJsonObject();
           String quantity = e.get("quantity").getAsString();
           details.append(s).append(": ").append(quantity);
+        }
+        if (state.has("probability")) {
+          double pct = state.get("probability").getAsDouble() * 100.0;
+          String label = pct + "%";
+          details.append(" (").append(label).append(")");
         }
         break;
       case "Observation":

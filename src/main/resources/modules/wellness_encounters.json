@@ -100,7 +100,7 @@
               "display": "Systolic Blood Pressure"
             }
           ],
-          "unit": "mmHg",
+          "unit": "mm[Hg]",
           "device":"Sphygmomanometer",
           "performer":"Nurse"
         },
@@ -114,7 +114,7 @@
               "display": "Diastolic Blood Pressure"
             }
           ],
-          "unit": "mmHg",
+          "unit": "mm[Hg]",
           "device":"Sphygmomanometer",
           "performer":"Nurse"          
         }

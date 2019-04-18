@@ -17,6 +17,8 @@ import org.mitre.synthea.engine.Transition.ConditionalTransitionOption;
 import org.mitre.synthea.engine.Transition.DirectTransition;
 import org.mitre.synthea.engine.Transition.DistributedTransition;
 import org.mitre.synthea.engine.Transition.DistributedTransitionOption;
+import org.mitre.synthea.helpers.ConstantValueGenerator;
+import org.mitre.synthea.helpers.RandomValueGenerator;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.modules.EncounterModule;
 import org.mitre.synthea.world.agents.Person;
@@ -34,6 +36,7 @@ public abstract class State implements Cloneable {
   public Module module;
   public String name;
   public Long entered;
+  public Entry entry;
   public Long exited;
 
   private Transition transition;
@@ -117,6 +120,8 @@ public abstract class State implements Cloneable {
 
   /**
    * Process this State with the given Person at the specified time within the simulation.
+   * If this State generates a HealthRecord.Entry during processing, then the resulting data
+   * will reside in the State.entry field.
    *
    * @param person
    *          : the person being simulated
@@ -476,6 +481,7 @@ public abstract class State implements Cloneable {
     public boolean process(Person person, long time) {
       if (wellness) {
         HealthRecord.Encounter encounter = person.record.currentEncounter(time);
+        entry = encounter;
         String activeKey = EncounterModule.ACTIVE_WELLNESS_ENCOUNTER + " " + this.module.name;
         if (person.attributes.containsKey(activeKey)) {
           person.attributes.remove(activeKey);
@@ -483,10 +489,10 @@ public abstract class State implements Cloneable {
           person.setCurrentEncounter(module, encounter);
 
           // find closest provider and increment encounters count
-          Provider provider = person.getAmbulatoryProvider(time);
+          Provider provider = person.getProvider(EncounterType.AMBULATORY, time);
           person.addCurrentProvider(module.name, provider);
           int year = Utilities.getYear(time);
-          provider.incrementEncounters("wellness", year);
+          provider.incrementEncounters(EncounterType.WELLNESS, year);
           encounter.provider = provider;
           encounter.clinician = provider.chooseClinicianList(
               ClinicianSpecialty.GENERAL_PRACTICE, person.random);
@@ -498,17 +504,19 @@ public abstract class State implements Cloneable {
           return false;
         }
       } else {
-        HealthRecord.Encounter encounter = person.record.encounterStart(time, encounterClass);
+        EncounterType type = EncounterType.fromString(encounterClass);
+        HealthRecord.Encounter encounter = person.encounterStart(time, type);
+        entry = encounter;
         if (codes != null) {
           encounter.codes.addAll(codes);
         }
         person.setCurrentEncounter(module, encounter);
 
         // find closest provider and increment encounters count
-        Provider provider = person.getProvider(encounterClass, time);
+        Provider provider = person.getProvider(type, time);
         person.addCurrentProvider(module.name, provider);
         int year = Utilities.getYear(time);
-        provider.incrementEncounters(encounterClass, year);
+        provider.incrementEncounters(type, year);
         encounter.provider = provider;
         encounter.clinician = provider.chooseClinicianList(
             ClinicianSpecialty.GENERAL_PRACTICE, person.random);
@@ -542,7 +550,7 @@ public abstract class State implements Cloneable {
       for (State state : person.history) {
         if (state instanceof OnsetState) {
           OnsetState onset = (OnsetState) state;
-          
+
           if (!onset.diagnosed && this.name.equals(onset.targetEncounter)) {
             onset.diagnose(person, time);
           }
@@ -583,15 +591,14 @@ public abstract class State implements Cloneable {
     @Override
     public boolean process(Person person, long time) {
       HealthRecord.Encounter encounter = person.getCurrentEncounter(module);
-      if (encounter.type != EncounterType.WELLNESS.toString()) {
-        person.record.encounterEnd(time, encounter.type);
+      EncounterType type = EncounterType.fromString(encounter.type);
+      if (type != EncounterType.WELLNESS) {
+        person.record.encounterEnd(time, type);
       }
-
       encounter.discharge = dischargeDisposition;
 
       // reset current provider hash
       person.removeCurrentProvider(module.name);
-
       person.setCurrentEncounter(module, null);
 
       return true;
@@ -626,8 +633,6 @@ public abstract class State implements Cloneable {
           || (encounter != null && targetEncounter.equals(encounter.name))) {
         diagnose(person, time);
       } else if (assignToAttribute != null && codes != null) {
-        // TODO - this is a hack. can we eventually split Diagnosis & Onset states?
-
         // create a temporary coded entry to use for reference in the attribute,
         // which will be replaced if the thing is diagnosed
         HealthRecord.Entry codedEntry = person.record.new Entry(time, codes.get(0).code);
@@ -653,13 +658,13 @@ public abstract class State implements Cloneable {
     @Override
     public void diagnose(Person person, long time) {
       String primaryCode = codes.get(0).code;
-      Entry condition = person.record.conditionStart(time, primaryCode);
-      condition.name = this.name;
+      entry = person.record.conditionStart(time, primaryCode);
+      entry.name = this.name;
       if (codes != null) {
-        condition.codes.addAll(codes);
+        entry.codes.addAll(codes);
       }
       if (assignToAttribute != null) {
-        person.attributes.put(assignToAttribute, condition);
+        person.attributes.put(assignToAttribute, entry);
       }
 
       diagnosed = true;
@@ -717,12 +722,12 @@ public abstract class State implements Cloneable {
     @Override
     public void diagnose(Person person, long time) {
       String primaryCode = codes.get(0).code;
-      Entry allergy = person.record.allergyStart(time, primaryCode);
-      allergy.name = this.name;
-      allergy.codes.addAll(codes);
+      entry = person.record.allergyStart(time, primaryCode);
+      entry.name = this.name;
+      entry.codes.addAll(codes);
 
       if (assignToAttribute != null) {
-        person.attributes.put(assignToAttribute, allergy);
+        person.attributes.put(assignToAttribute, entry);
       }
 
       diagnosed = true;
@@ -797,6 +802,7 @@ public abstract class State implements Cloneable {
     public boolean process(Person person, long time) {
       String primaryCode = codes.get(0).code;
       Medication medication = person.record.medicationStart(time, primaryCode);
+      entry = medication;
       medication.name = this.name;
       medication.codes.addAll(codes);
 
@@ -825,7 +831,7 @@ public abstract class State implements Cloneable {
       Provider medicationProvider = person.getCurrentProvider(module.name);
       if (medicationProvider == null) {
         // no provider associated with encounter or medication order
-        medicationProvider = person.getAmbulatoryProvider(time);
+        medicationProvider = person.getProvider(EncounterType.AMBULATORY, time);
       }
 
       int year = Utilities.getYear(time);
@@ -907,6 +913,7 @@ public abstract class State implements Cloneable {
     public boolean process(Person person, long time) {
       String primaryCode = codes.get(0).code;
       CarePlan careplan = person.record.careplanStart(time, primaryCode);
+      entry = careplan;
       careplan.name = this.name;
       careplan.codes.addAll(codes);
 
@@ -1004,6 +1011,7 @@ public abstract class State implements Cloneable {
     public boolean process(Person person, long time) {
       String primaryCode = codes.get(0).code;
       HealthRecord.Procedure procedure = person.record.procedure(time, primaryCode);
+      entry = procedure;
       procedure.name = this.name;
       procedure.codes.addAll(codes);
 
@@ -1031,7 +1039,7 @@ public abstract class State implements Cloneable {
       if (person.getCurrentProvider(module.name) != null) {
         provider = person.getCurrentProvider(module.name);
       } else { // no provider associated with encounter or procedure
-        provider = person.getAmbulatoryProvider(time);
+        provider = person.getProvider(EncounterType.AMBULATORY, time);
       }
       int year = Utilities.getYear(time);
       provider.incrementProcedures(year);
@@ -1076,10 +1084,9 @@ public abstract class State implements Cloneable {
     @Override
     public boolean process(Person person, long time) {
       if (exact != null) {
-        person.setVitalSign(vitalSign, exact.quantity);
+        person.setVitalSign(vitalSign, new ConstantValueGenerator(person, exact.quantity));
       } else if (range != null) {
-        double value = person.rand(range.low, range.high);
-        person.setVitalSign(vitalSign, value);
+        person.setVitalSign(vitalSign, new RandomValueGenerator(person, range.low, range.high));
       } else {
         throw new RuntimeException(
             "VitalSign state has no exact quantity or low/high range: " + this);
@@ -1160,11 +1167,12 @@ public abstract class State implements Cloneable {
       } else if (attribute != null) {
         value = person.attributes.get(attribute);
       } else if (vitalSign != null) {
-        value = person.getVitalSign(vitalSign);
+        value = person.getVitalSign(vitalSign, time);
       } else if (valueCode != null) {
         value = valueCode;
       }
       HealthRecord.Observation observation = person.record.observation(time, primaryCode, value);
+      entry = observation;
       observation.name = this.name;
       observation.codes.addAll(codes);
       observation.category = category;
@@ -1223,6 +1231,7 @@ public abstract class State implements Cloneable {
       String primaryCode = codes.get(0).code;
       HealthRecord.Observation observation =
           person.record.multiObservation(time, primaryCode, observations.size());
+      entry = observation;
       observation.name = this.name;
       observation.codes.addAll(codes);
       observation.category = category;
@@ -1249,6 +1258,7 @@ public abstract class State implements Cloneable {
       }}
       String primaryCode = codes.get(0).code;
       Report report = person.record.report(time, primaryCode, observations.size());
+      entry = report;
       report.name = this.name;
       report.codes.addAll(codes);
 
@@ -1257,7 +1267,7 @@ public abstract class State implements Cloneable {
       if (person.getCurrentProvider(module.name) != null) {
         provider = person.getCurrentProvider(module.name);
       } else { // no provider associated with encounter or procedure
-        provider = person.getAmbulatoryProvider(time);
+        provider = person.getProvider(EncounterType.AMBULATORY, time);
       }
       int year = Utilities.getYear(time);
       provider.incrementLabs(year);
@@ -1292,7 +1302,7 @@ public abstract class State implements Cloneable {
       // The modality code of the first series is a good approximation
       // of the type of ImagingStudy this is
       String primaryModality = series.get(0).modality.code;
-      HealthRecord.ImagingStudy study = person.record.imagingStudy(time, primaryModality, series);
+      entry = person.record.imagingStudy(time, primaryModality, series);
 
       // Also add the Procedure equivalent of this ImagingStudy to the patient's record
       String primaryProcedureCode = procedureCode.code;
@@ -1313,6 +1323,7 @@ public abstract class State implements Cloneable {
   public static class Symptom extends State {
     private String symptom;
     private String cause;
+    private Double probability;
     private Range<Integer> range;
     private Exact<Integer> exact;
     public boolean addressed;
@@ -1323,6 +1334,9 @@ public abstract class State implements Cloneable {
       if (cause == null) {
         cause = module.name;
       }
+      if (probability == null || probability > 1 || probability < 0) {
+        probability = 1.0;
+      }
       addressed = false;
     }
 
@@ -1331,6 +1345,7 @@ public abstract class State implements Cloneable {
       Symptom clone = (Symptom) super.clone();
       clone.symptom = symptom;
       clone.cause = cause;
+      clone.probability = probability;
       clone.range = range;
       clone.exact = exact;
       clone.addressed = addressed;
@@ -1339,12 +1354,14 @@ public abstract class State implements Cloneable {
 
     @Override
     public boolean process(Person person, long time) {
-      if (exact != null) {
-        person.setSymptom(cause, symptom, exact.quantity, addressed);
-      } else if (range != null) {
-        person.setSymptom(cause, symptom, (int) person.rand(range.low, range.high), addressed);
-      } else {
-        person.setSymptom(cause, symptom, 0, addressed);
+      if (person.rand() <= probability) {
+        if (exact != null) {
+          person.setSymptom(cause, symptom, exact.quantity, addressed);
+        } else if (range != null) {
+          person.setSymptom(cause, symptom, (int) person.rand(range.low, range.high), addressed);
+        } else {
+          person.setSymptom(cause, symptom, 0, addressed);
+        }
       }
       return true;
     }
@@ -1406,7 +1423,7 @@ public abstract class State implements Cloneable {
       } else if (referencedByAttribute != null) {
         Entry entry = (Entry) person.attributes.get(referencedByAttribute);
         if (entry == null) {
-          // TODO - condition referenced but not yet diagnosed
+          // condition referenced but not yet diagnosed
           throw new RuntimeException("Attribute '" + referencedByAttribute
               + "' was referenced by state '" + name + "' but not set");
         }

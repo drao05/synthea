@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.modules.EncounterModule;
+import org.mitre.synthea.modules.LifecycleModule;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.HealthRecord;
@@ -45,11 +46,17 @@ public class StateTest {
   @Before
   public void setup() throws IOException {
     person = new Person(0L);
+    person.attributes.put(Person.GENDER, "F");
+    person.attributes.put(Person.FIRST_LANGUAGE, "spanish");
+    person.attributes.put(Person.RACE, "other");
+    person.attributes.put(Person.ETHNICITY, "hispanic");
 
     person.history = new LinkedList<>();
-    person.setAmbulatoryProvider(Mockito.mock(Provider.class));
-    person.setEmergencyProvider(Mockito.mock(Provider.class));
-    person.setInpatientProvider(Mockito.mock(Provider.class));
+    Provider mock = Mockito.mock(Provider.class);
+    mock.uuid = "Mock-UUID";
+    person.setProvider(EncounterType.AMBULATORY, mock);
+    person.setProvider(EncounterType.EMERGENCY, mock);
+    person.setProvider(EncounterType.INPATIENT, mock);
 
     long birthTime = time - Utilities.convertTime("years", 35);
     person.attributes.put(Person.BIRTHDATE, birthTime);
@@ -58,7 +65,7 @@ public class StateTest {
     time = System.currentTimeMillis();
   }
 
-  private static Module getModule(String name) {
+  protected static Module getModule(String name) {
     try {
       Path modulesFolder = Paths.get("src/test/resources/generic");
       Path logicFile = modulesFolder.resolve(name);
@@ -153,9 +160,9 @@ public class StateTest {
   }
 
   @Test
-  public void condition_onset_diagnosed_by_target_encounter() { 
+  public void condition_onset_diagnosed_by_target_encounter() {
     Module module = getModule("condition_onset.json");
-    
+
     State condition = module.getState("Diabetes");
     // Should pass through this state immediately without calling the record
     person.history.add(0, condition);
@@ -351,7 +358,7 @@ public class StateTest {
     State vitalsign = module.getState("VitalSign").clone();
     assertTrue(vitalsign.process(person, time));
 
-    assertEquals(120.0, person.getVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE), 0.0);
+    assertEquals(120.0, person.getVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE, time), 0.0);
 
     verifyZeroInteractions(person.record);
   }
@@ -368,6 +375,14 @@ public class StateTest {
     State symptom2 = module.getState("SymptomWorsen");
     assertTrue(symptom2.process(person, time));
     assertEquals(96, person.getSymptom("Chest Pain"));
+  }
+
+  @Test
+  public void symptoms50() {
+    Module module = getModule("symptom50.json");
+
+    State symptom50 = module.getState("Symptom50");
+    assertTrue(symptom50.process(person, time));
   }
 
   @Test
@@ -459,7 +474,7 @@ public class StateTest {
     HealthRecord.Observation vitalObservation = person.record.encounters.get(0).observations.get(0);
     assertEquals(120.0, vitalObservation.value);
     assertEquals("vital-signs", vitalObservation.category);
-    assertEquals("mmHg", vitalObservation.unit);
+    assertEquals("mm[Hg]", vitalObservation.unit);
 
     Code vitalObsCode = vitalObservation.codes.get(0);
     assertEquals("8480-6", vitalObsCode.code);
@@ -470,7 +485,7 @@ public class StateTest {
     //assertEquals("LOINC", codeObservation.value.system);
     //assertEquals("25428-4", codeObservation.value.code);
     //assertEquals("Glucose [Presence] in Urine by Test strip", codeObservation.value.system);
-    
+
     Code testCode = new Code("LOINC", "25428-4", "Glucose [Presence] in Urine by Test strip");
     assertEquals(testCode.toString(), codeObservation.value.toString());
 
@@ -1319,13 +1334,13 @@ public class StateTest {
 
   @Test
   public void testSubmoduleHistory() {
-    Map<String, Module> modules =
-        Whitebox.<Map<String, Module>>getInternalState(Module.class, "modules");
+    Map<String, Module.ModuleSupplier> modules =
+            Whitebox.<Map<String, Module.ModuleSupplier>>getInternalState(Module.class, "modules");
     // hack to load these test modules so they can be called by the CallSubmodule state
     Module subModule1 = getModule("submodules/encounter_submodule.json");
     Module subModule2 = getModule("submodules/medication_submodule.json");
-    modules.put("submodules/encounter_submodule", subModule1);
-    modules.put("submodules/medication_submodule", subModule2);
+    modules.put("submodules/encounter_submodule", new Module.ModuleSupplier(subModule1));
+    modules.put("submodules/medication_submodule", new Module.ModuleSupplier(subModule2));
 
     try {
       Module module = getModule("recursively_calls_submodules.json");
@@ -1406,11 +1421,11 @@ public class StateTest {
 
   @Test
   public void testSubmoduleDiagnosesAndEndingEncounters() {
-    Map<String, Module> modules =
-        Whitebox.<Map<String, Module>>getInternalState(Module.class, "modules");
+    Map<String, Module.ModuleSupplier> modules =
+        Whitebox.<Map<String, Module.ModuleSupplier>>getInternalState(Module.class, "modules");
     // hack to load these test modules so they can be called by the CallSubmodule state
     Module subModule = getModule("submodules/admission.json");
-    modules.put("submodules/admission", subModule);
+    modules.put("submodules/admission", new Module.ModuleSupplier(subModule));
 
     try {
       Module module = getModule("encounter_with_submodule.json");
@@ -1435,6 +1450,9 @@ public class StateTest {
 
   @Test
   public void testDiagnosticReport() {
+    // Birth makes the vital signs come alive :-)
+    LifecycleModule.birth(person, (long)person.attributes.get(Person.BIRTHDATE));
+
     Module module = getModule("observation_groups.json");
 
     State condition = module.getState("Record_MetabolicPanel");
@@ -1443,26 +1461,29 @@ public class StateTest {
     // for a DiagnosticReport, we expect the report as well as the individual observations
     // to be added to the record
     Encounter e = person.record.encounters.get(0);
-    
+
     assertEquals(1, e.reports.size());
     HealthRecord.Report report = e.reports.get(0);
     assertEquals(8, report.observations.size());
     assertEquals(8, e.observations.size());
-    
+
     String[] codes =
         {"2339-0", "6299-2", "38483-4", "49765-1", "2947-0", "6298-4", "2069-3", "20565-8"};
     // Glucose, Urea Nitrogen, Creatinine, Calcium, Sodium, Potassium, Chloride, Carbon Dioxide
-    
+
     for (int i = 0; i < 8; i++) {
       HealthRecord.Observation o = e.observations.get(i);
-      
+
       assertEquals(codes[i], o.codes.get(0).code);
       assertEquals(report, o.report);
     }
   }
-  
+
   @Test
   public void testMultiObservation() {
+    // Birth makes the blood pump :-)
+    LifecycleModule.birth(person, (long)person.attributes.get(Person.BIRTHDATE));
+
     Module module = getModule("observation_groups.json");
 
     State condition = module.getState("Record_BP");
@@ -1472,7 +1493,7 @@ public class StateTest {
     // not the child observations, which get added as components of the parent observation
     Encounter e = person.record.encounters.get(0);
     assertEquals(1, e.observations.size());
-    
+
     HealthRecord.Observation o = e.observations.get(0);
     assertEquals("55284-4", o.codes.get(0).code);
     assertEquals(2, o.observations.size());

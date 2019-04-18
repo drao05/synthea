@@ -1,6 +1,6 @@
 package org.mitre.synthea.export;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.dstu2.resource.Bundle;
@@ -55,6 +55,13 @@ public class FHIRDSTU2ExporterTest {
       Config.set("exporter.fhir_dstu2.export", "true");
       FhirDstu2.TRANSACTION_BUNDLE = person.random.nextBoolean();
       String fhirJson = FhirDstu2.convertToFHIRJson(person, System.currentTimeMillis());
+      // Check that the fhirJSON doesn't contain unresolved SNOMED-CT strings
+      // (these should have been converted into URIs)
+      if (fhirJson.contains("SNOMED-CT")) {
+        validationErrors.add(
+            "JSON contains unconverted references to 'SNOMED-CT' (should be URIs)");
+      }
+      // Now validate the resource...
       IBaseResource resource = ctx.newJsonParser().parseResource(fhirJson);
       ValidationResult result = validator.validateWithResult(resource);
       if (!result.isSuccessful()) {
@@ -84,6 +91,8 @@ public class FHIRDSTU2ExporterTest {
         Exporter.export(person, System.currentTimeMillis());
       }
     }
-    assertEquals(0, validationErrors.size());
+
+    assertTrue("Validation of exported FHIR bundle failed: " 
+        + String.join("|", validationErrors), validationErrors.size() == 0);
   }
 }

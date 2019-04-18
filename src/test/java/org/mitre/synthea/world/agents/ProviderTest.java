@@ -13,6 +13,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mitre.synthea.world.geography.location.Location;
+import org.mitre.synthea.world.concepts.HealthRecord.EncounterType;
+import org.mitre.synthea.world.geography.Location;
 
 public class ProviderTest {
 
@@ -75,7 +77,7 @@ public class ProviderTest {
     Provider.loadProviders(location);
     Person person = new Person(0L);
     location.assignPoint(person, location.randomCityName(person.random));
-    Provider provider = Provider.findClosestService(person, Provider.INPATIENT, 0);
+    Provider provider = Provider.findService(person, EncounterType.INPATIENT, 0);
     Assert.assertNotNull(provider);
   }
 
@@ -84,7 +86,7 @@ public class ProviderTest {
     Provider.loadProviders(location);
     Person person = new Person(0L);
     location.assignPoint(person, location.randomCityName(person.random));
-    Provider provider = Provider.findClosestService(person, Provider.AMBULATORY, 0);
+    Provider provider = Provider.findService(person, EncounterType.AMBULATORY, 0);
     Assert.assertNotNull(provider);
   }
 
@@ -93,7 +95,7 @@ public class ProviderTest {
     Provider.loadProviders(location);
     Person person = new Person(0L);
     location.assignPoint(person, location.randomCityName(person.random));
-    Provider provider = Provider.findClosestService(person, Provider.EMERGENCY, 0);
+    Provider provider = Provider.findService(person, EncounterType.EMERGENCY, 0);
     Assert.assertNotNull(provider);
   }
 
@@ -102,7 +104,7 @@ public class ProviderTest {
     Provider.loadProviders(location);
     Person person = new Person(0L);
     location.assignPoint(person, location.randomCityName(person.random));
-    Provider provider = Provider.findClosestService(person, Provider.URGENTCARE, 0);
+    Provider provider = Provider.findService(person, EncounterType.URGENTCARE, 0);
     Assert.assertNotNull(provider); 
   }
   
@@ -111,7 +113,7 @@ public class ProviderTest {
     Provider.loadProviders(city);
     Person person = new Person(0L);
     city.assignPoint(person, city.randomCityName(person.random));
-    Provider provider = Provider.findClosestService(person, Provider.INPATIENT, 0);
+    Provider provider = Provider.findService(person, EncounterType.INPATIENT, 0);
     Assert.assertNotNull(provider);
   }
 
@@ -120,7 +122,7 @@ public class ProviderTest {
     Provider.loadProviders(city);
     Person person = new Person(0L);
     city.assignPoint(person, city.randomCityName(person.random));
-    Provider provider = Provider.findClosestService(person, Provider.AMBULATORY, 0);
+    Provider provider = Provider.findService(person, EncounterType.AMBULATORY, 0);
     Assert.assertNotNull(provider);
   }
 
@@ -129,7 +131,7 @@ public class ProviderTest {
     Provider.loadProviders(city);
     Person person = new Person(0L);
     city.assignPoint(person, city.randomCityName(person.random));
-    Provider provider = Provider.findClosestService(person, Provider.EMERGENCY, 0);
+    Provider provider = Provider.findService(person, EncounterType.EMERGENCY, 0);
     Assert.assertNotNull(provider);
   }
 
@@ -138,7 +140,7 @@ public class ProviderTest {
     Provider.loadProviders(city);
     Person person = new Person(0L);
     city.assignPoint(person, city.randomCityName(person.random));
-    Provider provider = Provider.findClosestService(person, Provider.URGENTCARE, 0);
+    Provider provider = Provider.findService(person, EncounterType.URGENTCARE, 0);
     Assert.assertNotNull(provider);
   }
   
@@ -163,8 +165,8 @@ public class ProviderTest {
   public void testAllFiles() throws Exception {
     // just load all files and make sure they don't crash
     URL providersFolder = ClassLoader.getSystemClassLoader().getResource("providers");
-    Set<String> providerServices = new HashSet<String>();
-    providerServices.add(Provider.WELLNESS);
+    Set<EncounterType> providerServices = new HashSet<EncounterType>();
+    providerServices.add(EncounterType.WELLNESS);
     Path path = Paths.get(providersFolder.toURI());
     Files.walk(path)
          .filter(Files::isReadable)

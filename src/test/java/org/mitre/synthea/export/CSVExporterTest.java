@@ -25,6 +25,7 @@ public class CSVExporterTest {
   public void testCSVExport() throws Exception {
     TestHelper.exportOff();
     Config.set("exporter.csv.export", "true");
+    Config.set("exporter.csv.folder_per_run", "false");
     File tempOutputFolder = tempFolder.newFolder();
     Config.set("exporter.baseDirectory", tempOutputFolder.toString());
 
@@ -33,6 +34,8 @@ public class CSVExporterTest {
     for (int i = 0; i < numberOfPeople; i++) {
       generator.generatePerson(i);
     }
+    // Adding post completion exports to generate organizations and providers CSV files
+    Exporter.runPostCompletionExports(generator);
 
     // if we get here we at least had no exceptions
 
@@ -55,6 +58,6 @@ public class CSVExporterTest {
       count++;
     }
 
-    assertEquals("Expected 10 CSV files in the output directory, found " + count, 10, count);
+    assertEquals("Expected 12 CSV files in the output directory, found " + count, 12, count);
   }
 }

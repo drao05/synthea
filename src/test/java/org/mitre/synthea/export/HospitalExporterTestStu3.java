@@ -35,7 +35,7 @@ public class HospitalExporterTestStu3 {
 
     File tempOutputFolder = tempFolder.newFolder();
     Config.set("exporter.baseDirectory", tempOutputFolder.toString());
-    Config.set("exporter.hospital.fhir.export", "true");
+    Config.set("exporter.hospital.fhir_stu3.export", "true");
     Config.set("exporter.fhir.transaction_bundle", "true");
     FhirStu3.TRANSACTION_BUNDLE = true; // set this manually, in case it has already been loaded.
     Location location = new Location("Massachusetts", null);
@@ -44,10 +44,10 @@ public class HospitalExporterTestStu3 {
     assertNotNull(Provider.getProviderList());
     assertFalse(Provider.getProviderList().isEmpty());
 
-    Provider.getProviderList().get(0).incrementEncounters(EncounterType.WELLNESS.toString(), 0);
+    Provider.getProviderList().get(0).incrementEncounters(EncounterType.WELLNESS, 0);
     HospitalExporterStu3.export(0L);
 
-    File expectedExportFolder = tempOutputFolder.toPath().resolve("fhir").toFile();
+    File expectedExportFolder = tempOutputFolder.toPath().resolve("fhir_stu3").toFile();
     assertTrue(expectedExportFolder.exists() && expectedExportFolder.isDirectory());
 
     File expectedExportFile = expectedExportFolder.toPath().resolve("hospitalInformation0.json")
