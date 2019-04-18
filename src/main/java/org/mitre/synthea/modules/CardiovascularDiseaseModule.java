@@ -11,10 +11,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.mitre.synthea.engine.Module;
+import org.mitre.synthea.helpers.Attributes;
+import org.mitre.synthea.helpers.Attributes.Inventory;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.HealthRecord.Code;
+import org.mitre.synthea.world.concepts.HealthRecord.EncounterType;
 import org.mitre.synthea.world.concepts.HealthRecord.Entry;
 import org.mitre.synthea.world.concepts.HealthRecord.Medication;
 import org.mitre.synthea.world.concepts.HealthRecord.Procedure;
@@ -279,15 +282,15 @@ public final class CardiovascularDiseaseModule extends Module {
   private static void calculateCardioRisk(Person person, long time) {
     int age = person.ageInYears(time);
     String gender = (String) person.attributes.get(Person.GENDER);
-    Double sysBP = person.getVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE);
-    Double chol = person.getVitalSign(VitalSign.TOTAL_CHOLESTEROL);
+    Double sysBP = person.getVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE, time);
+    Double chol = person.getVitalSign(VitalSign.TOTAL_CHOLESTEROL, time);
     if (sysBP == null || chol == null) {
       return;
     }
 
     Boolean bpTreated = (Boolean) person.attributes.getOrDefault("bp_treated?", false);
 
-    Double hdl = person.getVitalSign(VitalSign.HDL);
+    Double hdl = person.getVitalSign(VitalSign.HDL, time);
 
     // calculate which index in a lookup array a number corresponds to based on ranges in scoring
     int shortAgeRange = bound((age - 20) / 5, 0, 11);
@@ -438,8 +441,8 @@ public final class CardiovascularDiseaseModule extends Module {
   private static void calculateAtrialFibrillationRisk(Person person, long time) {
     int age = person.ageInYears(time);
     if (age < 45 || person.attributes.containsKey("atrial_fibrillation")
-        || person.getVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE) == null
-        || person.getVitalSign(VitalSign.BMI) == null) {
+        || person.getVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE, time) == null
+        || person.getVitalSign(VitalSign.BMI, time) == null) {
       return;
     }
 
@@ -447,11 +450,11 @@ public final class CardiovascularDiseaseModule extends Module {
     int ageRange = Math.min((age - 45) / 5, 8);
     int genderIndex = (person.attributes.get(Person.GENDER).equals("M")) ? 0 : 1;
     afScore += age_af[genderIndex][ageRange];
-    if (person.getVitalSign(VitalSign.BMI) >= 30) {
+    if (person.getVitalSign(VitalSign.BMI, time) >= 30) {
       afScore += 1;
     }
 
-    if (person.getVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE) >= 160) {
+    if (person.getVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE, time) >= 160) {
       afScore += 1;
     }
 
@@ -524,7 +527,7 @@ public final class CardiovascularDiseaseModule extends Module {
   private static final double[] atrial_fibrillation_stroke_points = { 4, 6 };
 
   private static void calculateStrokeRisk(Person person, long time) {
-    Double bloodPressure = person.getVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE);
+    Double bloodPressure = person.getVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE, time);
     if (bloodPressure == null) {
       return;
     }
@@ -734,7 +737,7 @@ public final class CardiovascularDiseaseModule extends Module {
           Provider provider = person.getCurrentProvider("Cardiovascular Disease Module");
           // no provider associated with encounter or procedure
           if (provider == null) {
-            provider = person.getAmbulatoryProvider(time);
+            provider = person.getProvider(EncounterType.AMBULATORY, time);
           }
           provider.incrementPrescriptions(year);
         }
@@ -765,7 +768,7 @@ public final class CardiovascularDiseaseModule extends Module {
             Provider provider = person.getCurrentProvider("Cardiovascular Disease Module");
             // no provider associated with encounter or procedure
             if (provider == null) {
-              provider = person.getAmbulatoryProvider(time);
+              provider = person.getProvider(EncounterType.AMBULATORY, time);
             }
             provider.incrementProcedures(year);
           }
@@ -781,7 +784,7 @@ public final class CardiovascularDiseaseModule extends Module {
    * @param diagnosis The diagnosis to be made.
    */
   public static void performEmergency(Person person, long time, String diagnosis) {
-    Provider provider = person.getEmergencyProvider(time);
+    Provider provider = person.getProvider(EncounterType.EMERGENCY, time);
 
     int year = Utilities.getYear(time);
 
@@ -820,5 +823,44 @@ public final class CardiovascularDiseaseModule extends Module {
    */
   public static Collection<Code> getAllCodes() {
     return LOOKUP.values();
+  }
+
+  /**
+   * Populate the given attribute map with the list of attributes that this
+   * module reads/writes with example values when appropriate.
+   *
+   * @param attributes Attribute map to populate.
+   */
+  public static void inventoryAttributes(Map<String,Inventory> attributes) {
+    String m = CardiovascularDiseaseModule.class.getSimpleName();
+    // Read
+    Attributes.inventory(attributes, m, Person.GENDER, true, false, "M");
+    Attributes.inventory(attributes, m, Person.GENDER, true, false, "F");
+    Attributes.inventory(attributes, m, Person.SMOKER, true, false, "true");
+    Attributes.inventory(attributes, m, Person.SMOKER, true, false, "false");
+    Attributes.inventory(attributes, m, "atrial_fibrillation", true, false, "false");
+    Attributes.inventory(attributes, m, "atrial_fibrillation_risk", true, false, null);
+    Attributes.inventory(attributes, m, "bp_treated?", true, false, "false");
+    Attributes.inventory(attributes, m, "cardio_risk", true, false, "-1.0");
+    Attributes.inventory(attributes, m, "coronary_heart_disease", true, false, "false");
+    Attributes.inventory(attributes, m, "cardiovascular_procedures", true, false, null);
+    Attributes.inventory(attributes, m, "cardiovascular_disease_med_changes", true, false, null);
+    Attributes.inventory(attributes, m, "diabetes", true, false, "false");
+    Attributes.inventory(attributes, m, "left_ventricular_hypertrophy", true, false, "false");
+    Attributes.inventory(attributes, m, "stroke_risk", true, false, null);
+    // Write
+    Attributes.inventory(attributes, m, "atrial_fibrillation", false, true, "true");
+    Attributes.inventory(attributes, m, "atrial_fibrillation_risk", false, true, "Numeric");
+    Attributes.inventory(attributes, m, "cardio_risk", false, true, "1.0");
+    Attributes.inventory(attributes, m,
+        "cardiovascular_procedures", false, true, "Map<String, List<String>>");
+    Attributes.inventory(attributes, m,
+        "cardiovascular_disease_med_changes", false, true, "Set<String>");
+    Attributes.inventory(attributes, m, "coronary_heart_disease", false, true, "true");
+    Attributes.inventory(attributes, m, "stroke_risk", false, true, "0.0");
+    Attributes.inventory(attributes, m, "stroke_risk", false, true, "0.5");
+    Attributes.inventory(attributes, m, "stroke_risk", false, true, "1.0");
+    Attributes.inventory(attributes, m, "stroke_points", false, true, "Numeric");
+    Attributes.inventory(attributes, m, "stroke_history", false, true, "true");
   }
 }

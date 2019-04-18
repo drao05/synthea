@@ -15,10 +15,13 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.math3.special.Erf;
 import org.mitre.synthea.engine.Event;
 import org.mitre.synthea.engine.Module;
+import org.mitre.synthea.helpers.Attributes;
+import org.mitre.synthea.helpers.Attributes.Inventory;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.RandomCollection;
 import org.mitre.synthea.helpers.SimpleYML;
 import org.mitre.synthea.helpers.Utilities;
+import org.mitre.synthea.modules.BloodPressureValueGenerator.SysDias;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.concepts.BiometricsConfig;
 import org.mitre.synthea.world.concepts.BirthStatistics;
@@ -99,7 +102,7 @@ public final class LifecycleModule extends Module {
     quitSmoking(person, time);
     quitAlcoholism(person, time);
     adherence(person, time);
-    diabeticVitalSigns(person, time);
+    calculateVitalSigns(person, time);
     calculateFallRisk(person, time);
     death(person, time);
 
@@ -182,6 +185,7 @@ public final class LifecycleModule extends Module {
     boolean hasStreetAddress2 = person.rand() < 0.5;
     attributes.put(Person.ADDRESS, fakeAddress(hasStreetAddress2, person.random));
 
+    // TODO: Why are the percentiles a vital sign? Sounds more like an attribute?
     double heightPercentile = person.rand();
     double weightPercentile = person.rand();
     person.setVitalSign(VitalSign.HEIGHT_PERCENTILE, heightPercentile);
@@ -212,9 +216,24 @@ public final class LifecycleModule extends Module {
     person.attributes.put(ADHERENCE_PROBABILITY, adherenceBaseline);
 
     grow(person, time); // set initial height and weight from percentiles
+    calculateVitalSigns(person, time);  // Set initial values for many vital signs.
 
     String orientation = sexualOrientationData.next(person.random);
     attributes.put(Person.SEXUAL_ORIENTATION, orientation);
+
+    // Setup vital signs which follow the generator approach
+    setupVitalSignGenerators(person);
+  }
+
+  /**
+   * Set up the generators for vital signs which use the generator-based approach already.
+   * @param person The person to generate vital signs for.
+   */
+  private static void setupVitalSignGenerators(Person person) {
+    person.setVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE,
+        new BloodPressureValueGenerator(person, SysDias.SYSTOLIC));
+    person.setVitalSign(VitalSign.DIASTOLIC_BLOOD_PRESSURE,
+        new BloodPressureValueGenerator(person, SysDias.DIASTOLIC));
   }
 
   /**
@@ -403,17 +422,17 @@ public final class LifecycleModule extends Module {
   private static void grow(Person person, long time) {
     int age = person.ageInYears(time);
 
-    double height = person.getVitalSign(VitalSign.HEIGHT);
-    double weight = person.getVitalSign(VitalSign.WEIGHT);
+    double height = person.getVitalSign(VitalSign.HEIGHT, time);
+    double weight = person.getVitalSign(VitalSign.WEIGHT, time);
 
     if (age < 20) {
       // follow growth charts
       String gender = (String) person.attributes.get(Person.GENDER);
       int ageInMonths = person.ageInMonths(time);
       height = lookupGrowthChart("height", gender, ageInMonths,
-          person.getVitalSign(VitalSign.HEIGHT_PERCENTILE));
+          person.getVitalSign(VitalSign.HEIGHT_PERCENTILE, time));
       weight = lookupGrowthChart("weight", gender, ageInMonths,
-          person.getVitalSign(VitalSign.WEIGHT_PERCENTILE));
+          person.getVitalSign(VitalSign.WEIGHT_PERCENTILE, time));
     } else if (age <= ADULT_MAX_WEIGHT_AGE) {
       // getting older and fatter
       double adultWeightGain = person.rand(ADULT_WEIGHT_GAIN_RANGE);
@@ -519,14 +538,7 @@ public final class LifecycleModule extends Module {
     return impacts;
   }
   
-  private static final int[] HYPERTENSIVE_SYS_BP_RANGE =
-      BiometricsConfig.ints("metabolic.blood_pressure.hypertensive.systolic");
-  private static final int[] HYPERTENSIVE_DIA_BP_RANGE =
-      BiometricsConfig.ints("metabolic.blood_pressure.hypertensive.diastolic");
-  private static final int[] NORMAL_SYS_BP_RANGE =
-      BiometricsConfig.ints("metabolic.blood_pressure.normal.systolic");
-  private static final int[] NORMAL_DIA_BP_RANGE =
-      BiometricsConfig.ints("metabolic.blood_pressure.normal.diastolic");
+
   
   private static final int[] CHOLESTEROL_RANGE =
       BiometricsConfig.ints("metabolic.lipid_panel.cholesterol");
@@ -586,22 +598,7 @@ public final class LifecycleModule extends Module {
    * @param person The person
    * @param time Current simulation timestamp
    */
-  private static void diabeticVitalSigns(Person person, long time) {
-    boolean hypertension = (Boolean)person.attributes.getOrDefault("hypertension", false);
-
-    int[] sysRange;
-    int[] diaRange;
-    if (hypertension) {
-      sysRange = HYPERTENSIVE_SYS_BP_RANGE;
-      diaRange = HYPERTENSIVE_DIA_BP_RANGE;
-    } else {
-      sysRange = NORMAL_SYS_BP_RANGE;
-      diaRange = NORMAL_DIA_BP_RANGE;
-    }
-
-    person.setVitalSign(VitalSign.SYSTOLIC_BLOOD_PRESSURE, person.rand(sysRange));
-    person.setVitalSign(VitalSign.DIASTOLIC_BLOOD_PRESSURE, person.rand(diaRange));
-    
+  private static void calculateVitalSigns(Person person, long time) {
     int index = 0;
     if (person.attributes.containsKey("diabetes_severity")) {
       index = (Integer) person.attributes.getOrDefault("diabetes_severity", 1);
@@ -617,7 +614,7 @@ public final class LifecycleModule extends Module {
     person.setVitalSign(VitalSign.HDL, hdl);
     person.setVitalSign(VitalSign.LDL, ldl);
     
-    double bmi = person.getVitalSign(VitalSign.BMI);
+    double bmi = person.getVitalSign(VitalSign.BMI, time);
     boolean prediabetes = (boolean)person.attributes.getOrDefault("prediabetes", false);
     boolean diabetes = (boolean)person.attributes.getOrDefault("diabetes", false);
     double hbA1c = estimateHbA1c(bmi, prediabetes, diabetes, person);
@@ -734,7 +731,7 @@ public final class LifecycleModule extends Module {
     try {
       int age = person.ageInYears(time);
       boolean female = "F".equals(person.attributes.get(Person.GENDER));
-      double weight = person.getVitalSign(VitalSign.WEIGHT); // kg
+      double weight = person.getVitalSign(VitalSign.WEIGHT, time); // kg
       crcl = Math.max(1, Math.min(crcl, 100)); // clamp between 1-100
       double creatinine = ((140.0 - age) * weight) / (72.0 * crcl);
       if (female) {
@@ -932,7 +929,7 @@ public final class LifecycleModule extends Module {
    */
   private void calculateFallRisk(Person person, long time) {
     if (person.ageInYears(time) >= 65) {
-      boolean hasOsteoporosis = (boolean) person.attributes.getOrDefault("osteporosis", false);
+      boolean hasOsteoporosis = (boolean) person.attributes.getOrDefault("osteoporosis", false);
       double baselineFallRisk = hasOsteoporosis ? 0.06 : 0.035;// numbers from injuries module
 
       int activeInterventions = 0;
@@ -968,5 +965,83 @@ public final class LifecycleModule extends Module {
    */
   public static Collection<Code> getAllCodes() {
     return Collections.singleton(NATURAL_CAUSES);
+  }
+
+  /**
+   * Populate the given attribute map with the list of attributes that this
+   * module reads/writes with example values when appropriate.
+   *
+   * @param attributes Attribute map to populate.
+   */
+  public static void inventoryAttributes(Map<String,Inventory> attributes) {
+    String m = LifecycleModule.class.getSimpleName();
+    // Read
+    Attributes.inventory(attributes, m, Person.ADHERENCE, true, false, null);
+    Attributes.inventory(attributes, m, ADHERENCE_PROBABILITY, true, false, "1.0");
+    Attributes.inventory(attributes, m, AGE, true, false, null);
+    Attributes.inventory(attributes, m, AGE_MONTHS, true, false, null);
+    Attributes.inventory(attributes, m, Person.ALCOHOLIC, true, false, null);
+    Attributes.inventory(attributes, m, "ckd", true, false, null);
+    Attributes.inventory(attributes, m, "diabetes", true, false, null);
+    Attributes.inventory(attributes, m, "diabetes_severity", true, false, null);
+    Attributes.inventory(attributes, m, Person.EDUCATION_LEVEL, true, false, null);
+    Attributes.inventory(attributes, m, Person.ETHNICITY, true, false, null);
+    Attributes.inventory(attributes, m, Person.FIRST_NAME, true, false, null);
+    Attributes.inventory(attributes, m, Person.FIRST_LANGUAGE, true, false, null);
+    Attributes.inventory(attributes, m, Person.GENDER, true, false, "M");
+    Attributes.inventory(attributes, m, Person.IDENTIFIER_DRIVERS, true, false, null);
+    Attributes.inventory(attributes, m, Person.IDENTIFIER_PASSPORT, true, false, null);
+    Attributes.inventory(attributes, m, Person.LAST_NAME, true, false, null);
+    Attributes.inventory(attributes, m, Person.NAME_PREFIX, true, false, null);
+    Attributes.inventory(attributes, m, Person.NAME_SUFFIX, true, false, null);
+    Attributes.inventory(attributes, m, Person.MARITAL_STATUS, true, false, null);
+    Attributes.inventory(attributes, m, "osteoporosis", true, false, null);
+    Attributes.inventory(attributes, m, "prediabetes", true, false, null);
+    Attributes.inventory(attributes, m, QUIT_ALCOHOLISM_PROBABILITY, true, false, null);
+    Attributes.inventory(attributes, m, QUIT_SMOKING_PROBABILITY, true, false, null);
+    Attributes.inventory(attributes, m, Person.RACE, true, false, null);
+    Attributes.inventory(attributes, m, Person.SMOKER, true, false, "Boolean");
+    // Write
+    Attributes.inventory(attributes, m, "pregnant", false, true, "Boolean");
+    Attributes.inventory(attributes, m, "probability_of_fall_injury", false, true, "1.0");
+    Attributes.inventory(attributes, m, "RH_NEG", false, true, "Boolean");
+    Attributes.inventory(attributes, m, ADHERENCE_PROBABILITY, false, true, "1.0");
+    Attributes.inventory(attributes, m, AGE, false, true, "Numeric");
+    Attributes.inventory(attributes, m, AGE_MONTHS, false, true, "Numeric");
+    Attributes.inventory(attributes, m, BirthStatistics.BIRTH_SEX, false, true, "M");
+    Attributes.inventory(attributes, m,
+        LifecycleModule.QUIT_SMOKING_PROBABILITY, false, true, "1.0");
+    Attributes.inventory(attributes, m, Person.ADDRESS, false, true, null);
+    Attributes.inventory(attributes, m, Person.ALCOHOLIC, false, true, "Boolean");
+    Attributes.inventory(attributes, m, Person.BIRTH_CITY, false, true, "Bedford");
+    Attributes.inventory(attributes, m, Person.BIRTH_COUNTRY, false, true, "USA");
+    Attributes.inventory(attributes, m, Person.BIRTH_STATE, false, true, "Massachusetts");
+    Attributes.inventory(attributes, m, Person.BIRTHDATE, false, true, null);
+    Attributes.inventory(attributes, m, Person.BIRTHPLACE, false, true, "Boston");
+    Attributes.inventory(attributes, m, Person.ETHNICITY, false, true, null);
+    Attributes.inventory(attributes, m, Person.FIRST_NAME, false, true, null);
+    Attributes.inventory(attributes, m, Person.GENDER, false, true, "F");
+    Attributes.inventory(attributes, m, Person.ID, false, true, null);
+    Attributes.inventory(attributes, m, Person.IDENTIFIER_DRIVERS, false, true, null);
+    Attributes.inventory(attributes, m, Person.IDENTIFIER_PASSPORT, false, true, null);
+    Attributes.inventory(attributes, m, Person.IDENTIFIER_SSN, false, true, "999-99-9999");
+    Attributes.inventory(attributes, m, Person.LAST_NAME, false, true, null);
+    Attributes.inventory(attributes, m, Person.MAIDEN_NAME, false, true, null);
+    Attributes.inventory(attributes, m, Person.MARITAL_STATUS, false, true, "M");
+    Attributes.inventory(attributes, m, Person.MULTIPLE_BIRTH_STATUS, false, true, "Boolean");
+    Attributes.inventory(attributes, m, Person.NAME, false, true, null);
+    Attributes.inventory(attributes, m, Person.NAME_FATHER, false, true, null);
+    Attributes.inventory(attributes, m, Person.NAME_MOTHER, false, true, null);
+    Attributes.inventory(attributes, m, Person.NAME_PREFIX, false, true, null);
+    Attributes.inventory(attributes, m, Person.NAME_SUFFIX, false, true, null);
+    Attributes.inventory(attributes, m, Person.RACE, false, true, null);
+    Attributes.inventory(attributes, m, Person.SEXUAL_ORIENTATION, false, true, null);
+    Attributes.inventory(attributes, m, Person.SMOKER, false, true, "Boolean");
+    Attributes.inventory(attributes, m, Person.TELECOM, false, true, "555-555-5555");
+    Attributes.inventory(attributes, m, Person.ZIP, false, true, "01730");
+    Attributes.inventory(attributes, m, QUIT_ALCOHOLISM_AGE, false, true, "Numeric");
+    Attributes.inventory(attributes, m, QUIT_ALCOHOLISM_PROBABILITY, false, true, "1.0");
+    Attributes.inventory(attributes, m, QUIT_SMOKING_AGE, false, true, "Numeric");
+    Attributes.inventory(attributes, m, QUIT_SMOKING_PROBABILITY, false, true, "1.0");
   }
 }

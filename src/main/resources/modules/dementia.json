@@ -465,7 +465,7 @@
         {
           "condition": {
             "condition_type": "Attribute",
-            "attribute": "Alzheimer’s Medication",
+            "attribute": "Alzheimer's Medication",
             "operator": "is not nil"
           },
           "transition": "EndFirstPrescription"

@@ -440,7 +440,7 @@ public class Location {
    * @return Map of ethnicity to Lists of Strings "city,state,country"
    */
   @SuppressWarnings("unchecked")
-  protected static Map<String, List<String>> loadCitiesByLanguage(String resource) {
+  public static Map<String, List<String>> loadCitiesByLanguage(String resource) {
     Map<String, List<String>> foreignPlacesOfBirth = new HashMap<>();
     try {
       String json = Utilities.readResource(resource);

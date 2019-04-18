@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.mitre.synthea.engine.Event;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Clinician;
@@ -171,7 +172,7 @@ public class CSVExporter {
    * @throws IOException if any IO error occurs
    */
   private void writeCSVHeaders() throws IOException {
-    patients.write("ID,BIRTHDATE,DEATHDATE,SSN,DRIVERS,PASSPORT,"
+    patients.write("Id,BIRTHDATE,DEATHDATE,SSN,DRIVERS,PASSPORT,"
         + "PREFIX,FIRST,LAST,SUFFIX,MAIDEN,MARITAL,RACE,ETHNICITY,GENDER,BIRTHPLACE,"
         + "ADDRESS,CITY,STATE,ZIP");
     patients.write(NEWLINE);
@@ -185,7 +186,7 @@ public class CSVExporter {
     conditions.write("START,STOP,PATIENT,ENCOUNTER,CODE,DESCRIPTION");
     conditions.write(NEWLINE);
     careplans.write(
-        "ID,START,STOP,PATIENT,ENCOUNTER,CODE,DESCRIPTION,REASONCODE,REASONDESCRIPTION");
+        "Id,START,STOP,PATIENT,ENCOUNTER,CODE,DESCRIPTION,REASONCODE,REASONDESCRIPTION");
     careplans.write(NEWLINE);
     observations.write("DATE,PATIENT,ENCOUNTER,CODE,DESCRIPTION,VALUE,UNITS,TYPE");
     observations.write(NEWLINE);
@@ -193,15 +194,15 @@ public class CSVExporter {
     procedures.write(NEWLINE);
     immunizations.write("DATE,PATIENT,ENCOUNTER,CODE,DESCRIPTION,COST");
     immunizations.write(NEWLINE);
-    encounters.write("ID,START,STOP,PATIENT,PROVIDER,ENCOUNTERCLASS,CODE,DESCRIPTION,COST,"
+    encounters.write("Id,START,STOP,PATIENT,PROVIDER,ENCOUNTERCLASS,CODE,DESCRIPTION,COST,"
         + "REASONCODE,REASONDESCRIPTION");
     encounters.write(NEWLINE);
-    imagingStudies.write("ID,DATE,PATIENT,ENCOUNTER,BODYSITE_CODE,BODYSITE_DESCRIPTION,"
+    imagingStudies.write("Id,DATE,PATIENT,ENCOUNTER,BODYSITE_CODE,BODYSITE_DESCRIPTION,"
         + "MODALITY_CODE,MODALITY_DESCRIPTION,SOP_CODE,SOP_DESCRIPTION");
     imagingStudies.write(NEWLINE);
-    organizations.write("ID,NAME,ADDRESS,CITY,STATE,ZIP,PHONE,UTILIZATION");
+    organizations.write("Id,NAME,ADDRESS,CITY,STATE,ZIP,PHONE,UTILIZATION");
     organizations.write(NEWLINE);
-    providers.write("ID,ORGANIZATION,NAME,GENDER,SPECIALITY,ADDRESS,CITY,STATE,ZIP,UTILIZATION");
+    providers.write("Id,ORGANIZATION,NAME,GENDER,SPECIALITY,ADDRESS,CITY,STATE,ZIP,UTILIZATION");
     providers.write(NEWLINE);
   }
 
@@ -317,15 +318,23 @@ public class CSVExporter {
    * @throws IOException if any IO error occurs
    */
   private String patient(Person person, long time) throws IOException {
-    // ID,BIRTHDATE,DEATHDATE,SSN,DRIVERS,PASSPORT,PREFIX,
+    // Id,BIRTHDATE,DEATHDATE,SSN,DRIVERS,PASSPORT,PREFIX,
     // FIRST,LAST,SUFFIX,MAIDEN,MARITAL,RACE,ETHNICITY,GENDER,BIRTHPLACE,ADDRESS
-    StringBuilder s = new StringBuilder();
-
     String personID = (String) person.attributes.get(Person.ID);
+
+    // check if we've already exported this patient demographic data yet,
+    // otherwise the "split record" feature could add a duplicate entry.
+    if (person.attributes.containsKey("exported_to_csv")) {
+      return personID;
+    } else {
+      person.attributes.put("exported_to_csv", personID);
+    }
+
+    StringBuilder s = new StringBuilder();
     s.append(personID).append(',');
     s.append(dateFromTimestamp((long)person.attributes.get(Person.BIRTHDATE))).append(',');
     if (!person.alive(time)) {
-      s.append(dateFromTimestamp(person.record.death));
+      s.append(dateFromTimestamp(person.events.event(Event.DEATH).time));
     }
 
     for (String attribute : new String[] {
@@ -366,7 +375,7 @@ public class CSVExporter {
    * @throws IOException if any IO error occurs
    */
   private String encounter(String personID, Encounter encounter) throws IOException {
-    // ID,START,STOP,PATIENT,PROVIDER,ENCOUNTERCLASS,CODE,DESCRIPTION,COST,
+    // Id,START,STOP,PATIENT,PROVIDER,ENCOUNTERCLASS,CODE,DESCRIPTION,COST,
     // REASONCODE,REASONDESCRIPTION
     StringBuilder s = new StringBuilder();
 
@@ -679,7 +688,7 @@ public class CSVExporter {
    */
   private String careplan(String personID, String encounterID,
       CarePlan careplan) throws IOException {
-    // ID,START,STOP,PATIENT,ENCOUNTER,CODE,DESCRIPTION,REASONCODE,REASONDESCRIPTION
+    // Id,START,STOP,PATIENT,ENCOUNTER,CODE,DESCRIPTION,REASONCODE,REASONDESCRIPTION
     StringBuilder s = new StringBuilder();
 
     String careplanID = UUID.randomUUID().toString();
@@ -721,7 +730,7 @@ public class CSVExporter {
    */
   private String imagingStudy(String personID, String encounterID,
       ImagingStudy imagingStudy) throws IOException {
-    // ID,DATE,PATIENT,ENCOUNTER,BODYSITE_CODE,BODYSITE_DESCRIPTION,
+    // Id,DATE,PATIENT,ENCOUNTER,BODYSITE_CODE,BODYSITE_DESCRIPTION,
     // MODALITY_CODE,MODALITY_DESCRIPTION,SOP_CODE,SOP_DESCRIPTION
     StringBuilder s = new StringBuilder();
 
@@ -761,7 +770,7 @@ public class CSVExporter {
    * @throws IOException if any IO error occurs
    */
   private void organization(Provider org, int utilization) throws IOException {
-    // ID,NAME,ADDRESS,CITY,STATE,ZIP,PHONE,UTILIZATION
+    // Id,NAME,ADDRESS,CITY,STATE,ZIP,PHONE,UTILIZATION
     StringBuilder s = new StringBuilder();
     s.append(org.getResourceID()).append(',');
     s.append(clean(org.name)).append(',');
@@ -783,7 +792,7 @@ public class CSVExporter {
    * @throws IOException if any IO error occurs
    */
   private void provider(Clinician provider, String orgId) throws IOException {
-    // ID,ORGANIZATION,NAME,GENDER,SPECIALITY,ADDRESS,CITY,STATE,ZIP,UTILIZATION
+    // Id,ORGANIZATION,NAME,GENDER,SPECIALITY,ADDRESS,CITY,STATE,ZIP,UTILIZATION
 
     StringBuilder s = new StringBuilder();
     s.append(provider.getResourceID()).append(',');
@@ -800,7 +809,7 @@ public class CSVExporter {
       String value = (String) provider.attributes.getOrDefault(attribute, "");
       s.append(clean(value)).append(',');
     }
-    s.append(provider.getEncounterCount()).append(',');
+    s.append(provider.getEncounterCount());
 
     s.append(NEWLINE);
 
