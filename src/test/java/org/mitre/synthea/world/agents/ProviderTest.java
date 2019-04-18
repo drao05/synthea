@@ -14,7 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mitre.synthea.world.geography.location.Location;
 import org.mitre.synthea.world.concepts.HealthRecord.EncounterType;
-import org.mitre.synthea.world.geography.Location;
+// import org.mitre.synthea.world.geography.Location;
 
 public class ProviderTest {
 

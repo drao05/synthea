@@ -31,8 +31,6 @@ import org.mitre.synthea.world.agents.behaviors.ProviderFinderRandom;
 import org.mitre.synthea.world.concepts.ClinicianSpecialty;
 import org.mitre.synthea.world.geography.demographics.Demographics;
 import org.mitre.synthea.world.concepts.HealthRecord.EncounterType;
-import org.mitre.synthea.world.geography.Demographics;
-import org.mitre.synthea.world.geography.Location;
 
 public class Provider implements QuadTreeData {
 

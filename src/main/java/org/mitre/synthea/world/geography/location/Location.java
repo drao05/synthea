@@ -64,8 +64,6 @@ public class Location {
       demographicsLoader = new DefaultDemographicsLoader();
     }
   }
-  private static LinkedHashMap<String, String> stateAbbreviations = loadAbbreviations();
-  private static Map<String, String> timezones = loadTimezones();
   private static Map<String, List<String>> foreignPlacesOfBirth = loadCitiesByLangauge();
 
   private long totalPopulation;
@@ -447,7 +445,7 @@ public class Location {
    * @return Map of ethnicity to Lists of Strings "city,state,country"
    */
   @SuppressWarnings("unchecked")
-  protected static Map<String, List<String>> loadCitiesByLanguage(String resource) {
+  public static Map<String, List<String>> loadCitiesByLanguage(String resource) {
     Map<String, List<String>> foreignPlacesOfBirth = new HashMap<>();
     try {
       String json = Utilities.readResource(resource);

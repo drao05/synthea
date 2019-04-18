@@ -55,6 +55,10 @@ public final class EncounterModule extends Module {
   // NOTE: if new codes are added, be sure to update getAllCodes below
   private Random rand;
   
+  public EncounterModule() {
+    this.name = "Encounter";
+  }
+
   public EncounterModule(long seed) {
     this.name = "Encounter";
     rand = new Random(seed);

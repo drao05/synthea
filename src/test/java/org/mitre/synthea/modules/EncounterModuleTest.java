@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.HealthRecord.Encounter;
-import org.mitre.synthea.world.geography.Location;
+import org.mitre.synthea.world.geography.location.Location;
 
 public class EncounterModuleTest {
 

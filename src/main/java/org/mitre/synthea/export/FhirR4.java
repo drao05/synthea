@@ -120,7 +120,7 @@ import org.mitre.synthea.world.concepts.HealthRecord.Medication;
 import org.mitre.synthea.world.concepts.HealthRecord.Observation;
 import org.mitre.synthea.world.concepts.HealthRecord.Procedure;
 import org.mitre.synthea.world.concepts.HealthRecord.Report;
-import org.mitre.synthea.world.geography.Location;
+import org.mitre.synthea.world.geography.location.Location;
 
 public class FhirR4 {
   // HAPI FHIR warns that the context creation is expensive, and should be performed
