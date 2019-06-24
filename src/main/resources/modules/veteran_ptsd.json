@@ -1,7 +1,7 @@
 {
   "name": "Veteran PTSD",
   "remarks": [
-    "Post Traumatic Stress Disorder is one of the top disease conditions (by prevalence), disproportionately affecting veterans.  A majority of the guidelines detailed here in this module "
+    "Post Traumatic Stress Disorder is one of the top disease conditions (by prevalence), disproportionately affecting veterans.  A majority of the guidelines detailed here in this module...  Sources: https://www.ncbi.nlm.nih.gov/pubmed/26243685 ; https://cptforptsd.com/wp-content/uploads/2017/10/1-s2.0-S0005789417300783-main.pdf ; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5047000/ ; https://www.ptsd.va.gov/apps/decisionaid/compare.aspx ; https://www.nursingtimes.net/post-traumatic-stress-disorder/1996064.article "
   ],
   "states": {
     "Initial": {
